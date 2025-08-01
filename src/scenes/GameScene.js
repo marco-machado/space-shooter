@@ -1,8 +1,19 @@
 import Logger from '../core/Logger.js';
 import Environment from '../config/Environment.js';
 import Entity from '../entities/Entity.js';
+// import Enemy from '../entities/Enemy.js'; // Imported but not directly used in scene
 import HealthComponent from '../components/HealthComponent.js';
 import MovementComponent from '../components/MovementComponent.js';
+import WeaponComponent from '../components/WeaponComponent.js';
+import CollisionComponent from '../components/CollisionComponent.js';
+
+// Systems
+import WeaponSystem from '../systems/WeaponSystem.js';
+import CollisionSystem from '../systems/CollisionSystem.js';
+import EnemySpawnSystem from '../systems/EnemySpawnSystem.js';
+
+// Game State Management
+import GameStateManager from '../utils/GameStateManager.js';
 
 /**
  * Game Scene - Primary gameplay scene
@@ -14,14 +25,10 @@ class GameScene extends Phaser.Scene {
 
     // ECS Management
     this.entities = [];
-    this.systems = [];
+    this.systems = {};
 
-    // Game state
-    this.gameState = 'playing'; // 'playing', 'paused', 'gameOver'
-    this.score = 0;
-    this.lives = Environment.STARTING_LIVES;
-    this.level = 1;
-    this.enemiesKilled = 0;
+    // Game State Manager
+    this.gameStateManager = null;
 
     // Player reference
     this.player = null;
@@ -41,16 +48,12 @@ class GameScene extends Phaser.Scene {
   init() {
     Logger.info('GameScene: Initializing gameplay scene');
 
-    // Reset game state
-    this.gameState = 'playing';
-    this.score = 0;
-    this.lives = Environment.STARTING_LIVES;
-    this.level = 1;
-    this.enemiesKilled = 0;
-
     // Clear entities and systems
     this.entities = [];
-    this.systems = [];
+    this.systems = {};
+
+    // GameStateManager will be initialized in create() when event system is ready
+    this.gameStateManager = null;
   }
 
   /**
@@ -58,6 +61,10 @@ class GameScene extends Phaser.Scene {
    */
   create() {
     Logger.info('GameScene: Creating gameplay scene');
+
+    // Initialize game state manager (now that event system is ready)
+    this.gameStateManager = new GameStateManager(this);
+    this.gameStateManager.loadGame(); // Load saved progress
 
     // Create background
     this.createBackground();
@@ -68,7 +75,7 @@ class GameScene extends Phaser.Scene {
     // Create player
     this.createPlayer();
 
-    // Initialize systems (will be expanded in future sprints)
+    // Initialize all systems
     this.initializeSystems();
 
     // Create UI
@@ -82,6 +89,9 @@ class GameScene extends Phaser.Scene {
 
     // Fade in from black
     this.cameras.main.fadeIn(500, 0, 0, 0);
+
+    // Start the game
+    this.gameStateManager.startGame();
 
     Logger.info('GameScene: Scene setup complete');
   }
@@ -141,14 +151,37 @@ class GameScene extends Phaser.Scene {
     // Create player entity (blue rectangle in development)
     this.player = new Entity(this, startX, startY, 64, 64, 0x0099ff);
 
+    // Mark as player for identification
+    this.player.entityType = 'player';
+
     // Add components
     this.player.addComponent(new HealthComponent(100));
-    this.player.addComponent(new MovementComponent(300)); // 300 pixels/second max speed
+
+    const movementComponent = new MovementComponent(300); // 300 pixels/second max speed
+    movementComponent.init({
+      boundToScreen: true,
+      screenPadding: 32,
+      boundaryBehavior: 'clamp',
+    });
+    this.player.addComponent(movementComponent);
+
+    // Add weapon component with starting weapon
+    const weaponComponent = new WeaponComponent('laser');
+    weaponComponent.init({
+      availableWeapons: Array.from(this.gameStateManager.weaponsUnlocked),
+      currentWeapon: 'laser',
+    });
+    this.player.addComponent(weaponComponent);
+
+    // Add collision component
+    const collisionComponent = new CollisionComponent();
+    collisionComponent.init(CollisionComponent.createPlayerConfig());
+    this.player.addComponent(collisionComponent);
 
     // Enable physics
     this.player.enablePhysics('dynamic');
     this.player.body.setCollideWorldBounds(true);
-    this.player.body.setSize(60, 60); // Slightly smaller collision box
+    this.player.body.setSize(48, 48); // Smaller collision box for better gameplay
 
     // Add to player group
     this.playerGroup.add(this.player);
@@ -160,46 +193,77 @@ class GameScene extends Phaser.Scene {
   }
 
   /**
-   * Initialize game systems
-   * Systems will be expanded in future sprints
+   * Initialize all game systems
    */
   initializeSystems() {
-    // For now, just log that systems would be initialized here
-    Logger.debug('GameScene: Systems initialization placeholder');
+    Logger.info('GameScene: Initializing systems');
 
-    // Future systems:
-    // - MovementSystem (handle entity movement)
-    // - WeaponSystem (handle shooting)
-    // - CollisionSystem (handle collisions)
-    // - EnemySpawnSystem (spawn enemies)
-    // - ProgressionSystem (handle XP and leveling)
-    // - AudioSystem (handle sound effects)
+    // Weapon System - handles player and enemy firing
+    this.systems.weapon = new WeaponSystem(this);
+
+    // Collision System - handles all collision detection
+    this.systems.collision = new CollisionSystem(this);
+
+    // Enemy Spawn System - handles enemy waves and spawning
+    this.systems.enemySpawn = new EnemySpawnSystem(this);
+
+    Logger.info('GameScene: All systems initialized', {
+      systemCount: Object.keys(this.systems).length,
+    });
   }
 
   /**
    * Create game UI elements
    */
   createUI() {
+    const gameState = this.gameStateManager.getGameState();
+
     // Score display
-    this.uiElements.scoreText = this.add.text(20, 20, `SCORE: ${this.score}`, {
+    this.uiElements.scoreText = this.add.text(20, 20, `SCORE: ${gameState.score}`, {
       fontSize: '20px',
       color: '#ffffff',
       fontFamily: 'monospace',
     });
 
     // Lives display
-    this.uiElements.livesText = this.add.text(20, 50, `LIVES: ${this.lives}`, {
+    this.uiElements.livesText = this.add.text(20, 50, `LIVES: ${gameState.lives}`, {
       fontSize: '16px',
       color: '#ffffff',
       fontFamily: 'monospace',
     });
 
     // Level display
-    this.uiElements.levelText = this.add.text(20, 80, `LEVEL: ${this.level}`, {
+    this.uiElements.levelText = this.add.text(20, 80, `LEVEL: ${gameState.level}`, {
       fontSize: '16px',
       color: '#ffffff',
       fontFamily: 'monospace',
     });
+
+    // Wave display
+    this.uiElements.waveText = this.add.text(20, 110, `WAVE: ${gameState.currentWave}`, {
+      fontSize: '16px',
+      color: '#ffffff',
+      fontFamily: 'monospace',
+    });
+
+    // Current weapon display
+    this.uiElements.weaponText = this.add.text(20, 140, 'WEAPON: LASER', {
+      fontSize: '14px',
+      color: '#ffff00',
+      fontFamily: 'monospace',
+    });
+
+    // Accuracy display
+    this.uiElements.accuracyText = this.add.text(
+      20,
+      170,
+      `ACCURACY: ${gameState.accuracy.toFixed(1)}%`,
+      {
+        fontSize: '12px',
+        color: '#00ff88',
+        fontFamily: 'monospace',
+      }
+    );
 
     // Health bar background
     const healthBarX = this.scale.width - 220;
@@ -303,9 +367,14 @@ class GameScene extends Phaser.Scene {
    * @param {number} delta - Time delta in milliseconds
    */
   update(time, delta) {
-    if (this.gameState !== 'playing') {
+    const gameState = this.gameStateManager.getGameState();
+
+    if (!gameState.isPlaying || gameState.isPaused) {
       return;
     }
+
+    // Update game state manager
+    this.gameStateManager.update(delta);
 
     // Update background stars
     this.updateBackground(delta);
@@ -316,7 +385,7 @@ class GameScene extends Phaser.Scene {
     // Update all entities
     this.updateEntities(delta);
 
-    // Update systems (placeholder for future implementation)
+    // Update all systems
     this.updateSystems(delta);
 
     // Update UI
@@ -385,13 +454,12 @@ class GameScene extends Phaser.Scene {
   }
 
   /**
-   * Handle player shooting (placeholder for future implementation)
+   * Handle player shooting (handled by WeaponSystem)
    * @param {number} delta - Time delta
    */
   handlePlayerShooting(_delta) {
-    // Placeholder for shooting system
-    // Will be implemented with WeaponSystem in future sprints
-    Logger.debug('GameScene: Player shooting (not implemented yet)');
+    // Shooting is now handled by WeaponSystem in updateSystems()
+    // This method is kept for potential future direct shooting logic
   }
 
   /**
@@ -419,26 +487,57 @@ class GameScene extends Phaser.Scene {
   }
 
   /**
-   * Update game systems (placeholder)
+   * Update all game systems
    * @param {number} delta - Time delta
    */
-  updateSystems(_delta) {
-    // Placeholder for system updates
-    // Systems will be implemented in future sprints
+  updateSystems(delta) {
+    // Get all entities including projectiles
+    const allEntities = [...this.entities, ...this.systems.weapon.getActiveProjectiles()];
+
+    // Update weapon system (handles firing and projectiles)
+    if (this.systems.weapon) {
+      this.systems.weapon.update(allEntities, delta);
+    }
+
+    // Update collision system (handles all collisions)
+    if (this.systems.collision) {
+      this.systems.collision.update(allEntities, delta);
+    }
+
+    // Update enemy spawn system (handles enemy waves)
+    if (this.systems.enemySpawn) {
+      this.systems.enemySpawn.update(allEntities, delta);
+    }
   }
 
   /**
    * Update UI elements
    */
   updateUI() {
+    const displayStats = this.gameStateManager.getDisplayStats();
+
     // Update score
-    this.uiElements.scoreText.setText(`SCORE: ${this.score}`);
+    this.uiElements.scoreText.setText(`SCORE: ${displayStats.score}`);
 
     // Update lives
-    this.uiElements.livesText.setText(`LIVES: ${this.lives}`);
+    this.uiElements.livesText.setText(`LIVES: ${displayStats.lives}`);
 
     // Update level
-    this.uiElements.levelText.setText(`LEVEL: ${this.level}`);
+    this.uiElements.levelText.setText(`LEVEL: ${displayStats.level}`);
+
+    // Update wave
+    this.uiElements.waveText.setText(`WAVE: ${displayStats.wave}`);
+
+    // Update current weapon
+    if (this.player) {
+      const weapon = this.player.getComponent(WeaponComponent);
+      if (weapon) {
+        this.uiElements.weaponText.setText(`WEAPON: ${weapon.currentWeapon.toUpperCase()}`);
+      }
+    }
+
+    // Update accuracy
+    this.uiElements.accuracyText.setText(`ACCURACY: ${displayStats.accuracy}`);
 
     // Update health bar
     if (this.player) {
@@ -470,8 +569,12 @@ class GameScene extends Phaser.Scene {
       return;
     }
 
+    const gameState = this.gameStateManager.getGameState();
     const fps = Math.round(1000 / delta);
     const entityCount = this.entities.length;
+    const projectileCount = this.systems.weapon
+      ? this.systems.weapon.getActiveProjectiles().length
+      : 0;
     const playerPos = this.player
       ? `(${Math.round(this.player.x)}, ${Math.round(this.player.y)})`
       : 'N/A';
@@ -479,8 +582,11 @@ class GameScene extends Phaser.Scene {
     const debugInfo = [
       `FPS: ${fps}`,
       `Entities: ${entityCount}`,
+      `Projectiles: ${projectileCount}`,
       `Player: ${playerPos}`,
-      `Game State: ${this.gameState}`,
+      `Playing: ${gameState.isPlaying}`,
+      `Wave: ${gameState.currentWave}`,
+      `Enemies: ${gameState.enemiesRemaining || 0}`,
     ];
 
     this.uiElements.debugText.setText(debugInfo.join('\n'));
@@ -490,13 +596,15 @@ class GameScene extends Phaser.Scene {
    * Toggle game pause
    */
   togglePause() {
-    if (this.gameState === 'playing') {
-      this.gameState = 'paused';
+    const gameState = this.gameStateManager.getGameState();
+
+    if (gameState.isPlaying && !gameState.isPaused) {
+      this.gameStateManager.pauseGame();
       this.uiElements.pauseText.setVisible(true);
       this.physics.pause();
       Logger.info('GameScene: Game paused');
-    } else if (this.gameState === 'paused') {
-      this.gameState = 'playing';
+    } else if (gameState.isPlaying && gameState.isPaused) {
+      this.gameStateManager.resumeGame();
       this.uiElements.pauseText.setVisible(false);
       this.physics.resume();
       Logger.info('GameScene: Game resumed');
@@ -504,12 +612,11 @@ class GameScene extends Phaser.Scene {
   }
 
   /**
-   * Add score
+   * Add score (delegated to GameStateManager)
    * @param {number} points - Points to add
    */
   addScore(points) {
-    this.score += points;
-    Logger.debug('GameScene: Score added:', points, 'Total:', this.score);
+    this.gameStateManager.addScore(points);
   }
 
   /**
@@ -521,7 +628,10 @@ class GameScene extends Phaser.Scene {
 
     const health = this.player.getComponent(HealthComponent);
     if (health) {
-      health.takeDamage(damage);
+      const actualDamage = health.takeDamage(damage);
+
+      // Emit damage event for game state tracking
+      this.events.emit('playerDamage', { damage: actualDamage });
 
       if (!health.isAlive()) {
         this.handlePlayerDeath();
@@ -533,10 +643,13 @@ class GameScene extends Phaser.Scene {
    * Handle player death
    */
   handlePlayerDeath() {
-    this.lives--;
-    Logger.info('GameScene: Player died, lives remaining:', this.lives);
+    Logger.info('GameScene: Player died');
 
-    if (this.lives <= 0) {
+    // Emit player death event
+    this.events.emit('playerDeath', { player: this.player });
+
+    const gameState = this.gameStateManager.getGameState();
+    if (gameState.lives <= 0) {
       this.gameOver();
     } else {
       this.respawnPlayer();
@@ -567,10 +680,12 @@ class GameScene extends Phaser.Scene {
    * Handle game over
    */
   gameOver() {
-    this.gameState = 'gameOver';
-    Logger.info('GameScene: Game Over - Final Score:', this.score);
+    const gameState = this.gameStateManager.getGameState();
+    this.gameStateManager.endGame('no_lives');
 
-    // Show game over screen (placeholder)
+    Logger.info('GameScene: Game Over - Final Score:', gameState.score);
+
+    // Show game over screen
     const centerX = this.scale.width / 2;
     const centerY = this.scale.height / 2;
 
@@ -580,23 +695,44 @@ class GameScene extends Phaser.Scene {
         color: '#ff0000',
         fontFamily: 'Arial, sans-serif',
       })
-      .setOrigin(0.5);
+      .setOrigin(0.5)
+      .setDepth(200);
 
     this.add
-      .text(centerX, centerY, `FINAL SCORE: ${this.score}`, {
+      .text(centerX, centerY, `FINAL SCORE: ${gameState.score.toLocaleString()}`, {
         fontSize: '24px',
         color: '#ffffff',
         fontFamily: 'Arial, sans-serif',
       })
-      .setOrigin(0.5);
+      .setOrigin(0.5)
+      .setDepth(200);
 
     this.add
-      .text(centerX, centerY + 50, 'Press SPACE to return to menu', {
-        fontSize: '16px',
+      .text(centerX, centerY + 30, `WAVE REACHED: ${gameState.currentWave}`, {
+        fontSize: '18px',
         color: '#888888',
         fontFamily: 'Arial, sans-serif',
       })
-      .setOrigin(0.5);
+      .setOrigin(0.5)
+      .setDepth(200);
+
+    this.add
+      .text(centerX, centerY + 60, `ACCURACY: ${gameState.accuracy.toFixed(1)}%`, {
+        fontSize: '18px',
+        color: '#00ff88',
+        fontFamily: 'Arial, sans-serif',
+      })
+      .setOrigin(0.5)
+      .setDepth(200);
+
+    this.add
+      .text(centerX, centerY + 100, 'Press SPACE to return to menu', {
+        fontSize: '16px',
+        color: '#666666',
+        fontFamily: 'Arial, sans-serif',
+      })
+      .setOrigin(0.5)
+      .setDepth(200);
 
     // Return to menu on space key
     this.input.keyboard.once('keydown-SPACE', () => {
@@ -610,6 +746,12 @@ class GameScene extends Phaser.Scene {
   shutdown() {
     Logger.debug('GameScene: Shutting down');
 
+    // Clean up game state manager
+    if (this.gameStateManager) {
+      this.gameStateManager.destroy();
+      this.gameStateManager = null;
+    }
+
     // Clean up entities
     this.entities.forEach(entity => {
       if (entity.destroy) {
@@ -619,12 +761,12 @@ class GameScene extends Phaser.Scene {
     this.entities = [];
 
     // Clean up systems
-    this.systems.forEach(system => {
+    Object.values(this.systems).forEach(system => {
       if (system.destroy) {
         system.destroy();
       }
     });
-    this.systems = [];
+    this.systems = {};
 
     // Clean up timers and tweens
     this.time.removeAllEvents();

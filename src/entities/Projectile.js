@@ -1,0 +1,348 @@
+import Entity from './Entity.js';
+import MovementComponent from '../components/MovementComponent.js';
+import CollisionComponent from '../components/CollisionComponent.js';
+import Logger from '../core/Logger.js';
+
+/**
+ * Projectile Entity
+ * Represents bullets fired by players and enemies
+ * Uses colored rectangles for development graphics
+ */
+class Projectile extends Entity {
+  constructor(scene, x, y, config = {}) {
+    // Determine size and color based on projectile type
+    const size = config.size || { width: 8, height: 16 };
+    const color = config.color || 0xffff00; // Default yellow
+
+    super(scene, x, y, size.width, size.height, color);
+
+    // Projectile properties
+    this.damage = config.damage || 25;
+    this.speed = config.speed || 400;
+    this.weaponType = config.weaponType || 'laser';
+    this.isPlayerProjectile =
+      config.isPlayerProjectile !== undefined ? config.isPlayerProjectile : true;
+    this.piercing = config.piercing || false; // Can pass through enemies
+    this.maxLifetime = config.maxLifetime || 5000; // 5 seconds max lifetime
+    this.creationTime = Date.now();
+
+    // Visual effects (for future enhancement)
+    this.trailEnabled = config.trailEnabled || false;
+    this.glowEnabled = config.glowEnabled || false;
+
+    // Initialize components
+    this.initializeComponents();
+
+    // Enable physics
+    this.enablePhysics('dynamic');
+
+    // Configure physics body
+    if (this.body) {
+      this.body.setSize(size.width * 0.8, size.height * 0.8); // Slightly smaller hitbox
+      this.body.setOffset(size.width * 0.1, size.height * 0.1);
+    }
+
+    Logger.debug(
+      `Projectile created: ${this.weaponType} (${this.isPlayerProjectile ? 'player' : 'enemy'})`,
+      {
+        damage: this.damage,
+        speed: this.speed,
+        position: { x, y },
+      }
+    );
+  }
+
+  /**
+   * Initialize projectile components
+   */
+  initializeComponents() {
+    // Movement component - projectiles fly in straight lines
+    const movementComponent = new MovementComponent(this.speed);
+    movementComponent.init({
+      maxSpeed: this.speed,
+      boundToScreen: true,
+      boundaryBehavior: 'destroy', // Destroy when leaving screen
+      screenPadding: -50, // Allow slight off-screen before destruction
+    });
+    this.addComponent(movementComponent);
+
+    // Collision component
+    const collisionConfig = CollisionComponent.createProjectileConfig(this.isPlayerProjectile);
+    collisionConfig.damageAmount = this.damage;
+    collisionConfig.width = this.width * 0.8;
+    collisionConfig.height = this.height * 0.8;
+
+    // Configure collision response based on piercing
+    if (this.piercing) {
+      collisionConfig.collisionResponse.destroy = false;
+      collisionConfig.collisionCooldown = 100; // Brief cooldown between hits
+    }
+
+    const collisionComponent = new CollisionComponent();
+    collisionComponent.init(collisionConfig);
+    this.addComponent(collisionComponent);
+  }
+
+  /**
+   * Fire projectile in a specific direction
+   * @param {number} angle - Angle in radians
+   * @param {number} speed - Optional speed override
+   */
+  fire(angle, speed = null) {
+    const projectileSpeed = speed || this.speed;
+    const movement = this.getComponent(MovementComponent);
+
+    if (movement) {
+      movement.moveInDirection(angle, projectileSpeed);
+      Logger.debug(`Projectile fired: angle ${angle.toFixed(2)}, speed ${projectileSpeed}`);
+    }
+  }
+
+  /**
+   * Fire towards a target position
+   * @param {number} targetX - Target X coordinate
+   * @param {number} targetY - Target Y coordinate
+   * @param {number} speed - Optional speed override
+   */
+  fireTowards(targetX, targetY, speed = null) {
+    const projectileSpeed = speed || this.speed;
+    const movement = this.getComponent(MovementComponent);
+
+    if (movement) {
+      movement.moveTowards(targetX, targetY, projectileSpeed);
+      Logger.debug(`Projectile fired towards: (${targetX}, ${targetY})`);
+    }
+  }
+
+  /**
+   * Update projectile - handles lifetime and special effects
+   * @param {number} delta - Time delta in milliseconds
+   */
+  update(delta) {
+    super.update(delta);
+
+    // Check lifetime expiration
+    const currentTime = Date.now();
+    if (currentTime - this.creationTime > this.maxLifetime) {
+      Logger.debug(`Projectile expired after ${this.maxLifetime}ms`);
+      this.destroy();
+      return;
+    }
+
+    // Update components
+    const movement = this.getComponent(MovementComponent);
+    if (movement) {
+      movement.update(delta / 1000); // Convert to seconds
+    }
+
+    const collision = this.getComponent(CollisionComponent);
+    if (collision) {
+      collision.update(delta);
+    }
+
+    // Handle visual effects (placeholder for future enhancement)
+    this.updateVisualEffects(delta);
+  }
+
+  /**
+   * Update visual effects (placeholder for future sprites/particles)
+   * @param {number} delta - Time delta in milliseconds
+   */
+  updateVisualEffects(_delta) {
+    // Future: Add particle trails, glow effects, rotation, etc.
+
+    // Simple pulsing effect for now (development)
+    if (this.glowEnabled) {
+      const pulse = Math.sin(Date.now() * 0.01) * 0.1 + 0.9;
+      this.setAlpha(pulse);
+    }
+
+    // Simple rotation based on movement direction
+    const movement = this.getComponent(MovementComponent);
+    if (movement && (movement.velocityX !== 0 || movement.velocityY !== 0)) {
+      const angle = Math.atan2(movement.velocityY, movement.velocityX);
+      this.setRotation(angle + Math.PI / 2); // Add 90 degrees for proper orientation
+    }
+  }
+
+  /**
+   * Handle collision with another entity
+   * Called by CollisionSystem
+   * @param {Entity} otherEntity - Entity that was hit
+   * @param {Object} collisionResult - Result from collision component
+   */
+  onCollision(otherEntity, collisionResult) {
+    Logger.debug(`Projectile hit: ${otherEntity.constructor.name}`, {
+      damage: collisionResult.damageDealt,
+      piercing: this.piercing,
+    });
+
+    // Emit hit event for sound/visual effects
+    this.emit('projectileHit', {
+      target: otherEntity,
+      damage: collisionResult.damageDealt,
+      weaponType: this.weaponType,
+      position: { x: this.x, y: this.y },
+    });
+
+    // Destroy projectile unless it's piercing
+    if (!this.piercing && collisionResult.handled) {
+      // Small delay to ensure collision is fully processed
+      this.scene.time.delayedCall(10, () => {
+        if (this.active) {
+          this.destroy();
+        }
+      });
+    }
+  }
+
+  /**
+   * Create projectile configurations for different weapon types
+   */
+  static createLaserConfig(isPlayerProjectile = true) {
+    return {
+      weaponType: 'laser',
+      damage: 25,
+      speed: 600,
+      color: isPlayerProjectile ? 0xffff00 : 0xff4400, // Yellow for player, orange-red for enemy
+      size: { width: 6, height: 14 },
+      isPlayerProjectile,
+      piercing: false,
+      maxLifetime: 3000,
+      glowEnabled: true,
+    };
+  }
+
+  static createPlasmaConfig(isPlayerProjectile = true) {
+    return {
+      weaponType: 'plasma',
+      damage: 40,
+      speed: 500,
+      color: isPlayerProjectile ? 0x00ff88 : 0xff2266, // Green-blue for player, red-pink for enemy
+      size: { width: 10, height: 16 },
+      isPlayerProjectile,
+      piercing: false,
+      maxLifetime: 4000,
+      glowEnabled: true,
+    };
+  }
+
+  static createMissileConfig(isPlayerProjectile = true) {
+    return {
+      weaponType: 'missile',
+      damage: 100,
+      speed: 300,
+      color: isPlayerProjectile ? 0xff8800 : 0x884400, // Orange for player, dark orange for enemy
+      size: { width: 8, height: 20 },
+      isPlayerProjectile,
+      piercing: false,
+      maxLifetime: 6000,
+      trailEnabled: true,
+    };
+  }
+
+  static createEnemyBasicConfig() {
+    return {
+      weaponType: 'basic',
+      damage: 15,
+      speed: 400,
+      color: 0xff0000, // Red
+      size: { width: 6, height: 12 },
+      isPlayerProjectile: false,
+      piercing: false,
+      maxLifetime: 4000,
+    };
+  }
+
+  /**
+   * Object pool management for performance
+   */
+  static createPool(scene, size = 50) {
+    const pool = [];
+
+    for (let i = 0; i < size; i++) {
+      const projectile = new Projectile(scene, -100, -100, { damage: 0, speed: 0 });
+      projectile.setActive(false);
+      projectile.setVisible(false);
+      pool.push(projectile);
+    }
+
+    Logger.debug(`Projectile pool created: ${size} projectiles`);
+    return pool;
+  }
+
+  /**
+   * Get projectile from pool
+   * @param {Array} pool - Projectile pool
+   * @param {number} x - X position
+   * @param {number} y - Y position
+   * @param {Object} config - Projectile configuration
+   * @returns {Projectile|null} Available projectile or null
+   */
+  static getFromPool(pool, x, y, config) {
+    const projectile = pool.find(p => !p.active);
+
+    if (projectile) {
+      // Reset projectile properties
+      projectile.setPosition(x, y);
+      projectile.setActive(true);
+      projectile.setVisible(true);
+      projectile.damage = config.damage || 25;
+      projectile.speed = config.speed || 400;
+      projectile.weaponType = config.weaponType || 'laser';
+      projectile.isPlayerProjectile =
+        config.isPlayerProjectile !== undefined ? config.isPlayerProjectile : true;
+      projectile.creationTime = Date.now();
+      projectile.setFillStyle(config.color || 0xffff00);
+
+      // Update size if needed
+      if (config.size) {
+        projectile.setSize(config.size.width, config.size.height);
+      }
+
+      // Reinitialize components with new config
+      const movement = projectile.getComponent(MovementComponent);
+      if (movement) {
+        movement.init({ maxSpeed: projectile.speed, boundaryBehavior: 'destroy' });
+      }
+
+      const collision = projectile.getComponent(CollisionComponent);
+      if (collision) {
+        const collisionConfig = CollisionComponent.createProjectileConfig(
+          projectile.isPlayerProjectile
+        );
+        collisionConfig.damageAmount = projectile.damage;
+        collision.init(collisionConfig);
+      }
+
+      Logger.debug(`Projectile retrieved from pool: ${config.weaponType}`);
+      return projectile;
+    }
+
+    Logger.warn('Projectile pool exhausted - creating new projectile');
+    return null;
+  }
+
+  /**
+   * Return projectile to pool
+   * @param {Array} pool - Projectile pool
+   * @param {Projectile} projectile - Projectile to return
+   */
+  static returnToPool(pool, projectile) {
+    if (pool.includes(projectile)) {
+      projectile.setActive(false);
+      projectile.setVisible(false);
+      projectile.setPosition(-100, -100);
+
+      // Stop movement
+      const movement = projectile.getComponent(MovementComponent);
+      if (movement) {
+        movement.stop();
+      }
+
+      Logger.debug(`Projectile returned to pool: ${projectile.weaponType}`);
+    }
+  }
+}
+
+export default Projectile;

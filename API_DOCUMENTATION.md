@@ -12,6 +12,9 @@ This document provides comprehensive API documentation for the Space Shooter gam
   - [Component API](#component-api)
   - [System API](#system-api)
 - [Scene Management](#scene-management)
+- [Entity Types](#entity-types)
+- [Game State Management](#game-state-management)
+- [Performance Optimization](#performance-optimization)
 - [Development Graphics](#development-graphics)
 - [Usage Examples](#usage-examples)
 
@@ -453,7 +456,7 @@ health.canTakeDamage(); // Returns boolean (not invulnerable)
 
 **Location**: `src/components/MovementComponent.js`
 
-Manages entity movement, velocity, acceleration, and constraints.
+Manages entity movement, velocity, acceleration, and AI patterns.
 
 ```javascript
 // Create movement component
@@ -464,32 +467,116 @@ movement.setVelocity(100, -50); // Set X,Y velocity
 movement.addVelocity(25, 0); // Add to current velocity
 movement.stop(); // Stop all movement
 
-// Directional movement
-movement.moveInDirection(Math.PI / 4, 200); // Move at 45° angle
-movement.moveTowards(targetX, targetY, 150); // Move toward target
+// AI Movement Patterns (Sprint 2)
+movement.setAIPattern('straight', { angle: Math.PI / 2, speed: 100 });
+movement.setAIPattern('curve', { amplitude: 50, frequency: 0.01 });
+movement.setAIPattern('formation', { target: playerEntity, offset: { x: 50, y: 0 } });
+movement.setAIPattern('chase', { target: playerEntity, speed: 150 });
+movement.setAIPattern('circle', { center: { x: 400, y: 300 }, radius: 100 });
+movement.setAIPattern('zigzag', { amplitude: 100, frequency: 0.02 });
 
-// Physics-based movement
-movement.setAcceleration(50, 0); // Set acceleration
-movement.applyForce(100, -25); // Apply force (adds to acceleration)
+// Boundary behaviors
+movement.setBoundaryBehavior('bounce'); // Bounce off screen edges
+movement.setBoundaryBehavior('wrap'); // Wrap around screen
+movement.setBoundaryBehavior('destroy'); // Destroy when off-screen
+movement.setBoundaryBehavior('clamp'); // Stop at screen edges
 
 // Properties
 movement.velocityX; // Current X velocity
 movement.velocityY; // Current Y velocity
 movement.maxSpeed; // Maximum speed limit
-movement.drag; // Drag coefficient
-movement.friction; // Friction multiplier (0-1)
-movement.boundToScreen; // Keep entity on screen
-movement.screenPadding; // Padding from screen edges
-
-// State properties
-movement.isMoving; // Is currently moving
-movement.lastDirection; // Last movement direction
+movement.aiPattern; // Current AI movement pattern
+movement.boundaryBehavior; // How entity behaves at screen boundaries
+movement.patternData; // Data specific to current AI pattern
 
 // Methods
 movement.getCurrentSpeed(); // Get current speed magnitude
 movement.getDirection(); // Get movement angle in radians
-movement.clampVelocity(); // Apply max speed limit
+movement.updateAI(delta, entity); // Update AI movement (called by MovementSystem)
 movement.update(delta); // Update movement (called automatically)
+```
+
+##### `WeaponComponent`
+
+**Location**: `src/components/WeaponComponent.js`
+
+Manages weapon stats, firing mechanics, and upgrade system.
+
+```javascript
+// Create weapon component
+const weapon = new WeaponComponent('laser'); // Default weapon type
+
+// Weapon configuration
+weapon.configure({
+  weaponType: 'plasma',
+  damage: 40,
+  fireRate: 500, // milliseconds between shots
+  projectileSpeed: 400,
+  range: 600,
+  spread: 0, // bullet spread in radians
+  burstCount: 1, // projectiles per shot
+  accuracy: 1.0, // 1.0 = perfect accuracy
+});
+
+// Firing mechanics
+weapon.canFire(currentTime); // Check if weapon can fire
+weapon.fire(currentTime); // Attempt to fire weapon
+weapon.upgrade(); // Upgrade weapon stats
+
+// Properties
+weapon.weaponType; // 'laser', 'plasma', 'missile'
+weapon.damage; // Damage per projectile
+weapon.fireRate; // Milliseconds between shots
+weapon.lastFiredTime; // Last time weapon was fired
+weapon.level; // Weapon upgrade level
+weapon.maxLevel; // Maximum upgrade level
+
+// Methods
+weapon.getUpgradeCost(); // Get cost to upgrade
+weapon.canUpgrade(); // Check if weapon can be upgraded
+weapon.getStats(); // Get current weapon statistics
+```
+
+##### `CollisionComponent`
+
+**Location**: `src/components/CollisionComponent.js`
+
+Manages collision detection, layers, and response behaviors.
+
+```javascript
+// Create collision component
+const collision = new CollisionComponent('player');
+
+// Configure collision layers
+collision.setLayer('player'); // Entity belongs to player layer
+collision.setTargetLayers(['enemy', 'enemyProjectile']); // Can collide with these layers
+collision.setIgnoreLayers(['playerProjectile']); // Ignore these layers
+
+// Collision behavior
+collision.setDealsDamage(true, 25); // This entity deals 25 damage on collision
+collision.setReceivesDamage(true); // This entity can take damage from collisions
+collision.setDestroyOnCollision(false); // Don't destroy on collision
+
+// Collision response callbacks
+collision.onCollisionStart = otherEntity => {
+  Logger.info('Collision started with', otherEntity.constructor.name);
+};
+
+collision.onCollisionEnd = otherEntity => {
+  Logger.info('Collision ended with', otherEntity.constructor.name);
+};
+
+// Properties
+collision.layer; // Collision layer this entity belongs to
+collision.targetLayers; // Array of layers this entity can collide with
+collision.dealsDamage; // Whether this entity deals damage
+collision.damageAmount; // Amount of damage dealt
+collision.receivesDamage; // Whether this entity can take damage
+collision.destroyOnCollision; // Whether to destroy on collision
+
+// Methods
+collision.canCollideWith(otherCollision); // Check if can collide with other entity
+collision.handleCollision(otherEntity); // Handle collision response
 ```
 
 ---
@@ -537,6 +624,83 @@ class MovementSystem extends System {
 - `delta` (number): Time delta in seconds
 
 **Must be overridden in subclasses.**
+
+#### Implemented Systems
+
+##### `WeaponSystem`
+
+**Location**: `src/systems/WeaponSystem.js`
+
+Handles weapon firing, projectile creation, and object pooling.
+
+```javascript
+// Initialize weapon system in GameScene
+const weaponSystem = new WeaponSystem(this); // Pass scene reference
+this.systems.push(weaponSystem);
+
+// System automatically handles:
+// - Input detection for firing
+// - Weapon cooldowns and fire rates
+// - Projectile creation from object pools
+// - Different weapon types and behaviors
+```
+
+**Features:**
+
+- Object pooling for projectiles (100 per pool)
+- Weapon switching with number keys
+- Different projectile behaviors per weapon type
+- Performance monitoring and optimization
+
+##### `CollisionSystem`
+
+**Location**: `src/systems/CollisionSystem.js`
+
+Advanced collision detection with spatial grid optimization.
+
+```javascript
+// Initialize collision system
+const collisionSystem = new CollisionSystem(64); // 64px grid size
+this.systems.push(collisionSystem);
+
+// System provides:
+// - O(1) collision detection using spatial grid
+// - Layer-based collision filtering
+// - Damage dealing and collision response
+// - Performance metrics and monitoring
+```
+
+**Performance:**
+
+- 64px spatial grid for efficient collision detection
+- Only checks entities in nearby grid cells
+- Supports collision layers and filtering
+- Real-time performance monitoring
+
+##### `EnemySpawnSystem`
+
+**Location**: `src/systems/EnemySpawnSystem.js`
+
+Manages enemy wave generation, spawning, and AI coordination.
+
+```javascript
+// Initialize enemy spawn system
+const enemySpawnSystem = new EnemySpawnSystem(this);
+this.systems.push(enemySpawnSystem);
+
+// System handles:
+// - Wave-based enemy spawning
+// - Progressive difficulty scaling
+// - Enemy formation patterns
+// - AI behavior coordination
+```
+
+**Features:**
+
+- 3 enemy types: Scout (fast), Fighter (balanced), Bomber (slow/powerful)
+- Formation flight patterns
+- Wave progression with 10% difficulty increase
+- AI state machines for enemy behavior
 
 ---
 
@@ -649,6 +813,149 @@ Deal damage to the player.
 
 ```javascript
 this.takeDamage(25); // Deal 25 damage to player
+```
+
+---
+
+## Entity Types
+
+### Player Entity
+
+**Location**: Integrated in `src/scenes/GameScene.js`
+
+The player entity is the main controllable character with comprehensive component integration.
+
+```javascript
+// Player creation with all components
+this.player = new Entity(this, 400, 500, 64, 64, 0x0099ff);
+this.player
+  .addComponent(new HealthComponent(100))
+  .addComponent(new MovementComponent(300))
+  .addComponent(new WeaponComponent('laser'))
+  .addComponent(new CollisionComponent('player'));
+
+// Player automatically handles:
+// - WASD movement with screen boundary collision
+// - Weapon firing with spacebar
+// - Weapon switching with number keys
+// - Collision with enemies and enemy projectiles
+// - Health management and damage visualization
+```
+
+### Projectile Entity
+
+**Location**: `src/entities/Projectile.js`
+
+Projectiles are object-pooled entities that handle weapon fire.
+
+```javascript
+// Create projectile from object pool
+const projectile = this.objectPools.playerProjectiles.get();
+projectile.activate(x, y, velocityX, velocityY, damage, 'player');
+
+// Projectile features:
+// - Automatic movement and collision detection
+// - Layer-based collision (player vs enemy projectiles)
+// - Auto-cleanup when leaving screen
+// - Object pooling for performance (0% pool misses)
+// - Different visual styles per weapon type
+```
+
+### Enemy Entity
+
+**Location**: `src/entities/Enemy.js`
+
+AI-driven enemies with state machines and formation behavior.
+
+```javascript
+// Create enemy with AI pattern
+const enemy = new Enemy(this, x, y, 'fighter');
+enemy.getComponent(MovementComponent).setAIPattern('formation', {
+  target: this.player,
+  offset: { x: 100, y: 50 },
+});
+
+// Enemy types:
+// - Scout: 32x32, 50 HP, fast movement, 150 speed
+// - Fighter: 48x48, 100 HP, shoots projectiles, 120 speed
+// - Bomber: 64x64, 200 HP, slow but powerful, 80 speed
+
+// AI behaviors:
+// - Formation flight patterns
+// - Chase player with pathfinding
+// - Shooting at player when in range
+// - State machine (idle, attacking, fleeing)
+```
+
+## Game State Management
+
+### GameStateManager
+
+**Location**: `src/utils/GameStateManager.js`
+
+Centralized game state management with persistence.
+
+```javascript
+// Initialize game state manager
+const gameState = new GameStateManager();
+
+// Score and progression
+gameState.addScore(100, 'enemy_kill'); // Add score with reason
+gameState.addExperience(25); // Add XP
+gameState.levelUp(); // Handle level up
+
+// Lives and health
+gameState.loseLife(); // Lose a life
+gameState.addLife(); // Gain a life (rare)
+
+// Wave progression
+gameState.nextWave(); // Advance to next wave
+gameState.getWaveDifficulty(); // Get current difficulty multiplier
+
+// Achievements
+gameState.checkAchievements(); // Check for new achievements
+gameState.unlockAchievement('first_kill'); // Unlock specific achievement
+
+// Persistence
+gameState.saveGame(); // Save to localStorage
+gameState.loadGame(); // Load from localStorage
+gameState.resetGame(); // Reset all progress
+
+// Statistics
+const stats = gameState.getStatistics();
+// Returns: { score, level, wave, kills, accuracy, playtime, ... }
+```
+
+## Performance Optimization
+
+### Object Pooling
+
+```javascript
+// Object pools for projectiles (prevents garbage collection)
+this.objectPools = {
+  playerProjectiles: new ObjectPool(() => new Projectile(this), 100),
+  enemyProjectiles: new ObjectPool(() => new Projectile(this), 100),
+};
+
+// Usage (handled automatically by WeaponSystem)
+const projectile = this.objectPools.playerProjectiles.get();
+projectile.activate(x, y, vx, vy, damage, 'player');
+
+// Return to pool when done (automatic)
+projectile.deactivate(); // Returns to pool for reuse
+```
+
+### Spatial Grid Collision
+
+```javascript
+// CollisionSystem uses spatial grid for O(1) collision detection
+const collisionSystem = new CollisionSystem(64); // 64px grid cells
+
+// Automatic optimization:
+// - Entities placed in grid cells based on position
+// - Only check collisions between entities in same/adjacent cells
+// - Massive performance improvement over brute-force collision
+// - Real-time performance monitoring available
 ```
 
 ---
@@ -966,4 +1273,58 @@ class GameFeature {
 }
 ```
 
-This API documentation provides comprehensive coverage of all major systems and components in the Space Shooter game. Use it as a reference for extending the game with new features and understanding the existing architecture.
+## Development Workflow
+
+### Adding New Weapon Types
+
+```javascript
+// 1. Define weapon configuration
+const weaponConfig = {
+  railgun: {
+    damage: 200,
+    fireRate: 2000,
+    projectileSpeed: 800,
+    color: 0x00ffff,
+    unlockLevel: 10,
+  },
+};
+
+// 2. Add to WeaponComponent.js weapon types
+// 3. Update WeaponSystem.js for new projectile behavior
+// 4. Add unlock condition to GameStateManager.js
+```
+
+### Adding New Enemy Types
+
+```javascript
+// 1. Define enemy in Enemy.js constructor
+case 'destroyer':
+  this.setSize(96, 96).setFillStyle(0x800000);
+  this.addComponent(new HealthComponent(500))
+    .addComponent(new MovementComponent(60))
+    .addComponent(new WeaponComponent('heavy'))
+    .addComponent(new CollisionComponent('enemy'));
+  break;
+
+// 2. Add spawn logic to EnemySpawnSystem.js
+// 3. Configure AI pattern and behavior
+// 4. Add to wave progression system
+```
+
+### Performance Monitoring
+
+```javascript
+// Enable performance monitoring in Environment.js
+VITE_DEBUG_MODE = true;
+VITE_SHOW_FPS = true;
+VITE_SHOW_DEBUG_INFO = true;
+
+// Monitor in real-time:
+// - FPS counter
+// - Entity count
+// - Object pool usage
+// - Collision system performance
+// - Memory usage
+```
+
+This comprehensive API documentation covers all major systems and components implemented in Sprint 2 of the Space Shooter game. Use it as a reference for extending the game with new features and understanding the complete ECS architecture with performance optimizations.

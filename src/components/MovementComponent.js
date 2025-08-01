@@ -25,10 +25,22 @@ class MovementComponent extends Component {
     // Movement constraints
     this.boundToScreen = true;
     this.screenPadding = 0;
+    this.boundaryBehavior = 'clamp'; // 'clamp', 'wrap', 'bounce', 'destroy'
 
     // Movement state
     this.isMoving = false;
     this.lastDirection = { x: 0, y: 0 };
+
+    // AI Movement patterns
+    this.aiPattern = 'none'; // 'none', 'straight', 'curve', 'formation', 'chase', 'circle', 'zigzag'
+    this.aiTarget = null; // Target entity for chase pattern
+    this.aiPatternData = {}; // Pattern-specific data
+
+    // AI timing and state
+    this.aiUpdateTimer = 0;
+    this.aiUpdateInterval = 100; // Update AI every 100ms
+    this.patternStartTime = Date.now();
+    this.patternPhase = 0;
 
     Logger.debug(`MovementComponent created: max speed ${this.maxSpeed}`);
   }
@@ -49,6 +61,16 @@ class MovementComponent extends Component {
     this.friction = Math.max(0, Math.min(1, data.friction !== undefined ? data.friction : 1));
     this.boundToScreen = data.boundToScreen !== undefined ? data.boundToScreen : true;
     this.screenPadding = Math.max(0, data.screenPadding || 0);
+    this.boundaryBehavior = data.boundaryBehavior || 'clamp';
+
+    // AI pattern initialization
+    this.aiPattern = data.aiPattern || 'none';
+    this.aiTarget = data.aiTarget || null;
+    this.aiUpdateInterval = Math.max(50, data.aiUpdateInterval || 100);
+    this.aiPatternData = data.aiPatternData || {};
+
+    // Initialize pattern-specific data
+    this.initializeAIPattern();
   }
 
   /**
@@ -140,11 +162,237 @@ class MovementComponent extends Component {
   }
 
   /**
+   * Initialize AI pattern-specific data
+   */
+  initializeAIPattern() {
+    this.patternStartTime = Date.now();
+    this.patternPhase = 0;
+
+    switch (this.aiPattern) {
+      case 'straight':
+        this.aiPatternData = {
+          direction: this.aiPatternData.direction || 0, // Angle in radians
+          speed: this.aiPatternData.speed || this.maxSpeed * 0.5,
+          ...this.aiPatternData,
+        };
+        break;
+
+      case 'curve':
+        this.aiPatternData = {
+          amplitude: this.aiPatternData.amplitude || 100, // Curve amplitude
+          frequency: this.aiPatternData.frequency || 2, // Oscillations per second
+          baseDirection: this.aiPatternData.baseDirection || Math.PI / 2, // Downward
+          speed: this.aiPatternData.speed || this.maxSpeed * 0.6,
+          ...this.aiPatternData,
+        };
+        break;
+
+      case 'circle':
+        this.aiPatternData = {
+          centerX: this.aiPatternData.centerX || (this.entity ? this.entity.x : 0),
+          centerY: this.aiPatternData.centerY || (this.entity ? this.entity.y : 0),
+          radius: this.aiPatternData.radius || 80,
+          angularSpeed: this.aiPatternData.angularSpeed || 2, // Radians per second
+          clockwise:
+            this.aiPatternData.clockwise !== undefined ? this.aiPatternData.clockwise : true,
+          ...this.aiPatternData,
+        };
+        break;
+
+      case 'zigzag':
+        this.aiPatternData = {
+          amplitude: this.aiPatternData.amplitude || 60,
+          frequency: this.aiPatternData.frequency || 3,
+          baseDirection: this.aiPatternData.baseDirection || Math.PI / 2,
+          speed: this.aiPatternData.speed || this.maxSpeed * 0.7,
+          ...this.aiPatternData,
+        };
+        break;
+
+      case 'formation':
+        this.aiPatternData = {
+          formationLeader: this.aiPatternData.formationLeader || null,
+          offsetX: this.aiPatternData.offsetX || 0,
+          offsetY: this.aiPatternData.offsetY || 0,
+          followDistance: this.aiPatternData.followDistance || 60,
+          speed: this.aiPatternData.speed || this.maxSpeed * 0.8,
+          ...this.aiPatternData,
+        };
+        break;
+
+      case 'chase':
+        this.aiPatternData = {
+          chaseSpeed: this.aiPatternData.chaseSpeed || this.maxSpeed * 0.9,
+          keepDistance: this.aiPatternData.keepDistance || 0, // Minimum distance to maintain
+          prediction: this.aiPatternData.prediction || 0.5, // Predict target movement
+          ...this.aiPatternData,
+        };
+        break;
+    }
+  }
+
+  /**
+   * Set AI movement pattern
+   * @param {string} pattern - AI pattern type
+   * @param {Object} patternData - Pattern-specific configuration
+   * @param {Entity} target - Target entity (for chase pattern)
+   */
+  setAIPattern(pattern, patternData = {}, target = null) {
+    this.aiPattern = pattern;
+    this.aiPatternData = patternData;
+    this.aiTarget = target;
+    this.initializeAIPattern();
+    Logger.debug(`MovementComponent: Set AI pattern to ${pattern}`);
+  }
+
+  /**
+   * Update AI movement based on current pattern
+   * @param {number} delta - Time delta in seconds
+   */
+  updateAIMovement(delta) {
+    if (this.aiPattern === 'none' || !this.entity) return;
+
+    this.aiUpdateTimer += delta * 1000; // Convert to milliseconds
+    if (this.aiUpdateTimer < this.aiUpdateInterval) return;
+
+    this.aiUpdateTimer = 0;
+    const elapsed = (Date.now() - this.patternStartTime) / 1000; // Seconds since pattern start
+
+    switch (this.aiPattern) {
+      case 'straight':
+        this.updateStraightMovement();
+        break;
+
+      case 'curve':
+        this.updateCurveMovement(elapsed);
+        break;
+
+      case 'circle':
+        this.updateCircleMovement(elapsed);
+        break;
+
+      case 'zigzag':
+        this.updateZigzagMovement(elapsed);
+        break;
+
+      case 'formation':
+        this.updateFormationMovement();
+        break;
+
+      case 'chase':
+        this.updateChaseMovement();
+        break;
+    }
+  }
+
+  updateStraightMovement() {
+    const data = this.aiPatternData;
+    this.velocityX = Math.cos(data.direction) * data.speed;
+    this.velocityY = Math.sin(data.direction) * data.speed;
+  }
+
+  updateCurveMovement(elapsed) {
+    const data = this.aiPatternData;
+    const oscillation = Math.sin(elapsed * data.frequency * Math.PI * 2) * data.amplitude;
+
+    // Base movement direction
+    const baseVelX = Math.cos(data.baseDirection) * data.speed;
+    const baseVelY = Math.sin(data.baseDirection) * data.speed;
+
+    // Perpendicular oscillation
+    const perpX = -Math.sin(data.baseDirection);
+    const perpY = Math.cos(data.baseDirection);
+
+    this.velocityX = baseVelX + perpX * oscillation * 0.01; // Scale oscillation to velocity
+    this.velocityY = baseVelY + perpY * oscillation * 0.01;
+  }
+
+  updateCircleMovement(elapsed) {
+    const data = this.aiPatternData;
+    const angle = elapsed * data.angularSpeed * (data.clockwise ? 1 : -1);
+
+    const targetX = data.centerX + Math.cos(angle) * data.radius;
+    const targetY = data.centerY + Math.sin(angle) * data.radius;
+
+    // Move towards the target position on the circle
+    this.moveTowards(targetX, targetY, this.maxSpeed * 0.8);
+  }
+
+  updateZigzagMovement(elapsed) {
+    const data = this.aiPatternData;
+    const zigzag = Math.sin(elapsed * data.frequency * Math.PI * 2) * data.amplitude;
+
+    // Base movement
+    const baseVelX = Math.cos(data.baseDirection) * data.speed;
+    const baseVelY = Math.sin(data.baseDirection) * data.speed;
+
+    // Add zigzag perpendicular to base direction
+    const perpX = -Math.sin(data.baseDirection);
+    const perpY = Math.cos(data.baseDirection);
+
+    this.velocityX = baseVelX + perpX * zigzag * 0.02;
+    this.velocityY = baseVelY + perpY * zigzag * 0.02;
+  }
+
+  updateFormationMovement() {
+    const data = this.aiPatternData;
+    if (!data.formationLeader || !data.formationLeader.x) return;
+
+    const targetX = data.formationLeader.x + data.offsetX;
+    const targetY = data.formationLeader.y + data.offsetY;
+
+    const distance = Math.sqrt(
+      Math.pow(targetX - this.entity.x, 2) + Math.pow(targetY - this.entity.y, 2)
+    );
+
+    if (distance > data.followDistance) {
+      this.moveTowards(targetX, targetY, data.speed);
+    } else {
+      // Slow down when close to formation position
+      this.velocityX *= 0.5;
+      this.velocityY *= 0.5;
+    }
+  }
+
+  updateChaseMovement() {
+    const data = this.aiPatternData;
+    if (!this.aiTarget || !this.aiTarget.x) return;
+
+    let targetX = this.aiTarget.x;
+    let targetY = this.aiTarget.y;
+
+    // Predict target movement
+    if (data.prediction > 0 && this.aiTarget.getComponent) {
+      const targetMovement = this.aiTarget.getComponent('MovementComponent');
+      if (targetMovement) {
+        targetX += targetMovement.velocityX * data.prediction;
+        targetY += targetMovement.velocityY * data.prediction;
+      }
+    }
+
+    const distance = Math.sqrt(
+      Math.pow(targetX - this.entity.x, 2) + Math.pow(targetY - this.entity.y, 2)
+    );
+
+    // Only chase if outside minimum distance
+    if (distance > data.keepDistance) {
+      this.moveTowards(targetX, targetY, data.chaseSpeed);
+    } else {
+      // Stop or move away if too close
+      this.velocityX *= 0.3;
+      this.velocityY *= 0.3;
+    }
+  }
+
+  /**
    * Update movement component
    * @param {number} delta - Time delta in seconds
    */
   update(delta) {
     if (!this.entity) return;
+
+    // Update AI movement patterns first
+    this.updateAIMovement(delta);
 
     // Apply acceleration to velocity
     this.velocityX += this.accelerationX * delta;
@@ -202,7 +450,7 @@ class MovementComponent extends Component {
   }
 
   /**
-   * Apply screen boundary constraints
+   * Apply screen boundary constraints based on boundary behavior
    */
   applyScreenBounds() {
     if (!this.entity || !this.entity.scene) return;
@@ -216,21 +464,93 @@ class MovementComponent extends Component {
     const minY = this.screenPadding + entityHeight / 2;
     const maxY = height - this.screenPadding - entityHeight / 2;
 
-    // Clamp position and stop velocity if hitting bounds
+    let shouldDestroy = false;
+
+    // Handle X bounds
     if (this.entity.x < minX) {
-      this.entity.x = minX;
-      this.velocityX = Math.max(0, this.velocityX);
+      switch (this.boundaryBehavior) {
+        case 'clamp':
+          this.entity.x = minX;
+          this.velocityX = Math.max(0, this.velocityX);
+          break;
+        case 'wrap':
+          this.entity.x = maxX;
+          break;
+        case 'bounce':
+          this.entity.x = minX;
+          this.velocityX = Math.abs(this.velocityX) * 0.8; // Reduce velocity on bounce
+          break;
+        case 'destroy':
+          shouldDestroy = true;
+          break;
+      }
     } else if (this.entity.x > maxX) {
-      this.entity.x = maxX;
-      this.velocityX = Math.min(0, this.velocityX);
+      switch (this.boundaryBehavior) {
+        case 'clamp':
+          this.entity.x = maxX;
+          this.velocityX = Math.min(0, this.velocityX);
+          break;
+        case 'wrap':
+          this.entity.x = minX;
+          break;
+        case 'bounce':
+          this.entity.x = maxX;
+          this.velocityX = -Math.abs(this.velocityX) * 0.8;
+          break;
+        case 'destroy':
+          shouldDestroy = true;
+          break;
+      }
     }
 
+    // Handle Y bounds
     if (this.entity.y < minY) {
-      this.entity.y = minY;
-      this.velocityY = Math.max(0, this.velocityY);
+      switch (this.boundaryBehavior) {
+        case 'clamp':
+          this.entity.y = minY;
+          this.velocityY = Math.max(0, this.velocityY);
+          break;
+        case 'wrap':
+          this.entity.y = maxY;
+          break;
+        case 'bounce':
+          this.entity.y = minY;
+          this.velocityY = Math.abs(this.velocityY) * 0.8;
+          break;
+        case 'destroy':
+          shouldDestroy = true;
+          break;
+      }
     } else if (this.entity.y > maxY) {
-      this.entity.y = maxY;
-      this.velocityY = Math.min(0, this.velocityY);
+      switch (this.boundaryBehavior) {
+        case 'clamp':
+          this.entity.y = maxY;
+          this.velocityY = Math.min(0, this.velocityY);
+          break;
+        case 'wrap':
+          this.entity.y = minY;
+          break;
+        case 'bounce':
+          this.entity.y = maxY;
+          this.velocityY = -Math.abs(this.velocityY) * 0.8;
+          break;
+        case 'destroy':
+          shouldDestroy = true;
+          break;
+      }
+    }
+
+    // Handle entity destruction
+    if (shouldDestroy) {
+      Logger.debug('MovementComponent: Entity destroyed by boundary behavior');
+      // Schedule destruction to avoid physics update conflicts
+      if (this.entity.scene) {
+        this.entity.scene.time.delayedCall(10, () => {
+          if (this.entity && this.entity.destroy) {
+            this.entity.destroy();
+          }
+        });
+      }
     }
   }
 
@@ -287,6 +607,10 @@ class MovementComponent extends Component {
       friction: this.friction,
       boundToScreen: this.boundToScreen,
       screenPadding: this.screenPadding,
+      boundaryBehavior: this.boundaryBehavior,
+      aiPattern: this.aiPattern,
+      aiPatternData: this.aiPatternData,
+      aiUpdateInterval: this.aiUpdateInterval,
     };
   }
 
@@ -309,8 +633,69 @@ class MovementComponent extends Component {
       this.drag >= 0 &&
       this.friction >= 0 &&
       this.friction <= 1 &&
-      this.screenPadding >= 0
+      this.screenPadding >= 0 &&
+      ['none', 'straight', 'curve', 'formation', 'chase', 'circle', 'zigzag'].includes(
+        this.aiPattern
+      ) &&
+      ['clamp', 'wrap', 'bounce', 'destroy'].includes(this.boundaryBehavior)
     );
+  }
+
+  /**
+   * Static helper methods for creating common AI patterns
+   */
+  static createScoutPattern() {
+    return {
+      aiPattern: 'straight',
+      aiPatternData: {
+        direction: Math.PI / 2, // Downward
+        speed: 150,
+      },
+      boundaryBehavior: 'destroy',
+      maxSpeed: 180,
+    };
+  }
+
+  static createFighterPattern() {
+    return {
+      aiPattern: 'zigzag',
+      aiPatternData: {
+        amplitude: 40,
+        frequency: 2,
+        baseDirection: Math.PI / 2,
+        speed: 120,
+      },
+      boundaryBehavior: 'destroy',
+      maxSpeed: 150,
+    };
+  }
+
+  static createBomberPattern() {
+    return {
+      aiPattern: 'curve',
+      aiPatternData: {
+        amplitude: 80,
+        frequency: 1,
+        baseDirection: Math.PI / 2,
+        speed: 80,
+      },
+      boundaryBehavior: 'destroy',
+      maxSpeed: 100,
+    };
+  }
+
+  static createChasePattern(target) {
+    return {
+      aiPattern: 'chase',
+      aiPatternData: {
+        chaseSpeed: 140,
+        keepDistance: 50,
+        prediction: 0.3,
+      },
+      aiTarget: target,
+      boundaryBehavior: 'bounce',
+      maxSpeed: 160,
+    };
   }
 }
 
