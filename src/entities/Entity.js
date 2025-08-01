@@ -190,8 +190,48 @@ class Entity extends Phaser.GameObjects.Rectangle {
    * @returns {Entity} This entity for chaining
    */
   setSize(width, height) {
-    super.setSize(width, height);
-    Logger.debug(`Entity ${this.entityId} resized to ${width}x${height}`);
+    try {
+      // Validate entity state before calling setSize
+      if (!this.scene || this.scene.sys.isDestroyed) {
+        Logger.error(`Entity ${this.entityId}: Cannot setSize - scene is destroyed`);
+        return this;
+      }
+
+      // Validate parameters
+      if (typeof width !== 'number' || typeof height !== 'number' || width <= 0 || height <= 0) {
+        Logger.error(`Entity ${this.entityId}: Invalid size parameters`, { width, height });
+        return this;
+      }
+
+      // Check if entity is in valid state
+      if (!this.active && !this.getData) {
+        Logger.error(`Entity ${this.entityId}: Entity appears to be corrupted or destroyed`);
+        return this;
+      }
+
+      // Call parent setSize with error handling
+      super.setSize(width, height);
+      
+      // Update physics body size if it exists
+      if (this.body && this.body.setSize) {
+        this.body.setSize(width * 0.8, height * 0.8);
+        this.body.setOffset(width * 0.1, height * 0.1);
+      }
+
+      Logger.debug(`Entity ${this.entityId} resized to ${width}x${height}`);
+    } catch (error) {
+      Logger.error(`Entity ${this.entityId}: setSize failed`, {
+        error: error.message,
+        width,
+        height,
+        entityState: {
+          active: this.active,
+          visible: this.visible,
+          hasScene: !!this.scene,
+          hasBody: !!this.body
+        }
+      });
+    }
     return this;
   }
 }

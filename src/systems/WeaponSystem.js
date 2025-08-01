@@ -137,25 +137,73 @@ class WeaponSystem extends System {
    * @param {Entity} player - Player entity
    */
   firePlayerWeapon(player) {
-    const weapon = player.getComponent(WeaponComponent);
-    if (!weapon) return;
+    try {
+      // Validate player entity
+      if (!player || !player.getComponent) {
+        Logger.error('WeaponSystem: Invalid player entity for firing');
+        return;
+      }
 
-    const projectileConfig = weapon.fire();
-    if (!projectileConfig) return;
+      const weapon = player.getComponent(WeaponComponent);
+      if (!weapon) {
+        Logger.debug('WeaponSystem: Player has no weapon component');
+        return;
+      }
 
-    // Create projectile
-    const projectile = this.createPlayerProjectile(
-      player.x,
-      player.y - player.height / 2, // Fire from top of player
-      projectileConfig
-    );
+      const projectileConfig = weapon.fire();
+      if (!projectileConfig) {
+        // Weapon might be on cooldown or out of ammo - this is normal
+        return;
+      }
 
-    if (projectile) {
-      // Fire straight up
-      projectile.fire(-Math.PI / 2); // -90 degrees (upward)
+      // Validate projectile config
+      if (!projectileConfig.weaponType || !projectileConfig.damage || !projectileConfig.speed) {
+        Logger.error('WeaponSystem: Invalid projectile config from weapon', projectileConfig);
+        return;
+      }
 
-      Logger.debug(`Player fired: ${projectileConfig.weaponType}`);
-      this.stats.projectilesFired++;
+      // Calculate fire position
+      const fireX = player.x;
+      const fireY = player.y - (player.height / 2); // Fire from top of player
+
+      // Create projectile
+      const projectile = this.createPlayerProjectile(fireX, fireY, projectileConfig);
+
+      if (projectile) {
+        try {
+          // Fire straight up
+          projectile.fire(-Math.PI / 2); // -90 degrees (upward)
+
+          Logger.debug(`Player fired: ${projectileConfig.weaponType}`, {
+            position: { x: fireX, y: fireY },
+            damage: projectileConfig.damage,
+            speed: projectileConfig.speed
+          });
+          this.stats.projectilesFired++;
+
+        } catch (fireError) {
+          Logger.error('Failed to fire projectile', {
+            error: fireError.message,
+            weaponType: projectileConfig.weaponType
+          });
+          
+          // Return failed projectile to pool if possible
+          if (this.playerProjectilePool.includes(projectile)) {
+            Projectile.returnToPool(this.playerProjectilePool, projectile);
+          }
+        }
+      } else {
+        Logger.warn('Failed to create projectile for player weapon', {
+          weaponType: projectileConfig.weaponType,
+          playerPosition: { x: player.x, y: player.y }
+        });
+      }
+
+    } catch (error) {
+      Logger.error('WeaponSystem: Critical error in firePlayerWeapon', {
+        error: error.message,
+        hasPlayer: !!player
+      });
     }
   }
 
@@ -167,39 +215,77 @@ class WeaponSystem extends System {
    * @returns {Projectile|null} Created projectile or null
    */
   createPlayerProjectile(x, y, config) {
-    // Get appropriate config based on weapon type
-    let projectileConfig;
-    switch (config.weaponType) {
-      case 'laser':
-        projectileConfig = Projectile.createLaserConfig(true);
-        break;
-      case 'plasma':
-        projectileConfig = Projectile.createPlasmaConfig(true);
-        break;
-      case 'missile':
-        projectileConfig = Projectile.createMissileConfig(true);
-        break;
-      default:
-        projectileConfig = Projectile.createLaserConfig(true);
+    try {
+      // Validate input parameters
+      if (typeof x !== 'number' || typeof y !== 'number' || !config) {
+        Logger.error('WeaponSystem: Invalid parameters for createPlayerProjectile', { x, y, config });
+        return null;
+      }
+
+      // Get appropriate config based on weapon type
+      let projectileConfig;
+      switch (config.weaponType) {
+        case 'laser':
+          projectileConfig = Projectile.createLaserConfig(true);
+          break;
+        case 'plasma':
+          projectileConfig = Projectile.createPlasmaConfig(true);
+          break;
+        case 'missile':
+          projectileConfig = Projectile.createMissileConfig(true);
+          break;
+        default:
+          projectileConfig = Projectile.createLaserConfig(true);
+      }
+
+      // Override with weapon-specific values
+      projectileConfig.damage = config.damage;
+      projectileConfig.speed = config.speed;
+      projectileConfig.color = config.color;
+      projectileConfig.size = config.size;
+
+      // Try to get from pool first
+      let projectile = Projectile.getFromPool(this.playerProjectilePool, x, y, projectileConfig);
+
+      // Create new if pool fails or is exhausted
+      if (!projectile) {
+        try {
+          projectile = new Projectile(this.scene, x, y, projectileConfig);
+          this.stats.poolMisses++;
+          Logger.warn('Player projectile pool exhausted, created new projectile', {
+            poolSize: this.playerProjectilePool.length,
+            activeCount: this.playerProjectilePool.filter(p => p && p.active).length
+          });
+        } catch (creationError) {
+          Logger.error('Failed to create new projectile', {
+            error: creationError.message,
+            position: { x, y },
+            config: projectileConfig
+          });
+          return null;
+        }
+      }
+
+      // Validate created/retrieved projectile
+      if (!projectile || !projectile.setPosition || !projectile.fire) {
+        Logger.error('Invalid projectile created/retrieved', {
+          hasProjectile: !!projectile,
+          hasSetPosition: !!(projectile && projectile.setPosition),
+          hasFire: !!(projectile && projectile.fire)
+        });
+        return null;
+      }
+
+      return projectile;
+
+    } catch (error) {
+      Logger.error('WeaponSystem: Failed to create player projectile', {
+        error: error.message,
+        position: { x, y },
+        config
+      });
+      return null;
     }
-
-    // Override with weapon-specific values
-    projectileConfig.damage = config.damage;
-    projectileConfig.speed = config.speed;
-    projectileConfig.color = config.color;
-    projectileConfig.size = config.size;
-
-    // Try to get from pool first
-    let projectile = Projectile.getFromPool(this.playerProjectilePool, x, y, projectileConfig);
-
-    // Create new if pool exhausted
-    if (!projectile) {
-      projectile = new Projectile(this.scene, x, y, projectileConfig);
-      this.stats.poolMisses++;
-      Logger.warn('Player projectile pool exhausted, creating new projectile');
-    }
-
-    return projectile;
   }
 
   /**

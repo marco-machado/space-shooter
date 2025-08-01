@@ -280,46 +280,130 @@ class Projectile extends Entity {
    * @returns {Projectile|null} Available projectile or null
    */
   static getFromPool(pool, x, y, config) {
-    const projectile = pool.find(p => !p.active);
-
-    if (projectile) {
-      // Reset projectile properties
-      projectile.setPosition(x, y);
-      projectile.setActive(true);
-      projectile.setVisible(true);
-      projectile.damage = config.damage || 25;
-      projectile.speed = config.speed || 400;
-      projectile.weaponType = config.weaponType || 'laser';
-      projectile.isPlayerProjectile =
-        config.isPlayerProjectile !== undefined ? config.isPlayerProjectile : true;
-      projectile.creationTime = Date.now();
-      projectile.setFillStyle(config.color || 0xffff00);
-
-      // Update size if needed
-      if (config.size) {
-        projectile.setSize(config.size.width, config.size.height);
-      }
-
-      // Reinitialize components with new config
-      const movement = projectile.getComponent(MovementComponent);
-      if (movement) {
-        movement.init({ maxSpeed: projectile.speed, boundaryBehavior: 'destroy' });
-      }
-
-      const collision = projectile.getComponent(CollisionComponent);
-      if (collision) {
-        const collisionConfig = CollisionComponent.createProjectileConfig(
-          projectile.isPlayerProjectile
-        );
-        collisionConfig.damageAmount = projectile.damage;
-        collision.init(collisionConfig);
-      }
-
-      Logger.debug(`Projectile retrieved from pool: ${config.weaponType}`);
-      return projectile;
+    // Validate pool
+    if (!Array.isArray(pool) || pool.length === 0) {
+      Logger.error('Invalid or empty projectile pool');
+      return null;
     }
 
-    Logger.warn('Projectile pool exhausted - creating new projectile');
+    // Find valid inactive projectile
+    let projectile = null;
+    for (let i = 0; i < pool.length; i++) {
+      const candidate = pool[i];
+      
+      // Validate projectile object
+      if (!candidate) {
+        Logger.warn(`Pool contains null projectile at index ${i}, removing`);
+        pool.splice(i, 1);
+        i--; // Adjust index after removal
+        continue;
+      }
+
+      // Check if projectile is in valid state
+      if (!candidate.scene || candidate.scene.sys.isDestroyed) {
+        Logger.warn(`Pool contains projectile with destroyed scene at index ${i}, removing`);
+        pool.splice(i, 1);
+        i--; // Adjust index after removal
+        continue;
+      }
+
+      // Check for destroyed or corrupted projectiles
+      if (!candidate.setPosition || !candidate.setActive || !candidate.getComponent) {
+        Logger.warn(`Pool contains corrupted projectile at index ${i}, removing`);
+        pool.splice(i, 1);
+        i--; // Adjust index after removal
+        continue;
+      }
+
+      // Found valid inactive projectile
+      if (!candidate.active) {
+        projectile = candidate;
+        break;
+      }
+    }
+
+    if (projectile) {
+      try {
+        // Re-enable physics if needed
+        if (!projectile.body && projectile.scene.physics) {
+          projectile.enablePhysics('dynamic');
+        }
+
+        // Reset projectile properties
+        projectile.setPosition(x, y);
+        projectile.setActive(true);
+        projectile.setVisible(true);
+        projectile.damage = config.damage || 25;
+        projectile.speed = config.speed || 400;
+        projectile.weaponType = config.weaponType || 'laser';
+        projectile.isPlayerProjectile =
+          config.isPlayerProjectile !== undefined ? config.isPlayerProjectile : true;
+        projectile.creationTime = Date.now();
+        
+        // Safely set fill style
+        if (projectile.setFillStyle) {
+          projectile.setFillStyle(config.color || 0xffff00);
+        }
+
+        // Update size if needed - with validation
+        if (config.size && config.size.width > 0 && config.size.height > 0) {
+          projectile.setSize(config.size.width, config.size.height);
+        }
+
+        // Reinitialize components with new config
+        const movement = projectile.getComponent(MovementComponent);
+        if (movement) {
+          movement.init({ 
+            maxSpeed: projectile.speed, 
+            boundaryBehavior: 'destroy',
+            boundToScreen: true,
+            screenPadding: -50
+          });
+        }
+
+        const collision = projectile.getComponent(CollisionComponent);
+        if (collision) {
+          const collisionConfig = CollisionComponent.createProjectileConfig(
+            projectile.isPlayerProjectile
+          );
+          collisionConfig.damageAmount = projectile.damage;
+          collision.init(collisionConfig);
+        }
+
+        Logger.debug(`Projectile retrieved from pool: ${config.weaponType}`, {
+          position: { x, y },
+          damage: projectile.damage,
+          speed: projectile.speed,
+          hasBody: !!projectile.body
+        });
+        return projectile;
+
+      } catch (error) {
+        Logger.error('Failed to initialize projectile from pool', {
+          error: error.message,
+          weaponType: config.weaponType,
+          projectileState: {
+            active: projectile.active,
+            visible: projectile.visible,
+            hasScene: !!projectile.scene,
+            hasBody: !!projectile.body
+          }
+        });
+        
+        // Remove corrupted projectile from pool
+        const index = pool.indexOf(projectile);
+        if (index > -1) {
+          pool.splice(index, 1);
+        }
+        
+        return null;
+      }
+    }
+
+    Logger.warn('Projectile pool exhausted - no valid projectiles available', {
+      poolSize: pool.length,
+      activeCount: pool.filter(p => p && p.active).length
+    });
     return null;
   }
 
@@ -329,10 +413,41 @@ class Projectile extends Entity {
    * @param {Projectile} projectile - Projectile to return
    */
   static returnToPool(pool, projectile) {
-    if (pool.includes(projectile)) {
+    try {
+      // Validate inputs
+      if (!Array.isArray(pool) || !projectile) {
+        Logger.warn('Invalid parameters for returnToPool', {
+          hasPool: Array.isArray(pool),
+          hasProjectile: !!projectile
+        });
+        return;
+      }
+
+      // Check if projectile is in this pool
+      if (!pool.includes(projectile)) {
+        Logger.warn('Projectile not found in pool, cannot return');
+        return;
+      }
+
+      // Validate projectile state before returning
+      if (!projectile.setActive || !projectile.setVisible || !projectile.setPosition) {
+        Logger.warn('Projectile appears corrupted, removing from pool instead of returning');
+        const index = pool.indexOf(projectile);
+        if (index > -1) {
+          pool.splice(index, 1);
+        }
+        return;
+      }
+
+      // Reset projectile to inactive state
       projectile.setActive(false);
       projectile.setVisible(false);
       projectile.setPosition(-100, -100);
+
+      // Reset physics velocity if body exists
+      if (projectile.body && projectile.body.setVelocity) {
+        projectile.body.setVelocity(0, 0);
+      }
 
       // Stop movement
       const movement = projectile.getComponent(MovementComponent);
@@ -340,7 +455,33 @@ class Projectile extends Entity {
         movement.stop();
       }
 
-      Logger.debug(`Projectile returned to pool: ${projectile.weaponType}`);
+      // Reset collision state
+      const collision = projectile.getComponent(CollisionComponent);
+      if (collision && collision.reset) {
+        collision.reset();
+      }
+
+      // Reset visual properties
+      projectile.setAlpha(1);
+      projectile.setRotation(0);
+
+      Logger.debug(`Projectile returned to pool: ${projectile.weaponType || 'unknown'}`, {
+        poolSize: pool.length,
+        activeCount: pool.filter(p => p && p.active).length
+      });
+
+    } catch (error) {
+      Logger.error('Failed to return projectile to pool', {
+        error: error.message,
+        weaponType: projectile ? projectile.weaponType : 'unknown'
+      });
+      
+      // Remove problematic projectile from pool
+      const index = pool.indexOf(projectile);
+      if (index > -1) {
+        pool.splice(index, 1);
+        Logger.warn('Removed corrupted projectile from pool');
+      }
     }
   }
 }
