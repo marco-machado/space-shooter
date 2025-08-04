@@ -1,15 +1,14 @@
-import System from './System.js';
-import Projectile from '../entities/Projectile.js';
-import WeaponComponent from '../components/WeaponComponent.js';
-// import MovementComponent from '../components/MovementComponent.js'; // Imported but not directly used
-import Logger from '../core/Logger.js';
+import BaseSystem from './BaseSystem.js';
+import Projectile from '@/entities/Projectile.js';
+import WeaponComponent from '@/components/WeaponComponent.js';
+import Logger from '@/utils/Logger.js';
 
 /**
- * Weapon System
+ * Weapon BaseSystem
  * Handles weapon firing, projectile creation, and weapon switching
  * Manages object pooling for projectiles for performance
  */
-class WeaponSystem extends System {
+class WeaponSystem extends BaseSystem {
   constructor(scene) {
     super();
     this.scene = scene;
@@ -23,6 +22,10 @@ class WeaponSystem extends System {
     this.playerProjectilePool = [];
     this.enemyProjectilePool = [];
     this.poolSize = 100;
+
+    // Active projectile arrays for optimized iteration (Critical Performance Fix)
+    this.activePlayerProjectiles = [];
+    this.activeEnemyProjectiles = [];
 
     // Statistics
     this.stats = {
@@ -74,6 +77,31 @@ class WeaponSystem extends System {
   }
 
   /**
+   * Helper method to get entities with specific components (fixes entity discovery fragility)
+   * @param {Array} entities - All entities to filter
+   * @param {Array<Function>} componentTypes - Array of component constructor functions
+   * @returns {Array} Entities that have ALL specified components
+   */
+  getEntitiesWithComponents(entities, componentTypes) {
+    if (!Array.isArray(entities) || !Array.isArray(componentTypes)) {
+      Logger.warn('WeaponSystem: Invalid parameters for getEntitiesWithComponents', {
+        hasEntities: Array.isArray(entities),
+        hasComponentTypes: Array.isArray(componentTypes),
+      });
+      return [];
+    }
+
+    return entities.filter(entity => {
+      if (!entity || typeof entity.hasComponent !== 'function') {
+        return false;
+      }
+
+      // Check if entity has all required components
+      return componentTypes.every(componentType => entity.hasComponent(componentType));
+    });
+  }
+
+  /**
    * Update weapon system - handles input and firing logic
    * @param {Array} entities - All entities in the scene
    * @param {number} delta - Time delta in milliseconds
@@ -82,14 +110,13 @@ class WeaponSystem extends System {
     // Update input handling
     this.updateInput(entities, delta);
 
-    // Update active projectiles
+    // Update active projectiles (optimized iteration)
     this.updateProjectiles(delta);
 
     // Handle entity weapon events
     this.handleWeaponEvents(entities);
 
-    // Update statistics
-    this.updateStats();
+    // Statistics are now updated event-driven (removed from main loop)
   }
 
   /**
@@ -105,9 +132,10 @@ class WeaponSystem extends System {
 
     this.lastInputCheck = 0;
 
-    // Find player entity
-    const player = entities.find(
-      entity => entity.constructor.name === 'Player' || entity.entityType === 'player'
+    // Find player entity using component-based filtering (fixes entity discovery fragility)
+    const playersWithWeapons = this.getEntitiesWithComponents(entities, [WeaponComponent]);
+    const player = playersWithWeapons.find(entity => 
+      entity.constructor.name === 'Player' || entity.entityType === 'player'
     );
 
     if (!player) return;
@@ -134,7 +162,7 @@ class WeaponSystem extends System {
 
   /**
    * Fire player weapon
-   * @param {Entity} player - Player entity
+   * @param {BaseEntity} player - Player entity
    */
   firePlayerWeapon(player) {
     try {
@@ -164,7 +192,7 @@ class WeaponSystem extends System {
 
       // Calculate fire position
       const fireX = player.x;
-      const fireY = player.y - (player.height / 2); // Fire from top of player
+      const fireY = player.y - player.height / 2; // Fire from top of player
 
       // Create projectile
       const projectile = this.createPlayerProjectile(fireX, fireY, projectileConfig);
@@ -174,19 +202,25 @@ class WeaponSystem extends System {
           // Fire straight up
           projectile.fire(-Math.PI / 2); // -90 degrees (upward)
 
+          // Add to active projectiles array for optimized iteration
+          this.activePlayerProjectiles.push(projectile);
+
+          // Update statistics event-driven (instead of every frame)
+          this.stats.projectilesFired++;
+          this.stats.projectilesActive++;
+
           Logger.debug(`Player fired: ${projectileConfig.weaponType}`, {
             position: { x: fireX, y: fireY },
             damage: projectileConfig.damage,
-            speed: projectileConfig.speed
+            speed: projectileConfig.speed,
+            activeCount: this.activePlayerProjectiles.length,
           });
-          this.stats.projectilesFired++;
-
         } catch (fireError) {
           Logger.error('Failed to fire projectile', {
             error: fireError.message,
-            weaponType: projectileConfig.weaponType
+            weaponType: projectileConfig.weaponType,
           });
-          
+
           // Return failed projectile to pool if possible
           if (this.playerProjectilePool.includes(projectile)) {
             Projectile.returnToPool(this.playerProjectilePool, projectile);
@@ -195,14 +229,13 @@ class WeaponSystem extends System {
       } else {
         Logger.warn('Failed to create projectile for player weapon', {
           weaponType: projectileConfig.weaponType,
-          playerPosition: { x: player.x, y: player.y }
+          playerPosition: { x: player.x, y: player.y },
         });
       }
-
     } catch (error) {
       Logger.error('WeaponSystem: Critical error in firePlayerWeapon', {
         error: error.message,
-        hasPlayer: !!player
+        hasPlayer: !!player,
       });
     }
   }
@@ -218,7 +251,11 @@ class WeaponSystem extends System {
     try {
       // Validate input parameters
       if (typeof x !== 'number' || typeof y !== 'number' || !config) {
-        Logger.error('WeaponSystem: Invalid parameters for createPlayerProjectile', { x, y, config });
+        Logger.error('WeaponSystem: Invalid parameters for createPlayerProjectile', {
+          x,
+          y,
+          config,
+        });
         return null;
       }
 
@@ -254,13 +291,13 @@ class WeaponSystem extends System {
           this.stats.poolMisses++;
           Logger.warn('Player projectile pool exhausted, created new projectile', {
             poolSize: this.playerProjectilePool.length,
-            activeCount: this.playerProjectilePool.filter(p => p && p.active).length
+            activeCount: this.playerProjectilePool.filter(p => p && p.active).length,
           });
         } catch (creationError) {
           Logger.error('Failed to create new projectile', {
             error: creationError.message,
             position: { x, y },
-            config: projectileConfig
+            config: projectileConfig,
           });
           return null;
         }
@@ -271,18 +308,17 @@ class WeaponSystem extends System {
         Logger.error('Invalid projectile created/retrieved', {
           hasProjectile: !!projectile,
           hasSetPosition: !!(projectile && projectile.setPosition),
-          hasFire: !!(projectile && projectile.fire)
+          hasFire: !!(projectile && projectile.fire),
         });
         return null;
       }
 
       return projectile;
-
     } catch (error) {
       Logger.error('WeaponSystem: Failed to create player projectile', {
         error: error.message,
         position: { x, y },
-        config
+        config,
       });
       return null;
     }
@@ -290,7 +326,7 @@ class WeaponSystem extends System {
 
   /**
    * Create enemy projectile
-   * @param {Entity} enemy - Enemy entity
+   * @param {BaseEntity} enemy - Enemy entity
    * @param {Object} config - Projectile configuration
    * @param {number} angle - Fire angle in radians
    * @returns {Projectile|null} Created projectile or null
@@ -323,40 +359,72 @@ class WeaponSystem extends System {
 
     if (projectile) {
       projectile.fire(angle);
+      
+      // Add to active projectiles array for optimized iteration
+      this.activeEnemyProjectiles.push(projectile);
+      
+      // Update statistics event-driven (instead of every frame)
       this.stats.projectilesFired++;
+      this.stats.projectilesActive++;
     }
 
     return projectile;
   }
 
   /**
-   * Update all active projectiles
+   * Update all active projectiles (OPTIMIZED - uses active arrays instead of pool iteration)
    * @param {number} delta - Time delta in milliseconds
    */
   updateProjectiles(delta) {
-    // Update player projectiles
-    this.playerProjectilePool.forEach(projectile => {
-      if (projectile.active) {
-        projectile.update(delta);
-
-        // Return to pool if destroyed or off-screen
-        if (!projectile.active || this.isProjectileOffScreen(projectile)) {
-          Projectile.returnToPool(this.playerProjectilePool, projectile);
-        }
+    // Update player projectiles using optimized active array
+    for (let i = this.activePlayerProjectiles.length - 1; i >= 0; i--) {
+      const projectile = this.activePlayerProjectiles[i];
+      
+      // Validate projectile state
+      if (!projectile || !projectile.update) {
+        Logger.warn('WeaponSystem: Corrupted projectile in active array, removing', { index: i });
+        this.activePlayerProjectiles.splice(i, 1);
+        this.stats.projectilesActive--;
+        continue;
       }
-    });
 
-    // Update enemy projectiles
-    this.enemyProjectilePool.forEach(projectile => {
-      if (projectile.active) {
-        projectile.update(delta);
+      projectile.update(delta);
 
-        // Return to pool if destroyed or off-screen
-        if (!projectile.active || this.isProjectileOffScreen(projectile)) {
-          Projectile.returnToPool(this.enemyProjectilePool, projectile);
-        }
+      // Check if projectile should be returned to pool
+      if (!projectile.active || this.isProjectileOffScreen(projectile)) {
+        // Remove from active array
+        this.activePlayerProjectiles.splice(i, 1);
+        
+        // Return to pool and update statistics
+        Projectile.returnToPool(this.playerProjectilePool, projectile);
+        this.stats.projectilesActive--;
       }
-    });
+    }
+
+    // Update enemy projectiles using optimized active array
+    for (let i = this.activeEnemyProjectiles.length - 1; i >= 0; i--) {
+      const projectile = this.activeEnemyProjectiles[i];
+      
+      // Validate projectile state
+      if (!projectile || !projectile.update) {
+        Logger.warn('WeaponSystem: Corrupted enemy projectile in active array, removing', { index: i });
+        this.activeEnemyProjectiles.splice(i, 1);
+        this.stats.projectilesActive--;
+        continue;
+      }
+
+      projectile.update(delta);
+
+      // Check if projectile should be returned to pool
+      if (!projectile.active || this.isProjectileOffScreen(projectile)) {
+        // Remove from active array
+        this.activeEnemyProjectiles.splice(i, 1);
+        
+        // Return to pool and update statistics
+        Projectile.returnToPool(this.enemyProjectilePool, projectile);
+        this.stats.projectilesActive--;
+      }
+    }
   }
 
   /**
@@ -411,58 +479,49 @@ class WeaponSystem extends System {
   }
 
   /**
-   * Get all active projectiles (for collision system)
+   * Get all active projectiles (for collision system) - OPTIMIZED
    * @returns {Array} All active projectiles
    */
   getActiveProjectiles() {
-    const activeProjectiles = [];
-
-    this.playerProjectilePool.forEach(projectile => {
-      if (projectile.active) {
-        activeProjectiles.push(projectile);
-      }
-    });
-
-    this.enemyProjectilePool.forEach(projectile => {
-      if (projectile.active) {
-        activeProjectiles.push(projectile);
-      }
-    });
-
-    return activeProjectiles;
+    // Use optimized active arrays instead of filtering entire pools
+    return [...this.activePlayerProjectiles, ...this.activeEnemyProjectiles];
   }
 
   /**
-   * Get player projectiles only
+   * Get player projectiles only - OPTIMIZED
    * @returns {Array} Active player projectiles
    */
   getPlayerProjectiles() {
-    return this.playerProjectilePool.filter(projectile => projectile.active);
+    // Use optimized active array instead of filtering entire pool
+    return this.activePlayerProjectiles;
   }
 
   /**
-   * Get enemy projectiles only
+   * Get enemy projectiles only - OPTIMIZED
    * @returns {Array} Active enemy projectiles
    */
   getEnemyProjectiles() {
-    return this.enemyProjectilePool.filter(projectile => projectile.active);
+    // Use optimized active array instead of filtering entire pool
+    return this.activeEnemyProjectiles;
   }
 
   /**
-   * Clear all projectiles (for scene transitions)
+   * Clear all projectiles (for scene transitions) - OPTIMIZED
    */
   clearAllProjectiles() {
-    this.playerProjectilePool.forEach(projectile => {
-      if (projectile.active) {
-        Projectile.returnToPool(this.playerProjectilePool, projectile);
-      }
+    // Clear using optimized active arrays instead of iterating entire pools
+    [...this.activePlayerProjectiles].forEach(projectile => {
+      Projectile.returnToPool(this.playerProjectilePool, projectile);
+    });
+    
+    [...this.activeEnemyProjectiles].forEach(projectile => {
+      Projectile.returnToPool(this.enemyProjectilePool, projectile);
     });
 
-    this.enemyProjectilePool.forEach(projectile => {
-      if (projectile.active) {
-        Projectile.returnToPool(this.enemyProjectilePool, projectile);
-      }
-    });
+    // Clear active arrays and update statistics
+    this.activePlayerProjectiles = [];
+    this.activeEnemyProjectiles = [];
+    this.stats.projectilesActive = 0;
 
     Logger.debug('All projectiles cleared');
   }
@@ -500,7 +559,7 @@ class WeaponSystem extends System {
   }
 
   /**
-   * Get system performance statistics
+   * Get system performance statistics - OPTIMIZED
    * @returns {Object} Performance stats
    */
   getStats() {
@@ -508,8 +567,9 @@ class WeaponSystem extends System {
       ...this.stats,
       playerPoolSize: this.playerProjectilePool.length,
       enemyPoolSize: this.enemyProjectilePool.length,
-      playerPoolActive: this.playerProjectilePool.filter(p => p.active).length,
-      enemyPoolActive: this.enemyProjectilePool.filter(p => p.active).length,
+      // Use optimized active arrays instead of filtering pools
+      playerPoolActive: this.activePlayerProjectiles.length,
+      enemyPoolActive: this.activeEnemyProjectiles.length,
       poolEfficiency:
         this.stats.poolMisses === 0
           ? 100
@@ -547,8 +607,12 @@ class WeaponSystem extends System {
       }
     });
 
+    // Clear all arrays and reset statistics
     this.playerProjectilePool = [];
     this.enemyProjectilePool = [];
+    this.activePlayerProjectiles = [];
+    this.activeEnemyProjectiles = [];
+    this.stats.projectilesActive = 0;
 
     Logger.info('WeaponSystem destroyed');
   }

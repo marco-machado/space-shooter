@@ -1,20 +1,20 @@
-import Entity from './Entity.js';
-import MovementComponent from '../components/MovementComponent.js';
-import CollisionComponent from '../components/CollisionComponent.js';
-import Logger from '../core/Logger.js';
+import BaseEntity from './BaseEntity.js';
+import MovementComponent from '@/components/MovementComponent.js';
+import CollisionComponent from '@/components/CollisionComponent.js';
+import Logger from '@/utils/Logger.js';
 
 /**
  * Projectile Entity
  * Represents bullets fired by players and enemies
  * Uses colored rectangles for development graphics
  */
-class Projectile extends Entity {
+export default class Projectile extends BaseEntity {
   constructor(scene, x, y, config = {}) {
     // Determine size and color based on projectile type
     const size = config.size || { width: 8, height: 16 };
     const color = config.color || 0xffff00; // Default yellow
 
-    super(scene, x, y, size.width, size.height, color);
+    super(scene, { type: 'rectangle', x, y, width: size.width, height: size.height, color });
 
     // Projectile properties
     this.damage = config.damage || 25;
@@ -43,157 +43,13 @@ class Projectile extends Entity {
     }
 
     Logger.debug(
-      `Projectile created: ${this.weaponType} (${this.isPlayerProjectile ? 'player' : 'enemy'})`,
+      `[Projectile] Created: ${this.weaponType} (${this.isPlayerProjectile ? 'player' : 'enemy'})`,
       {
         damage: this.damage,
         speed: this.speed,
         position: { x, y },
       }
     );
-  }
-
-  /**
-   * Initialize projectile components
-   */
-  initializeComponents() {
-    // Movement component - projectiles fly in straight lines
-    const movementComponent = new MovementComponent(this.speed);
-    movementComponent.init({
-      maxSpeed: this.speed,
-      boundToScreen: true,
-      boundaryBehavior: 'destroy', // Destroy when leaving screen
-      screenPadding: -50, // Allow slight off-screen before destruction
-    });
-    this.addComponent(movementComponent);
-
-    // Collision component
-    const collisionConfig = CollisionComponent.createProjectileConfig(this.isPlayerProjectile);
-    collisionConfig.damageAmount = this.damage;
-    collisionConfig.width = this.width * 0.8;
-    collisionConfig.height = this.height * 0.8;
-
-    // Configure collision response based on piercing
-    if (this.piercing) {
-      collisionConfig.collisionResponse.destroy = false;
-      collisionConfig.collisionCooldown = 100; // Brief cooldown between hits
-    }
-
-    const collisionComponent = new CollisionComponent();
-    collisionComponent.init(collisionConfig);
-    this.addComponent(collisionComponent);
-  }
-
-  /**
-   * Fire projectile in a specific direction
-   * @param {number} angle - Angle in radians
-   * @param {number} speed - Optional speed override
-   */
-  fire(angle, speed = null) {
-    const projectileSpeed = speed || this.speed;
-    const movement = this.getComponent(MovementComponent);
-
-    if (movement) {
-      movement.moveInDirection(angle, projectileSpeed);
-      Logger.debug(`Projectile fired: angle ${angle.toFixed(2)}, speed ${projectileSpeed}`);
-    }
-  }
-
-  /**
-   * Fire towards a target position
-   * @param {number} targetX - Target X coordinate
-   * @param {number} targetY - Target Y coordinate
-   * @param {number} speed - Optional speed override
-   */
-  fireTowards(targetX, targetY, speed = null) {
-    const projectileSpeed = speed || this.speed;
-    const movement = this.getComponent(MovementComponent);
-
-    if (movement) {
-      movement.moveTowards(targetX, targetY, projectileSpeed);
-      Logger.debug(`Projectile fired towards: (${targetX}, ${targetY})`);
-    }
-  }
-
-  /**
-   * Update projectile - handles lifetime and special effects
-   * @param {number} delta - Time delta in milliseconds
-   */
-  update(delta) {
-    super.update(delta);
-
-    // Check lifetime expiration
-    const currentTime = Date.now();
-    if (currentTime - this.creationTime > this.maxLifetime) {
-      Logger.debug(`Projectile expired after ${this.maxLifetime}ms`);
-      this.destroy();
-      return;
-    }
-
-    // Update components
-    const movement = this.getComponent(MovementComponent);
-    if (movement) {
-      movement.update(delta / 1000); // Convert to seconds
-    }
-
-    const collision = this.getComponent(CollisionComponent);
-    if (collision) {
-      collision.update(delta);
-    }
-
-    // Handle visual effects (placeholder for future enhancement)
-    this.updateVisualEffects(delta);
-  }
-
-  /**
-   * Update visual effects (placeholder for future sprites/particles)
-   * @param {number} delta - Time delta in milliseconds
-   */
-  updateVisualEffects(_delta) {
-    // Future: Add particle trails, glow effects, rotation, etc.
-
-    // Simple pulsing effect for now (development)
-    if (this.glowEnabled) {
-      const pulse = Math.sin(Date.now() * 0.01) * 0.1 + 0.9;
-      this.setAlpha(pulse);
-    }
-
-    // Simple rotation based on movement direction
-    const movement = this.getComponent(MovementComponent);
-    if (movement && (movement.velocityX !== 0 || movement.velocityY !== 0)) {
-      const angle = Math.atan2(movement.velocityY, movement.velocityX);
-      this.setRotation(angle + Math.PI / 2); // Add 90 degrees for proper orientation
-    }
-  }
-
-  /**
-   * Handle collision with another entity
-   * Called by CollisionSystem
-   * @param {Entity} otherEntity - Entity that was hit
-   * @param {Object} collisionResult - Result from collision component
-   */
-  onCollision(otherEntity, collisionResult) {
-    Logger.debug(`Projectile hit: ${otherEntity.constructor.name}`, {
-      damage: collisionResult.damageDealt,
-      piercing: this.piercing,
-    });
-
-    // Emit hit event for sound/visual effects
-    this.emit('projectileHit', {
-      target: otherEntity,
-      damage: collisionResult.damageDealt,
-      weaponType: this.weaponType,
-      position: { x: this.x, y: this.y },
-    });
-
-    // Destroy projectile unless it's piercing
-    if (!this.piercing && collisionResult.handled) {
-      // Small delay to ensure collision is fully processed
-      this.scene.time.delayedCall(10, () => {
-        if (this.active) {
-          this.destroy();
-        }
-      });
-    }
   }
 
   /**
@@ -262,12 +118,12 @@ class Projectile extends Entity {
 
     for (let i = 0; i < size; i++) {
       const projectile = new Projectile(scene, -100, -100, { damage: 0, speed: 0 });
-      projectile.setActive(false);
-      projectile.setVisible(false);
+      projectile.active = false;
+      projectile.visible = false;
       pool.push(projectile);
     }
 
-    Logger.debug(`Projectile pool created: ${size} projectiles`);
+    Logger.debug(`[Projectile] Pool created with ${size} projectiles`);
     return pool;
   }
 
@@ -282,7 +138,7 @@ class Projectile extends Entity {
   static getFromPool(pool, x, y, config) {
     // Validate pool
     if (!Array.isArray(pool) || pool.length === 0) {
-      Logger.error('Invalid or empty projectile pool');
+      Logger.error('[Projectile] Invalid or empty projectile pool');
       return null;
     }
 
@@ -290,10 +146,10 @@ class Projectile extends Entity {
     let projectile = null;
     for (let i = 0; i < pool.length; i++) {
       const candidate = pool[i];
-      
+
       // Validate projectile object
       if (!candidate) {
-        Logger.warn(`Pool contains null projectile at index ${i}, removing`);
+        Logger.warn(`[Projectile] Pool contains null projectile at index ${i}, removing`);
         pool.splice(i, 1);
         i--; // Adjust index after removal
         continue;
@@ -301,15 +157,17 @@ class Projectile extends Entity {
 
       // Check if projectile is in valid state
       if (!candidate.scene || candidate.scene.sys.isDestroyed) {
-        Logger.warn(`Pool contains projectile with destroyed scene at index ${i}, removing`);
+        Logger.warn(
+          `[Projectile] Pool contains projectile with destroyed scene at index ${i}, removing`
+        );
         pool.splice(i, 1);
         i--; // Adjust index after removal
         continue;
       }
 
       // Check for destroyed or corrupted projectiles
-      if (!candidate.setPosition || !candidate.setActive || !candidate.getComponent) {
-        Logger.warn(`Pool contains corrupted projectile at index ${i}, removing`);
+      if (!candidate.setPosition || !candidate.getComponent) {
+        Logger.warn(`[Projectile] Pool contains corrupted projectile at index ${i}, removing`);
         pool.splice(i, 1);
         i--; // Adjust index after removal
         continue;
@@ -324,40 +182,60 @@ class Projectile extends Entity {
 
     if (projectile) {
       try {
-        // Re-enable physics if needed
+        // CRITICAL FIX: Recreate GameObject if it's null (destroyed during pooling)
+        if (!projectile.gameObject) {
+          Logger.debug('[Projectile] Recreating GameObject for pooled projectile');
+          projectile.recreateGameObject();
+
+          // Verify GameObject was successfully recreated
+          if (!projectile.gameObject) {
+            Logger.error(
+              '[Projectile] Failed to recreate GameObject for pooled projectile, removing from pool'
+            );
+            const index = pool.indexOf(projectile);
+            if (index > -1) {
+              pool.splice(index, 1);
+            }
+            return null;
+          }
+        }
+
+        // Ensure physics is properly configured
         if (!projectile.body && projectile.scene.physics) {
           projectile.enablePhysics('dynamic');
         }
 
         // Reset projectile properties
         projectile.setPosition(x, y);
-        projectile.setActive(true);
-        projectile.setVisible(true);
+        projectile.active = true;
+        projectile.visible = true;
         projectile.damage = config.damage || 25;
         projectile.speed = config.speed || 400;
         projectile.weaponType = config.weaponType || 'laser';
         projectile.isPlayerProjectile =
           config.isPlayerProjectile !== undefined ? config.isPlayerProjectile : true;
         projectile.creationTime = Date.now();
-        
-        // Safely set fill style
-        if (projectile.setFillStyle) {
-          projectile.setFillStyle(config.color || 0xffff00);
+
+        // Safely set fill style through gameObject (now guaranteed to exist)
+        if (projectile.gameObject && projectile.gameObject.setFillStyle) {
+          projectile.gameObject.setFillStyle(config.color || 0xffff00);
         }
 
-        // Update size if needed - with validation
+        // Update size if needed - with validation (this was the original error location)
         if (config.size && config.size.width > 0 && config.size.height > 0) {
+          // This call was failing with "Cannot read properties of null (reading 'setSize')"
+          // Now it's safe because we've ensured gameObject exists
           projectile.setSize(config.size.width, config.size.height);
         }
 
         // Reinitialize components with new config
         const movement = projectile.getComponent(MovementComponent);
         if (movement) {
-          movement.init({ 
-            maxSpeed: projectile.speed, 
+          movement.init({
+            maxSpeed: projectile.speed,
             boundaryBehavior: 'destroy',
             boundToScreen: true,
-            screenPadding: -50
+            screenPadding: -50,
           });
         }
 
@@ -370,39 +248,40 @@ class Projectile extends Entity {
           collision.init(collisionConfig);
         }
 
-        Logger.debug(`Projectile retrieved from pool: ${config.weaponType}`, {
+        Logger.debug(`[Projectile] Projectile retrieved from pool: ${config.weaponType}`, {
           position: { x, y },
           damage: projectile.damage,
           speed: projectile.speed,
-          hasBody: !!projectile.body
+          hasBody: !!projectile.body,
+          hasGameObject: !!projectile.gameObject,
         });
         return projectile;
-
       } catch (error) {
-        Logger.error('Failed to initialize projectile from pool', {
+        Logger.error('[Projectile] Failed to initialize projectile from pool', {
           error: error.message,
           weaponType: config.weaponType,
           projectileState: {
             active: projectile.active,
             visible: projectile.visible,
             hasScene: !!projectile.scene,
-            hasBody: !!projectile.body
-          }
+            hasBody: !!projectile.body,
+            hasGameObject: !!projectile.gameObject,
+          },
         });
-        
+
         // Remove corrupted projectile from pool
         const index = pool.indexOf(projectile);
         if (index > -1) {
           pool.splice(index, 1);
         }
-        
+
         return null;
       }
     }
 
-    Logger.warn('Projectile pool exhausted - no valid projectiles available', {
+    Logger.warn('[Projectile] Projectile pool exhausted - no valid projectiles available', {
       poolSize: pool.length,
-      activeCount: pool.filter(p => p && p.active).length
+      activeCount: pool.filter(p => p && p.active).length,
     });
     return null;
   }
@@ -418,7 +297,7 @@ class Projectile extends Entity {
       if (!Array.isArray(pool) || !projectile) {
         Logger.warn('Invalid parameters for returnToPool', {
           hasPool: Array.isArray(pool),
-          hasProjectile: !!projectile
+          hasProjectile: !!projectile,
         });
         return;
       }
@@ -430,7 +309,7 @@ class Projectile extends Entity {
       }
 
       // Validate projectile state before returning
-      if (!projectile.setActive || !projectile.setVisible || !projectile.setPosition) {
+      if (!projectile.setPosition) {
         Logger.warn('Projectile appears corrupted, removing from pool instead of returning');
         const index = pool.indexOf(projectile);
         if (index > -1) {
@@ -440,8 +319,8 @@ class Projectile extends Entity {
       }
 
       // Reset projectile to inactive state
-      projectile.setActive(false);
-      projectile.setVisible(false);
+      projectile.active = false;
+      projectile.visible = false;
       projectile.setPosition(-100, -100);
 
       // Reset physics velocity if body exists
@@ -467,15 +346,14 @@ class Projectile extends Entity {
 
       Logger.debug(`Projectile returned to pool: ${projectile.weaponType || 'unknown'}`, {
         poolSize: pool.length,
-        activeCount: pool.filter(p => p && p.active).length
+        activeCount: pool.filter(p => p && p.active).length,
       });
-
     } catch (error) {
       Logger.error('Failed to return projectile to pool', {
         error: error.message,
-        weaponType: projectile ? projectile.weaponType : 'unknown'
+        weaponType: projectile ? projectile.weaponType : 'unknown',
       });
-      
+
       // Remove problematic projectile from pool
       const index = pool.indexOf(projectile);
       if (index > -1) {
@@ -484,6 +362,159 @@ class Projectile extends Entity {
       }
     }
   }
-}
 
-export default Projectile;
+  /**
+   * Initialize projectile components
+   */
+  initializeComponents() {
+    // Movement component - projectiles fly in straight lines
+    const movementComponent = new MovementComponent(this.speed);
+    movementComponent.init({
+      maxSpeed: this.speed,
+      boundToScreen: true,
+      boundaryBehavior: 'destroy', // Destroy when leaving screen
+      screenPadding: -50, // Allow slight off-screen before destruction
+    });
+    this.addComponent(movementComponent);
+
+    // Collision component
+    const collisionConfig = CollisionComponent.createProjectileConfig(this.isPlayerProjectile);
+    collisionConfig.damageAmount = this.damage;
+    collisionConfig.width = this.width * 0.8;
+    collisionConfig.height = this.height * 0.8;
+
+    // Configure collision response based on piercing
+    if (this.piercing) {
+      collisionConfig.collisionResponse.destroy = false;
+      collisionConfig.collisionCooldown = 100; // Brief cooldown between hits
+    }
+
+    const collisionComponent = new CollisionComponent();
+    collisionComponent.init(collisionConfig);
+    this.addComponent(collisionComponent);
+  }
+
+  /**
+   * Fire projectile in a specific direction
+   * @param {number} angle - Angle in radians
+   * @param {number} speed - Optional speed override
+   */
+  fire(angle, speed = null) {
+    const projectileSpeed = speed || this.speed;
+    const movement = this.getComponent(MovementComponent);
+
+    if (movement) {
+      movement.moveInDirection(angle, projectileSpeed);
+      Logger.debug(`Projectile fired: angle ${angle.toFixed(2)}, speed ${projectileSpeed}`);
+    }
+  }
+
+  /**
+   * Fire towards a target position
+   * @param {number} targetX - Target X coordinate
+   * @param {number} targetY - Target Y coordinate
+   * @param {number} speed - Optional speed override
+   */
+  fireTowards(targetX, targetY, speed = null) {
+    const projectileSpeed = speed || this.speed;
+    const movement = this.getComponent(MovementComponent);
+
+    if (movement) {
+      // Calculate angle from current position to target
+      const deltaX = targetX - this.x;
+      const deltaY = targetY - this.y;
+      const angle = Math.atan2(deltaY, deltaX);
+
+      // Use moveInDirection which exists in MovementComponent
+      movement.moveInDirection(angle, projectileSpeed);
+      Logger.debug(
+        `Projectile fired towards: (${targetX}, ${targetY}) at angle ${angle.toFixed(2)}`
+      );
+    }
+  }
+
+  /**
+   * Update projectile - handles lifetime and special effects
+   * @param {number} delta - Time delta in milliseconds
+   */
+  update(delta) {
+    super.update(delta);
+
+    // Check lifetime expiration
+    const currentTime = Date.now();
+    if (currentTime - this.creationTime > this.maxLifetime) {
+      Logger.debug(`Projectile expired after ${this.maxLifetime}ms`);
+      this.destroy();
+      return;
+    }
+
+    // Update collision component (if it has an update method)
+    const collision = this.getComponent(CollisionComponent);
+    if (collision && collision.update) {
+      collision.update(delta);
+    }
+
+    // Handle visual effects (placeholder for future enhancement)
+    this.updateVisualEffects(delta);
+  }
+
+  /**
+   * Deactivates the current instance by setting its active state to false.
+   * @return {void} Does not return a value.
+   */
+  destroy() {
+    this.active = false;
+  }
+
+  /**
+   * Update visual effects (placeholder for future sprites/particles)
+   * @param {number} delta - Time delta in milliseconds
+   */
+  updateVisualEffects(_delta) {
+    // Future: Add particle trails, glow effects, rotation, etc.
+
+    // Simple pulsing effect for now (development)
+    if (this.glowEnabled) {
+      const pulse = Math.sin(Date.now() * 0.01) * 0.1 + 0.9;
+      this.setAlpha(pulse);
+    }
+
+    // Simple rotation based on movement direction
+    const movement = this.getComponent(MovementComponent);
+    if (movement && (movement.velocityX !== 0 || movement.velocityY !== 0)) {
+      const angle = Math.atan2(movement.velocityY, movement.velocityX);
+      this.setRotation(angle + Math.PI / 2); // Add 90 degrees for proper orientation
+    }
+  }
+
+  /**
+   * Handle collision with another entity
+   * Called by CollisionSystem
+   * @param {BaseEntity} otherEntity - BaseEntity that was hit
+   * @param {Object} collisionResult - Result from collision component
+   */
+  onCollision(otherEntity, collisionResult) {
+    Logger.debug(`Projectile hit: ${otherEntity.constructor.name}`, {
+      damage: collisionResult.damageDealt,
+      piercing: this.piercing,
+    });
+
+    // Emit hit event for sound/visual effects
+    this.emit('projectileHit', {
+      target: otherEntity,
+      damage: collisionResult.damageDealt,
+      weaponType: this.weaponType,
+      position: { x: this.x, y: this.y },
+    });
+
+    // Destroy projectile unless it's piercing
+    if (!this.piercing && collisionResult.handled) {
+      // Small delay to ensure collision is fully processed
+      this.scene.time.delayedCall(10, () => {
+        if (this.active) {
+          this.destroy();
+        }
+      });
+    }
+  }
+}

@@ -1,11 +1,11 @@
-import Component from './Component.js';
-import Logger from '../core/Logger.js';
+import BaseComponent from './BaseComponent.js';
+import Logger from '@/utils/Logger.js';
 
 /**
- * Weapon Component
+ * Weapon BaseComponent
  * Manages weapon types, firing mechanics, cooldowns, and ammunition
  */
-class WeaponComponent extends Component {
+class WeaponComponent extends BaseComponent {
   constructor(weaponType = 'laser') {
     super();
 
@@ -70,7 +70,7 @@ class WeaponComponent extends Component {
       projectileSpeedBonus: 0,
     };
 
-    Logger.debug(`WeaponComponent created: ${this.currentWeapon} weapon`);
+    Logger.debug(`[WeaponComponent] created: ${this.currentWeapon} weapon`);
   }
 
   /**
@@ -160,7 +160,9 @@ class WeaponComponent extends Component {
       this.weaponSpecs[this.currentWeapon].currentAmmo--;
     }
 
-    Logger.debug(`WeaponComponent fired: ${this.currentWeapon} (ammo: ${weaponSpec.currentAmmo})`);
+    Logger.debug(
+      `[WeaponComponent] fired: ${this.currentWeapon} (ammo: ${weaponSpec.currentAmmo})`
+    );
 
     // Emit fire event if entity supports it
     if (this.entity && this.entity.emit) {
@@ -189,7 +191,7 @@ class WeaponComponent extends Component {
    */
   switchWeapon(weaponType) {
     if (!this.availableWeapons.has(weaponType) || !this.weaponSpecs[weaponType]) {
-      Logger.warn(`WeaponComponent: Cannot switch to unavailable weapon: ${weaponType}`);
+      Logger.warn(`[WeaponComponent]: Cannot switch to unavailable weapon: ${weaponType}`);
       return false;
     }
 
@@ -197,7 +199,7 @@ class WeaponComponent extends Component {
     this.currentWeapon = weaponType;
     this.lastFireTime = 0; // Reset cooldown when switching
 
-    Logger.info(`WeaponComponent: Switched from ${previousWeapon} to ${weaponType}`);
+    Logger.info(`[WeaponComponent]: Switched from ${previousWeapon} to ${weaponType}`);
 
     // Emit weapon switch event if entity supports it
     if (this.entity && this.entity.emit) {
