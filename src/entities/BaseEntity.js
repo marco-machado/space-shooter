@@ -1,24 +1,25 @@
-import Logger from '../core/Logger.js';
+import Logger from '@/utils/Logger.js';
 
 /**
- * Base Entity class extending Phaser.GameObjects.Rectangle
+ * Base Entity class using composition pattern with Phaser GameObjects
  * Provides ECS foundation with component management
  * Uses colored rectangles for development graphics
  */
-class Entity extends Phaser.GameObjects.Rectangle {
-  constructor(scene, x, y, width, height, color) {
-    super(scene, x, y, width, height, color);
+class Entity {
+  constructor(scene, x, y, width, height, color, name = 'noname') {
+    this.name = name;
 
     // Component storage
     this.components = new Map();
 
     // Entity metadata
     this.entityId = Entity.generateId();
-    this.active = true;
-    this.visible = true;
 
-    // Add to scene display list and physics world if needed
-    scene.add.existing(this);
+    // Create the Phaser GameObject using composition
+    this.gameObject = scene.add.rectangle(x, y, width, height, color);
+
+    // Add to scene display list
+    scene.add.existing(this.gameObject);
 
     // Register with scene's entity system
     if (!scene.entities) {
@@ -41,6 +42,88 @@ class Entity extends Phaser.GameObjects.Rectangle {
     return `entity_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 
+  // Property delegation getters and setters for commonly accessed properties
+  
+  /**
+   * Get/Set X position
+   */
+  get x() {
+    return this.gameObject.x;
+  }
+
+  set x(value) {
+    this.gameObject.x = value;
+  }
+
+  /**
+   * Get/Set Y position
+   */
+  get y() {
+    return this.gameObject.y;
+  }
+
+  set y(value) {
+    this.gameObject.y = value;
+  }
+
+  /**
+   * Get/Set width
+   */
+  get width() {
+    return this.gameObject.width;
+  }
+
+  set width(value) {
+    this.gameObject.width = value;
+  }
+
+  /**
+   * Get/Set height
+   */
+  get height() {
+    return this.gameObject.height;
+  }
+
+  set height(value) {
+    this.gameObject.height = value;
+  }
+
+  /**
+   * Get scene reference
+   */
+  get scene() {
+    return this.gameObject.scene;
+  }
+
+  /**
+   * Get/Set active state
+   */
+  get active() {
+    return this.gameObject.active;
+  }
+
+  set active(value) {
+    this.gameObject.active = value;
+  }
+
+  /**
+   * Get/Set visible state
+   */
+  get visible() {
+    return this.gameObject.visible;
+  }
+
+  set visible(value) {
+    this.gameObject.visible = value;
+  }
+
+  /**
+   * Get physics body
+   */
+  get body() {
+    return this.gameObject.body;
+  }
+
   /**
    * Add a component to this entity
    * @param {Object} component - Component instance to add
@@ -53,7 +136,7 @@ class Entity extends Phaser.GameObjects.Rectangle {
     // Set reference back to entity
     component.entity = this;
 
-    Logger.debug(`Component added: ${componentName} to ${this.entityId}`);
+    Logger.debug(`Component added: ${componentName} to ${this.entityId}-${this.name}`);
     return this;
   }
 
@@ -135,8 +218,8 @@ class Entity extends Phaser.GameObjects.Rectangle {
       }
     }
 
-    // Call Phaser's destroy method
-    super.destroy();
+    // Call Phaser GameObject's destroy method
+    this.gameObject.destroy();
   }
 
   /**
@@ -146,7 +229,7 @@ class Entity extends Phaser.GameObjects.Rectangle {
    */
   enablePhysics(bodyType = 'dynamic') {
     if (this.scene.physics && this.scene.physics.world) {
-      this.scene.physics.add.existing(this, bodyType === 'static');
+      this.scene.physics.add.existing(this.gameObject, bodyType === 'static');
 
       // Configure physics body based on type
       if (this.body) {
@@ -178,7 +261,7 @@ class Entity extends Phaser.GameObjects.Rectangle {
    * @returns {Entity} This entity for chaining
    */
   setPosition(x, y) {
-    super.setPosition(x, y);
+    this.gameObject.setPosition(x, y);
     Logger.debug(`Entity ${this.entityId} moved to (${x}, ${y})`);
     return this;
   }
@@ -203,14 +286,14 @@ class Entity extends Phaser.GameObjects.Rectangle {
         return this;
       }
 
-      // Check if entity is in valid state
-      if (!this.active && !this.getData) {
-        Logger.error(`Entity ${this.entityId}: Entity appears to be corrupted or destroyed`);
+      // Check if gameObject is in valid state
+      if (!this.gameObject || !this.gameObject.active) {
+        Logger.error(`Entity ${this.entityId}: GameObject appears to be corrupted or destroyed`);
         return this;
       }
 
-      // Call parent setSize with error handling
-      super.setSize(width, height);
+      // Call gameObject's setSize with error handling
+      this.gameObject.setSize(width, height);
       
       // Update physics body size if it exists
       if (this.body && this.body.setSize) {
@@ -228,7 +311,8 @@ class Entity extends Phaser.GameObjects.Rectangle {
           active: this.active,
           visible: this.visible,
           hasScene: !!this.scene,
-          hasBody: !!this.body
+          hasBody: !!this.body,
+          hasGameObject: !!this.gameObject
         }
       });
     }

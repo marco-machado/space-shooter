@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a space shooter game built with Phaser.js 3.x and Vite build tooling. The game features multiple weapon types, enemy varieties, player progression, and power-up systems using a simple Entity Component System architecture. All game data is persisted using browser localStorage. The development phase uses simple colored rectangles for rapid prototyping before final graphics are implemented.
+This is a space shooter game built with Phaser.js 3.x and Vite build tooling. The game features multiple weapon types, enemy varieties, player progression, and power-up systems using a simple BaseEntity BaseComponent BaseSystem architecture. All game data is persisted using browser localStorage. The development phase uses simple colored rectangles for rapid prototyping before final graphics are implemented.
 
 ## Development Commands
 
@@ -26,16 +26,70 @@ npm run build              # Build for production
 npm run preview            # Preview production build
 ```
 
-### Development Workflow
+### Safe Development Workflow (PROTECTED)
 
+⚠️ **CRITICAL: Use these safe, selective commands instead of project-wide operations**
+
+#### **Safe Linting Commands (SELECTIVE ONLY)**
 ```bash
-npm run dev                # Start development with HMR
-npm run lint               # Run ESLint
-npm run lint:fix           # Fix ESLint errors automatically
-npm run format             # Format code with Prettier
-npm run format:check       # Check if code is formatted
-npm run test               # Run basic unit tests (minimal suite)
-npm run test:watch         # Run tests in watch mode for TDD
+# ✅ SAFE: Lint specific utility files only
+eslint src/utils/MathUtils.js
+eslint src/utils/ObjectPool.js
+eslint src/utils/SaveManager.js
+
+# ✅ SAFE: Lint config files only
+eslint src/config/GameConfig.js
+eslint src/config/Environment.js
+
+# ❌ FORBIDDEN: Never lint these protected areas
+# eslint src/scenes/          # PROTECTED: Game scenes
+# eslint src/systems/         # PROTECTED: ECS systems  
+# eslint src/entities/        # PROTECTED: Game entities
+# eslint src/               # FORBIDDEN: Whole project
+# npm run lint              # FORBIDDEN: Uses whole project
+```
+
+#### **Safe Testing Commands (UTILITIES ONLY)**
+```bash
+# ✅ SAFE: Test only utility functions
+npm run test               # Only tests utils/ directory
+npm run test:watch         # Watch mode for utility tests only
+vitest src/utils/MathUtils.test.js    # Single test file
+
+# ❌ FORBIDDEN: Never test these areas
+# Testing game scenes, systems, or entities is FORBIDDEN
+# Never create tests for Phaser-dependent code
+# Never modify GameScene.js for testing purposes
+```
+
+#### **Safe Formatting Commands (SELECTIVE)**
+```bash
+# ✅ SAFE: Format specific files only
+prettier --write src/utils/MathUtils.js
+prettier --write src/config/GameConfig.js
+
+# ✅ SAFE: Check formatting without changes
+npm run format:check       # Read-only formatting check
+
+# ❌ FORBIDDEN: Never auto-format protected files
+# prettier --write src/scenes/    # PROTECTED
+# prettier --write src/systems/   # PROTECTED
+# npm run format                  # May affect protected files
+```
+
+#### **Development Server (ALWAYS SAFE)**
+```bash
+npm run dev                # ✅ SAFE: Start development with HMR
+npm run build              # ✅ SAFE: Build for production
+npm run preview            # ✅ SAFE: Preview production build
+```
+
+#### **Emergency Development Bypass**
+```bash
+# When automated tools interfere with development:
+export SKIP_LINT=true      # Skip linting temporarily
+export SKIP_FORMAT=true    # Skip formatting temporarily
+npm run dev:unsafe         # Development without quality gates
 ```
 
 ### Environment Configuration
@@ -79,20 +133,20 @@ space-shooter/
 │   │   ├── GameScene.js  # Primary gameplay scene
 │   │   └── GameOverScene.js  # End game results
 │   ├── entities/         # Game entities (ECS-based)
-│   │   ├── Entity.js     # Base entity class (extends Phaser.GameObject)
+│   │   ├── BaseEntity.js     # Base entity class (extends Phaser.GameObject)
 │   │   ├── Player.js     # Player entity (blue rectangle in dev)
 │   │   ├── Enemy.js      # Enemy entities (red rectangles in dev)
 │   │   ├── Projectile.js # Bullet entities (small colored shapes)
 │   │   └── PowerUp.js    # Power-up entities (green/purple shapes)
 │   ├── components/       # ECS components (simple data classes)
-│   │   ├── Component.js  # Base component class
+│   │   ├── BaseComponent.js  # Base component class
 │   │   ├── HealthComponent.js    # Health and damage
 │   │   ├── WeaponComponent.js    # Weapon stats and behavior
 │   │   ├── MovementComponent.js  # Movement and physics
 │   │   ├── CollisionComponent.js # Collision detection
 │   │   └── RenderComponent.js    # Rendering and visual effects
 │   ├── systems/          # ECS systems (game logic)
-│   │   ├── System.js     # Base system class
+│   │   ├── BaseSystem.js     # Base system class
 │   │   ├── MovementSystem.js     # Handle entity movement
 │   │   ├── WeaponSystem.js       # Weapon firing and projectiles
 │   │   ├── CollisionSystem.js    # Collision detection and response
@@ -118,7 +172,7 @@ space-shooter/
 
 ## Architecture Guidelines
 
-### Entity Component System (ECS)
+### BaseEntity BaseComponent BaseSystem (ECS)
 
 - **Entities**: Extend Phaser.GameObjects.Sprite/Image as base entities
 - **Components**: Pure data containers (health, weapon stats, movement data)
@@ -158,7 +212,7 @@ space-shooter/
 - Persist critical data immediately to localStorage
 - Implement fallbacks for corrupted save data
 
-### Logger System
+### Logger BaseSystem
 
 - **Environment-aware**: Only logs in development when `VITE_DEBUG_MODE=true`
 - **Multiple levels**: `Logger.debug()`, `Logger.info()`, `Logger.warn()`, `Logger.error()`
@@ -181,6 +235,39 @@ space-shooter/
 
 ## Code Quality Standards
 
+### Protective Development Policies
+
+⚠️ **CRITICAL: Automated Tool Safety Guidelines** ⚠️
+
+These policies prevent automated tools from interfering with critical game development work:
+
+#### **Never Lint Whole Project Policy**
+- **FORBIDDEN**: `npm run lint` or `eslint src/` (whole project linting)
+- **REQUIRED**: Always use selective linting with specific file targets
+- **Safe Usage**: `eslint src/utils/MathUtils.js` (single file only)
+- **Rationale**: Prevents automated changes to complex game scenes and ECS systems
+
+#### **Game Scene Protection Policy**
+- **PROTECTED FILES**: 
+  - `src/scenes/GameScene.js` - Critical gameplay scene
+  - `src/scenes/*.js` - All scene files protected from automated modification
+  - `src/systems/*.js` - ECS systems protected from automated changes
+  - `src/entities/*.js` - Game entities protected from automated changes
+- **MANUAL ONLY**: These files require manual code review and testing
+- **NO AUTO-FIX**: Never use `--fix` flag on protected files
+
+#### **Testing Boundary Policy**
+- **NEVER TEST**: Game scenes, ECS systems, or Phaser-dependent code
+- **TESTING FORBIDDEN**: Making changes to game files for testing purposes
+- **PROTECTED AREAS**: GameScene.js integrity must be maintained
+- **MANUAL TESTING**: All gameplay features tested manually, not programmatically
+
+#### **Development Workflow Protection**
+- **Selective Operations**: Target specific files/directories only
+- **Manual Override**: Developers can skip automated checks when needed
+- **Code Quality Gates**: Quality checks must not block critical development
+- **Emergency Bypass**: Always provide escape hatches for urgent development
+
 ### ESLint Configuration
 
 - **Standard Rules**: Use ESLint recommended rules with Prettier integration
@@ -188,6 +275,7 @@ space-shooter/
 - **ES6+ Rules**: Modern JavaScript patterns and best practices
 - **Phaser-specific**: Custom rules for Phaser GameObject lifecycle
 - **Error Prevention**: Catch common game development mistakes early
+- **SELECTIVE USE ONLY**: Never run on whole project - target specific files
 
 ### Prettier Configuration
 
@@ -210,8 +298,10 @@ space-shooter/
 ### ECS Patterns with Phaser (Inline Base Classes)
 
 ```javascript
-// src/entities/Entity.js - Base entity class
-class Entity extends Phaser.GameObjects.Rectangle {
+// src/entities/BaseEntity.js - Base entity class
+import Logger from '@/utils/Logger.js';
+
+class BaseEntity extends Phaser.GameObjects.Rectangle {
   constructor(scene, x, y, width, height, color) {
     super(scene, x, y, width, height, color);
 
@@ -247,15 +337,15 @@ class Entity extends Phaser.GameObjects.Rectangle {
   }
 }
 
-// src/components/Component.js - Base component class
-class Component {
+// src/components/BaseComponent.js - Base component class
+class BaseComponent {
   constructor() {
     // Base class for all components (optional - components can be plain objects)
   }
 }
 
 // src/components/HealthComponent.js - Example component (pure data)
-class HealthComponent extends Component {
+class HealthComponent extends BaseComponent {
   constructor(maxHealth = 100) {
     super();
     this.maxHealth = maxHealth;
@@ -264,8 +354,8 @@ class HealthComponent extends Component {
   }
 }
 
-// src/systems/System.js - Base system class
-class System {
+// src/systems/BaseSystem.js - Base system class
+class BaseSystem {
   constructor() {
     this.name = this.constructor.name;
   }
@@ -277,20 +367,25 @@ class System {
 }
 
 // src/systems/MovementSystem.js - Example system (logic handler)
-class MovementSystem extends System {
+import { MovementComponent } from '@/components/MovementComponent.js';
+import Logger from '@/utils/Logger.js';
+
+class MovementSystem extends BaseSystem {
   update(entities, delta) {
     entities.forEach(entity => {
       const movement = entity.getComponent(MovementComponent);
       if (movement) {
         entity.x += movement.velocityX * delta;
         entity.y += movement.velocityY * delta;
-        Logger.debug(`Entity moved to`, entity.x, entity.y);
+        Logger.debug(`BaseEntity moved to`, entity.x, entity.y);
       }
     });
   }
 }
 
 // Development graphics helper
+import Logger from '@/utils/Logger.js';
+
 class DevShapes {
   static createPlayer(scene, x, y) {
     const player = scene.add.rectangle(x, y, 64, 64, 0x0099ff);
@@ -313,7 +408,7 @@ class DevShapes {
 ```javascript
 // ONLY test core utility functions - keep it simple!
 import { describe, it, expect } from 'vitest';
-import { MathUtils } from '../src/utils/MathUtils.js';
+import { MathUtils } from '@/utils/MathUtils.js';
 
 describe('MathUtils', () => {
   it('should calculate distance between two points', () => {
@@ -329,7 +424,7 @@ describe('MathUtils', () => {
 });
 
 // Simple SaveManager test - core functionality only
-import { SaveManager } from '../src/utils/SaveManager.js';
+import { SaveManager } from '@/utils/SaveManager.js';
 
 describe('SaveManager', () => {
   it('should save and load data', () => {
@@ -364,6 +459,8 @@ describe('SaveManager', () => {
 
 ```javascript
 // SaveManager pattern with Logger integration
+import Logger from '@/utils/Logger.js';
+
 class SaveManager {
   static save(key, data) {
     try {
@@ -425,31 +522,66 @@ class Logger {
 }
 ```
 
-## Testing Guidelines
+## Testing Guidelines (PROTECTIVE BOUNDARIES)
 
-### Minimal Testing Philosophy
+### Minimal Testing Philosophy (SAFETY FIRST)
 
 - **Focus**: Test ONLY core utility functions (math, save/load, object pooling)
-- **TDD Approach**: Write simple tests first for utility functions, then implement
+- **NEVER MODIFY GAME FILES**: Testing must never require changes to game scenes or systems
+- **GameScene Protection**: GameScene.js integrity is PARAMOUNT - no testing modifications allowed
 - **No Elaborate Suites**: Keep test files small and focused
 - **No E2E Tests**: Manual testing for gameplay and UI interactions
 - **Time Limit**: Don't spend hours writing/fixing tests - keep it basic
 
-### What TO Test (Minimal)
+### What TO Test (SAFE ZONE ONLY)
 
+#### ✅ SAFE TO TEST (utils/ directory only)
 - **Utility Functions**: Math calculations, data transformations
-- **Save/Load Logic**: localStorage operations
+- **Save/Load Logic**: localStorage operations (mocked)
 - **Object Pooling**: Basic get/release functionality
 - **Pure Functions**: Functions with clear inputs/outputs
+- **Configuration**: Environment and config utilities
 
-### What NOT to Test
+#### 🟨 SAFE LOCATION
+```bash
+tests/utils/                # ONLY safe testing location
+├── MathUtils.test.js       # ✅ Math operations testing
+├── SaveManager.test.js     # ✅ localStorage testing (mocked)
+├── ObjectPool.test.js      # ✅ Pool management testing
+└── GameConfig.test.js      # ✅ Configuration testing
+```
 
-- **Phaser GameObjects**: Too complex to mock properly
-- **ECS Components**: Simple data containers, no complex logic
-- **Systems**: Depend heavily on Phaser, test through gameplay
-- **UI/Graphics**: Visual elements, test manually
-- **Audio**: Browser-dependent, test manually
-- **Scene Management**: Integration with Phaser, manual testing
+### What NOT to Test (FORBIDDEN ZONES)
+
+#### ❌ ABSOLUTELY FORBIDDEN
+- **GameScene.js**: NEVER create tests that require modifying this file
+- **All Scenes**: src/scenes/* - Manual testing only
+- **ECS Systems**: src/systems/* - Too complex, Phaser-dependent
+- **Game Entities**: src/entities/* - Phaser GameObjects, manual testing only
+- **Components**: Simple data containers, testing adds no value
+- **Phaser Integration**: Any code that requires Phaser context
+
+#### 🚫 FORBIDDEN TESTING ACTIVITIES
+- **Never modify GameScene.js** for testing purposes
+- **Never mock Phaser objects** - too complex and fragile
+- **Never create test scenes** - disrupts game architecture
+- **Never test ECS interactions** - use manual gameplay testing
+- **Never test UI/Graphics** - visual verification only
+- **Never test audio systems** - browser-dependent functionality
+
+### Protected Testing Principles
+
+#### **GameScene Integrity Protection**
+- GameScene.js is the **heart of the game** - modifications forbidden
+- Any testing that requires GameScene changes is **REJECTED**
+- Complex game logic tested through **manual gameplay**
+- Performance testing done via **runtime monitoring**
+
+#### **Manual Testing Priority**
+- **Primary Method**: Manual gameplay testing
+- **User Experience**: Play-testing for game balance and fun
+- **Integration Testing**: Scene transitions and system interactions
+- **Performance Validation**: Real gameplay performance monitoring
 
 ### Basic Test Organization
 

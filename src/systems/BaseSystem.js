@@ -1,11 +1,11 @@
-import Logger from '../core/Logger.js';
+import Logger from '@/utils/Logger.js';
 
 /**
  * Base System class for ECS architecture
  * Systems contain logic and operate on entities with specific components
  * All game behavior is implemented in systems, not components
  */
-class System {
+export default class System {
   constructor() {
     this.name = this.constructor.name;
     this.active = true;
@@ -41,7 +41,7 @@ class System {
 
   /**
    * Main update method - must be implemented by subclasses
-   * @param {Array<Entity>} entities - Array of entities to process
+   * @param {Array<BaseEntity>} entities - Array of entities to process
    * @param {number} delta - Time delta in milliseconds
    */
   update(_entities, _delta) {
@@ -50,7 +50,7 @@ class System {
 
   /**
    * Process entities with performance tracking
-   * @param {Array<Entity>} entities - Array of entities to process
+   * @param {Array<BaseEntity>} entities - Array of entities to process
    * @param {number} delta - Time delta in milliseconds
    */
   process(entities, delta) {
@@ -79,9 +79,9 @@ class System {
 
   /**
    * Filter entities that have all required components
-   * @param {Array<Entity>} entities - All entities
+   * @param {Array<BaseEntity>} entities - All entities
    * @param {Array<Function>} requiredComponents - Required component types
-   * @returns {Array<Entity>} Filtered entities
+   * @returns {Array<BaseEntity>} Filtered entities
    */
   getEntitiesWithComponents(entities, requiredComponents) {
     return entities.filter(entity => {
@@ -93,9 +93,9 @@ class System {
 
   /**
    * Filter entities that have any of the specified components
-   * @param {Array<Entity>} entities - All entities
-   * @param {Array<Function>} componentTypes - Component types to check
-   * @returns {Array<Entity>} Filtered entities
+   * @param {Array<BaseEntity>} entities - All entities
+   * @param {Array<Function>} componentTypes - BaseComponent types to check
+   * @returns {Array<BaseEntity>} Filtered entities
    */
   getEntitiesWithAnyComponent(entities, componentTypes) {
     return entities.filter(entity => {
@@ -205,5 +205,3 @@ class System {
     Logger.debug(`System deserialized: ${this.name}`, data);
   }
 }
-
-export default System;

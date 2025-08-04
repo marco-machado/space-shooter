@@ -1,6 +1,22 @@
 # Space Shooter Game
 
-A modern space shooter game built with **Phaser.js 3.x** and **Vite**, featuring an Entity Component System (ECS) architecture, environment-aware logging, and professional development practices.
+A modern space shooter game built with **Phaser.js 3.x** and **Vite**, featuring an BaseEntity BaseComponent BaseSystem (ECS) architecture, environment-aware logging, and professional development practices.
+
+## ⚠️ CRITICAL DEVELOPMENT POLICIES
+
+**🚨 PROTECT GAME INTEGRITY - READ BEFORE DEVELOPMENT**
+
+- **NEVER lint the whole project** - Use selective linting on specific files only
+- **NEVER modify GameScene.js for testing** - Game scene integrity is paramount  
+- **NEVER run automated tools on game scenes/systems** - Manual development only
+- **USE ONLY safe scripts** - See [Available Scripts](#-available-scripts-protective-usage) section
+
+**Safe Development Approach:**
+- ✅ `npm run dev` - Always safe for development
+- ✅ `eslint src/utils/MathUtils.js` - Single file linting only  
+- ✅ `npm run test` - Only tests utilities, never game files
+- ❌ `npm run lint` - FORBIDDEN: Whole project linting
+- ❌ `npm run validate` - FORBIDDEN: Interferes with game files
 
 ## 🎯 Project Status
 
@@ -10,8 +26,8 @@ A modern space shooter game built with **Phaser.js 3.x** and **Vite**, featuring
 
 ### Sprint 2 Achievements
 
-- ✅ **Complete Weapon System**: 3 weapon types (Laser, Plasma, Missile) with upgrading
-- ✅ **Enemy AI System**: 3 enemy types with formation flight and AI patterns
+- ✅ **Complete Weapon BaseSystem**: 3 weapon types (Laser, Plasma, Missile) with upgrading
+- ✅ **Enemy AI BaseSystem**: 3 enemy types with formation flight and AI patterns
 - ✅ **Advanced Collision**: Spatial grid optimization for high-performance collision detection
 - ✅ **Game Progression**: Score system, leveling, achievements, and save/load functionality
 - ✅ **Object Pooling**: Zero memory leaks with efficient projectile management
@@ -30,7 +46,7 @@ A modern space shooter game built with **Phaser.js 3.x** and **Vite**, featuring
 
 ### Technical Achievements
 
-- ✅ **ECS Architecture**: Complete Entity-Component-System with 8+ systems
+- ✅ **ECS Architecture**: Complete BaseEntity-BaseComponent-BaseSystem with 8+ systems
 - ✅ **Performance**: 125 FPS sustained (208% of target), 33-45MB memory (under 100MB target)
 - ✅ **Code Quality**: 100% ESLint compliance, comprehensive logging system
 - ✅ **Object Pooling**: 100 projectiles per pool, 0% pool misses during testing
@@ -88,29 +104,49 @@ The game will be available at `http://localhost:5173`
 
 ## 🛠️ Development
 
-### Available Scripts
+### Available Scripts (PROTECTIVE USAGE)
 
+#### **✅ SAFE Scripts (Always Use These)**
 ```bash
-# Development
+# Development (Always safe)
 npm run dev          # Start Vite dev server with HMR
 npm run build        # Build for production
 npm run preview      # Preview production build
+npm start            # Alias for npm run dev
 
-# Code Quality
-npm run lint         # Run ESLint
-npm run lint:fix     # Fix ESLint errors automatically
-npm run format       # Format code with Prettier
-npm run format:check # Check if code is formatted
-npm run validate     # Run all quality checks (lint + format + test)
-
-# Testing
+# Testing (Only tests utils/ directory)
 npm run test         # Run unit tests (utilities only)
 npm run test:watch   # Run tests in watch mode
 npm run test:coverage # Run tests with coverage report
 
 # Utilities
 npm run clean        # Clean build artifacts
-npm start            # Alias for npm run dev
+```
+
+#### **⚠️ SELECTIVE Scripts (Use With Caution - Target Specific Files Only)**
+```bash
+# Code Quality (NEVER use on whole project)
+npm run format:check # Check if code is formatted (read-only)
+
+# Manual selective usage only:
+eslint src/utils/MathUtils.js        # ✅ Single file linting
+prettier --check src/utils/          # ✅ Directory-specific formatting
+```
+
+#### **❌ FORBIDDEN Scripts (NEVER USE - Interfere with Game Development)**
+```bash
+# These scripts operate on whole project and interfere with game files:
+# npm run lint         # FORBIDDEN: Whole project linting
+# npm run lint:fix     # FORBIDDEN: Automated fixes project-wide
+# npm run format       # FORBIDDEN: May format protected game files  
+# npm run validate     # FORBIDDEN: Runs whole project quality checks
+```
+
+#### **🚨 Emergency Bypass (When Automation Blocks Development)**
+```bash
+# Temporary bypass when automated tools interfere:
+export SKIP_LINT=true && npm run dev
+export SKIP_FORMAT=true && npm run build
 ```
 
 ### Environment Configuration
@@ -137,61 +173,85 @@ VITE_SHOW_FPS=true           # Display FPS counter
 VITE_SHOW_DEBUG_INFO=true    # Show debug information overlay
 ```
 
-### Development Workflow
+### Safe Development Workflow (PROTECTED)
+
+⚠️ **IMPORTANT: Follow protective policies to prevent automated tool interference**
 
 1. **Start Development**
 
    ```bash
-   npm run dev
+   npm run dev                # ✅ Always safe
    ```
 
-2. **Code Quality Checks** (run before commits)
+2. **Code Quality Checks** (SELECTIVE ONLY - never whole project)
 
    ```bash
-   npm run validate
+   # ✅ SAFE: Check specific utility files only
+   eslint src/utils/MathUtils.js
+   eslint src/config/GameConfig.js
+   prettier --check src/utils/
+
+   # ❌ FORBIDDEN: Never run these
+   # npm run validate          # Uses whole project linting
+   # npm run lint              # Whole project linting
+   # eslint src/               # Whole project linting
    ```
 
-3. **Testing** (minimal utility testing only)
+3. **Testing** (utilities only - never game files)
 
    ```bash
-   npm run test:watch
+   npm run test               # ✅ Only tests utils/ directory
+   vitest src/utils/MathUtils.test.js  # ✅ Single test file
+   
+   # ❌ FORBIDDEN: Never test game scenes or systems
+   # Never modify GameScene.js for testing
    ```
 
 4. **Build for Production**
    ```bash
-   npm run build
-   npm run preview
+   npm run build              # ✅ Always safe
+   npm run preview            # ✅ Always safe
    ```
+
+#### **Protected Files (NO AUTOMATED CHANGES)**
+- **GameScene.js** - Critical gameplay scene (manual changes only)
+- **All scenes/** - Game scenes protected from automation
+- **All systems/** - ECS systems protected from automation  
+- **All entities/** - Game entities protected from automation
+
+#### **Safe Files for Automation**
+- **utils/** - Utility functions (safe for linting/testing)
+- **config/** - Configuration files (safe for linting)
 
 ## 🏗️ Architecture
 
-### Entity Component System (ECS)
+### BaseEntity BaseComponent BaseSystem (ECS)
 
 The game uses a modern ECS architecture built on top of Phaser.js:
 
 ```javascript
-// Entity - Game objects (Player, Enemy, Projectile)
-class Player extends Entity {
-  constructor(scene) {
-    super(scene, x, y, 64, 64, 0x0099ff); // Blue rectangle in dev
+// BaseEntity - Game objects (Player, Enemy, Projectile)
+class Player extends BaseEntity {
+   constructor(scene) {
+      super(scene, x, y, 64, 64, 0x0099ff); // Blue rectangle in dev
 
-    this.addComponent(new HealthComponent(100)).addComponent(new MovementComponent(300));
-  }
+      this.addComponent(new HealthComponent(100)).addComponent(new MovementComponent(300));
+   }
 }
 
-// Component - Pure data containers
-class HealthComponent extends Component {
-  constructor(maxHealth) {
-    this.maxHealth = maxHealth;
-    this.currentHealth = maxHealth;
-  }
+// BaseComponent - Pure data containers
+class HealthComponent extends BaseComponent {
+   constructor(maxHealth) {
+      this.maxHealth = maxHealth;
+      this.currentHealth = maxHealth;
+   }
 }
 
-// System - Logic processors (future implementation)
-class MovementSystem extends System {
-  update(entities, delta) {
-    // Process movement for all entities with MovementComponent
-  }
+// BaseSystem - Logic processors (future implementation)
+class MovementSystem extends BaseSystem {
+   update(entities, delta) {
+      // Process movement for all entities with MovementComponent
+   }
 }
 ```
 
@@ -206,12 +266,12 @@ Environment    Asset Loading   Menu UI    Core Gameplay
    Setup       (Dev Graphics)  Interface   Player Control
 ```
 
-### Logger System
+### Logger BaseSystem
 
 All output uses the environment-aware Logger system:
 
 ```javascript
-import Logger from './core/Logger.js';
+import Logger from '@/core/Logger.js';
 
 // Replaces console.log throughout the codebase
 Logger.debug('Player spawned at', x, y); // Only in debug mode
@@ -231,7 +291,7 @@ Logger.error('Failed to load asset'); // Critical problems
 
 During development, the game uses simple colored shapes for rapid prototyping:
 
-| Entity Type     | Development Graphics            | Production Ready |
+| BaseEntity Type | Development Graphics            | Production Ready |
 | --------------- | ------------------------------- | ---------------- |
 | **Player**      | Blue 64x64px rectangle          | ✅ Functional    |
 | **Enemies**     | Red rectangles (various sizes)  | 🔄 Coming Soon   |
@@ -275,19 +335,19 @@ space-shooter/
 │   │   └── GameScene.js    # Primary gameplay scene with full ECS integration
 │   │
 │   ├── entities/           # ✅ Game entities (ECS-based)
-│   │   ├── Entity.js       # Base entity class (extends Phaser.Rectangle)
+│   │   ├── BaseEntity.js       # Base entity class (extends Phaser.Rectangle)
 │   │   ├── Projectile.js   # ✅ Projectile entities with object pooling
 │   │   └── Enemy.js        # ✅ AI-driven enemy entities with state machines
 │   │
 │   ├── components/         # ✅ ECS components (data containers)
-│   │   ├── Component.js    # Base component class
+│   │   ├── BaseComponent.js    # Base component class
 │   │   ├── HealthComponent.js    # Health and damage management
 │   │   ├── MovementComponent.js  # Movement with AI patterns
 │   │   ├── WeaponComponent.js    # ✅ Weapon stats, fire rates, upgrades
 │   │   └── CollisionComponent.js # ✅ Collision layers and response behaviors
 │   │
 │   ├── systems/            # ✅ ECS systems (game logic)
-│   │   ├── System.js       # Base system class
+│   │   ├── BaseSystem.js       # Base system class
 │   │   ├── WeaponSystem.js # ✅ Weapon firing and projectile creation
 │   │   ├── CollisionSystem.js # ✅ Spatial grid collision detection
 │   │   └── EnemySpawnSystem.js # ✅ Wave generation and enemy AI
@@ -352,7 +412,7 @@ npm run test:coverage
 ```javascript
 // tests/utils/MathUtils.test.js
 import { describe, it, expect } from 'vitest';
-import { MathUtils } from '../../src/utils/MathUtils.js';
+import { MathUtils } from '@/utils/MathUtils.js';
 
 describe('MathUtils', () => {
   it('should calculate distance between two points', () => {
@@ -384,21 +444,21 @@ Primary testing method for gameplay and integration:
 - **Frame Rate**: 125 FPS sustained (208% of 60 FPS target) ✅
 - **Memory Usage**: 33-45MB total (well under 100MB target) ✅
 - **Load Time**: ~2 seconds (under 3 second target) ✅
-- **Entity Management**: 258 entities handled efficiently ✅
+- **BaseEntity Management**: 258 entities handled efficiently ✅
 - **Code Quality**: 100% ESLint pass rate, zero console.log statements ✅
 
 ### Performance Optimizations Implemented
 
 - **Object Pooling**: 100 projectiles per pool (player/enemy) with 0% pool misses ✅
 - **Spatial Grid Collision**: 64px grid system for O(1) collision detection ✅
-- **Efficient Entity Updates**: Only active entities processed in update loops ✅
+- **Efficient BaseEntity Updates**: Only active entities processed in update loops ✅
 - **Memory Management**: Automatic cleanup and pooling prevents memory leaks ✅
 - **Physics Optimization**: Lightweight collision with proper body management ✅
 
 ### Performance Monitoring
 
 - **Real-time FPS**: Displayed in debug mode
-- **Entity Count**: Live tracking of active entities
+- **BaseEntity Count**: Live tracking of active entities
 - **Pool Usage**: Monitor projectile pool efficiency
 - **Collision Performance**: Spatial grid performance metrics
 - **Memory Profiling**: Browser dev tools integration
@@ -511,7 +571,7 @@ npm run build -- --mode production
 
 **Achievements:**
 
-- ✅ **Complete Weapon System**: 3 weapon types with object pooling and switching
+- ✅ **Complete Weapon BaseSystem**: 3 weapon types with object pooling and switching
 - ✅ **Enemy AI & Spawning**: 3 enemy types with formation flight and wave progression
 - ✅ **Advanced Collision Detection**: Spatial grid optimization with collision layers
 - ✅ **Game State Management**: Score, lives, progression, achievements, and persistence
@@ -521,7 +581,7 @@ npm run build -- --mode production
 
 - **8 New Systems**: WeaponSystem, CollisionSystem, EnemySpawnSystem, GameStateManager
 - **5 Enhanced Components**: WeaponComponent, CollisionComponent, MovementComponent upgrades
-- **2 New Entity Types**: Projectile (pooled), Enemy (AI-driven)
+- **2 New BaseEntity Types**: Projectile (pooled), Enemy (AI-driven)
 - **Architecture**: Clean ECS with proper separation of concerns
 - **Code Quality**: 100% ESLint compliance, comprehensive logging
 
@@ -587,37 +647,37 @@ npm run build -- --mode production
 
 ### Adding New Features
 
-**Entity Component System Pattern:**
+**BaseEntity BaseComponent BaseSystem Pattern:**
 
 ```javascript
-// 1. Create Component (data only)
-export class NewComponent extends Component {
-  constructor(data) {
-    super();
-    this.someProperty = data;
-  }
+// 1. Create BaseComponent (data only)
+export class NewComponent extends BaseComponent {
+   constructor(data) {
+      super();
+      this.someProperty = data;
+   }
 }
 
-// 2. Add to Entity
+// 2. Add to BaseEntity
 entity.addComponent(new NewComponent(data));
 
-// 3. Create System (logic only)
-export class NewSystem extends System {
-  update(entities, delta) {
-    entities.forEach(entity => {
-      const component = entity.getComponent(NewComponent);
-      if (component) {
-        // Process logic here
-      }
-    });
-  }
+// 3. Create BaseSystem (logic only)
+export class NewSystem extends BaseSystem {
+   update(entities, delta) {
+      entities.forEach(entity => {
+         const component = entity.getComponent(NewComponent);
+         if (component) {
+            // Process logic here
+         }
+      });
+   }
 }
 ```
 
 **Logger Usage:**
 
 ```javascript
-import Logger from '../core/Logger.js';
+import Logger from '@/core/Logger.js';
 
 // Replace console.log with appropriate Logger method
 Logger.debug('Detailed debug info', data); // Development only

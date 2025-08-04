@@ -17,6 +17,7 @@ class Logger {
    */
   static init() {
     if (this.isInitialized) {
+      alert('ALREADY INITED');
       return;
     }
 
