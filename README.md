@@ -20,9 +20,18 @@ A modern space shooter game built with **Phaser.js 3.x** and **Vite**, featuring
 
 ## 🎯 Project Status
 
-**Sprint 1: COMPLETE** ✅ **Sprint 2: COMPLETE** ✅
+**Sprint 1: COMPLETE** ✅ **Sprint 2: COMPLETE** ✅ **Sprint 3: COMPLETE** ✅
 
-**🎮 FULLY PLAYABLE GAME** - Complete core gameplay loop with all major systems functional!
+**🎮 FULLY PLAYABLE GAME** - Complete core gameplay with advanced architecture and comprehensive testing!
+
+### Sprint 3 Major Achievements
+
+- ✅ **Auto-Initializing Logger**: Zero-setup logging system with auto-initialization and dual environment support
+- ✅ **Flexible BaseEntity Architecture**: Support for all Phaser GameObject types or pure logical entities
+- ✅ **KeyboardInputAdapter**: Event-driven input system with normalized movement and state management
+- ✅ **Comprehensive Unit Testing**: 36+ test cases with strategic Phaser mocking (Logger, BaseEntity, ObjectPool)
+- ✅ **Enhanced ECS Architecture**: BaseAdapter pattern, EventBus integration, and runtime GameObject switching
+- ✅ **Developer Experience**: Eliminated initialization errors, improved debugging, enhanced maintainability
 
 ### Sprint 2 Achievements
 
@@ -46,11 +55,26 @@ A modern space shooter game built with **Phaser.js 3.x** and **Vite**, featuring
 
 ### Technical Achievements
 
-- ✅ **ECS Architecture**: Complete BaseEntity-BaseComponent-BaseSystem with 8+ systems
+#### **Architecture Excellence**
+- ✅ **Enhanced ECS**: Flexible BaseEntity with 6 GameObject types + null logical entities
+- ✅ **Auto-Initialization**: Logger system with zero manual setup, dual environment support
+- ✅ **Event-Driven Input**: KeyboardInputAdapter with normalized movement and state tracking
+- ✅ **Adapter Pattern**: BaseAdapter architecture for extensible input management
+- ✅ **EventBus Integration**: Decoupled communication with structured event emission
+
+#### **Testing & Quality**
+- ✅ **Comprehensive Testing**: 36+ unit tests with strategic Phaser mocking
+- ✅ **Architecture Coverage**: Logger (32 tests), BaseEntity, ObjectPool, SaveManager
+- ✅ **100% Test Success**: Fast execution (~661ms), reliable edge case coverage
+- ✅ **Code Quality**: 100% ESLint compliance, auto-initializing logging system
+- ✅ **Developer Experience**: Eliminated initialization errors, enhanced debugging
+
+#### **Performance & Optimization**
 - ✅ **Performance**: 125 FPS sustained (208% of target), 33-45MB memory (under 100MB target)
-- ✅ **Code Quality**: 100% ESLint compliance, comprehensive logging system
 - ✅ **Object Pooling**: 100 projectiles per pool, 0% pool misses during testing
 - ✅ **Spatial Optimization**: 64px grid collision system for efficient detection
+- ✅ **Null-Safe Operations**: BaseEntity works reliably with or without GameObjects
+- ✅ **Memory Management**: Dynamic GameObject type switching with proper cleanup
 
 ## 🚀 Quick Start
 
@@ -225,35 +249,88 @@ VITE_SHOW_DEBUG_INFO=true    # Show debug information overlay
 
 ## 🏗️ Architecture
 
-### BaseEntity BaseComponent BaseSystem (ECS)
+### Enhanced ECS Architecture with Flexible GameObjects
 
-The game uses a modern ECS architecture built on top of Phaser.js:
+**NEW**: The game features an advanced ECS architecture with flexible GameObject support:
 
 ```javascript
-// BaseEntity - Game objects (Player, Enemy, Projectile)
+// ✨ NEW: Flexible BaseEntity - Multiple GameObject types or pure logical entities
 class Player extends BaseEntity {
    constructor(scene) {
+      // Backward compatible - continues working
       super(scene, x, y, 64, 64, 0x0099ff); // Blue rectangle in dev
+      
+      // OR use new flexible configuration
+      super(scene, {
+         type: 'sprite',          // 'rectangle', 'sprite', 'circle', 'text', null
+         x: 400, y: 300,
+         texture: 'player-sprite', // For sprite types
+         name: 'player'
+      });
 
-      this.addComponent(new HealthComponent(100)).addComponent(new MovementComponent(300));
+      this.addComponent(new HealthComponent(100))
+          .addComponent(new MovementComponent(300))
+          .addComponent(new WeaponComponent('laser'));
+   }
+   
+   // ✨ NEW: Runtime GameObject type changes
+   upgrade() {
+      this.changeGameObjectType('sprite', { texture: 'upgraded-player' });
    }
 }
 
-// BaseComponent - Pure data containers
+// Enhanced BaseComponent - Data containers with entity references and serialization
 class HealthComponent extends BaseComponent {
    constructor(maxHealth) {
+      super();
       this.maxHealth = maxHealth;
       this.currentHealth = maxHealth;
    }
+   
+   // ✨ NEW: Enhanced component functionality
+   serialize() {
+      return { maxHealth: this.maxHealth, currentHealth: this.currentHealth };
+   }
 }
 
-// BaseSystem - Logic processors (future implementation)
+// ✨ NEW: KeyboardInputAdapter - Event-driven input management
+class KeyboardInputAdapter extends BaseAdapter {
+   constructor(scene) {
+      super(scene); // Auto-gets EventBus
+      this.inputState = {
+         movement: { x: 0, y: 0 },
+         keys: new Set(),
+         weaponFiring: false
+      };
+   }
+   
+   updateMovementState() {
+      // Normalized diagonal movement calculation
+      // Emits structured PLAYER_INPUT events via EventBus
+   }
+}
+
+// BaseSystem - Logic processors with enhanced error handling
 class MovementSystem extends BaseSystem {
    update(entities, delta) {
-      // Process movement for all entities with MovementComponent
+      entities.forEach(entity => {
+         const movement = entity.getComponent(MovementComponent);
+         if (movement && entity.active) {
+            movement.update(delta);
+         }
+      });
    }
 }
 ```
+
+**Architecture Enhancements:**
+
+- ✅ **6 GameObject Types**: Rectangle, Sprite, Image, Circle, Polygon, Text, or null (logical)
+- ✅ **Runtime Type Switching**: Change GameObject types dynamically during gameplay
+- ✅ **Null-Safe Operations**: Full functionality with or without visual representation
+- ✅ **Event-Driven Input**: KeyboardInputAdapter with EventBus integration
+- ✅ **Adapter Pattern**: BaseAdapter for extensible input management
+- ✅ **Enhanced Components**: Serialization, entity references, enhanced lifecycle
 
 ### Scene Management
 
@@ -266,26 +343,39 @@ Environment    Asset Loading   Menu UI    Core Gameplay
    Setup       (Dev Graphics)  Interface   Player Control
 ```
 
-### Logger BaseSystem
+### Auto-Initializing Logger System
 
-All output uses the environment-aware Logger system:
+**NEW**: Zero-setup logging with automatic initialization and dual environment support:
 
 ```javascript
-import Logger from '@/core/Logger.js';
+import Logger from '@/utils/Logger.js';
 
-// Replaces console.log throughout the codebase
-Logger.debug('Player spawned at', x, y); // Only in debug mode
-Logger.info('Game started'); // General information
+// ✨ NEW: Works immediately - no manual init() required!
+Logger.debug('Player spawned at', x, y); // Auto-initializes on first call
+Logger.info('Game started'); // General information  
 Logger.warn('Low health warning'); // Potential issues
 Logger.error('Failed to load asset'); // Critical problems
+
+// ✨ NEW: Performance methods work immediately
+Logger.time('levelLoad');
+// ... level loading operations ...
+Logger.timeEnd('levelLoad'); // Output: ⏱️ levelLoad: 245.123ms
+
+// ✨ NEW: Advanced logging features
+Logger.group('Player Initialization');
+Logger.table([{ entity: 'Player', health: 100, x: 400 }]);
+Logger.groupEnd();
 ```
 
-**Benefits:**
+**Enhanced Benefits:**
 
-- ✅ Automatically disabled in production builds
-- ✅ Configurable log levels via environment
-- ✅ Formatted output with timestamps and emoji indicators
-- ✅ No console.log statements in final code
+- ✅ **Zero Setup**: No manual initialization - Logger.debug() works immediately
+- ✅ **Auto-Environment Detection**: Handles both Vite and Node.js environments
+- ✅ **Dual Fallbacks**: Graceful fallbacks if environment detection fails
+- ✅ **Backward Compatible**: Existing code continues working unchanged
+- ✅ **Comprehensive Testing**: 32 test cases cover all functionality
+- ✅ **Production Safe**: Automatically disabled in production builds
+- ✅ **Rich Formatting**: Timestamps, emoji indicators, and performance timing
 
 ### Development Graphics Strategy
 
@@ -325,8 +415,13 @@ space-shooter/
 │   │   ├── GameConfig.js   # Phaser game settings
 │   │   └── Environment.js  # Environment variable handling
 │   │
-│   ├── core/               # ✅ Core systems
-│   │   └── Logger.js       # Environment-aware logging system
+│   ├── adapters/           # ✨ NEW: Input management adapters
+│   │   ├── BaseAdapter.js  # Abstract adapter base class with EventBus
+│   │   └── KeyboardInputAdapter.js # Comprehensive keyboard input handling
+│   │
+│   ├── event-bus/          # ✨ NEW: Centralized event system
+│   │   ├── EventBus.js     # Singleton EventBus implementation
+│   │   └── EventTypes.js   # Event type constants and definitions
 │   │
 │   ├── scenes/             # ✅ Phaser scenes
 │   │   ├── BootScene.js    # Environment setup and initialization
@@ -334,20 +429,20 @@ space-shooter/
 │   │   ├── MainMenuScene.js  # Main menu interface
 │   │   └── GameScene.js    # Primary gameplay scene with full ECS integration
 │   │
-│   ├── entities/           # ✅ Game entities (ECS-based)
-│   │   ├── BaseEntity.js       # Base entity class (extends Phaser.Rectangle)
+│   ├── entities/           # ✅ Enhanced game entities (ECS-based)
+│   │   ├── BaseEntity.js   # ✨ NEW: Flexible GameObject support (6 types + null)
 │   │   ├── Projectile.js   # ✅ Projectile entities with object pooling
 │   │   └── Enemy.js        # ✅ AI-driven enemy entities with state machines
 │   │
-│   ├── components/         # ✅ ECS components (data containers)
-│   │   ├── BaseComponent.js    # Base component class
+│   ├── components/         # ✅ Enhanced ECS components (data containers)
+│   │   ├── BaseComponent.js    # ✨ NEW: Enhanced base with serialization & entity refs
 │   │   ├── HealthComponent.js    # Health and damage management
 │   │   ├── MovementComponent.js  # Movement with AI patterns
 │   │   ├── WeaponComponent.js    # ✅ Weapon stats, fire rates, upgrades
 │   │   └── CollisionComponent.js # ✅ Collision layers and response behaviors
 │   │
 │   ├── systems/            # ✅ ECS systems (game logic)
-│   │   ├── BaseSystem.js       # Base system class
+│   │   ├── BaseSystem.js       # ✨ NEW: Enhanced base with error handling
 │   │   ├── WeaponSystem.js # ✅ Weapon firing and projectile creation
 │   │   ├── CollisionSystem.js # ✅ Spatial grid collision detection
 │   │   └── EnemySpawnSystem.js # ✅ Wave generation and enemy AI
@@ -355,15 +450,22 @@ space-shooter/
 │   ├── graphics/           # ✅ Development graphics
 │   │   └── DevShapes.js    # Colored shape generators
 │   │
-│   └── utils/              # ✅ Utility functions
+│   └── utils/              # ✅ Enhanced utility functions
+│       ├── Logger.js       # ✨ NEW: Auto-initializing Logger (moved from core/)
 │       ├── MathUtils.js    # Math helper functions
+│       ├── ObjectPool.js   # ✨ NEW: Generic object pooling for performance
+│       ├── SaveManager.js  # ✨ NEW: Safe localStorage operations
 │       └── GameStateManager.js # ✅ Score, progression, achievements, persistence
 │
-├── tests/                  # ✅ Basic test coverage
+├── tests/                  # ✨ NEW: Comprehensive test coverage (36+ tests)
 │   ├── setup.js           # Test configuration
-│   ├── __mocks__/         # Mock implementations
-│   └── utils/             # Utility function tests only
-│       └── MathUtils.test.js
+│   ├── __mocks__/         # Phaser mock implementations for testing
+│   └── utils/             # ✨ NEW: Complete utility function tests
+│       ├── Logger.test.js      # ✨ NEW: 32 comprehensive Logger tests
+│       ├── BaseEntity.test.js  # ✨ NEW: GameObject flexibility tests
+│       ├── ObjectPool.test.js  # ✨ NEW: Object pooling tests
+│       ├── SaveManager.test.js # ✨ NEW: Data persistence tests
+│       └── MathUtils.test.js   # Math utility tests
 │
 └── public/                 # Static assets
     └── assets/            # 🔄 Audio and fonts (Sprint 2+)

@@ -11,6 +11,10 @@ This document records the key architectural decisions made during the developmen
 - [ADR-005: BaseComponent as Data Containers](#adr-005-component-as-data-containers)
 - [ADR-006: Minimal Testing Strategy](#adr-006-minimal-testing-strategy)
 - [ADR-007: Direct Main Branch Development](#adr-007-direct-main-branch-development)
+- [ADR-008: Auto-Initializing Logger Architecture](#adr-008-auto-initializing-logger-architecture)
+- [ADR-009: Flexible BaseEntity GameObject Support](#adr-009-flexible-baseentity-gameobject-support)
+- [ADR-010: KeyboardInputAdapter Event-Driven Input](#adr-010-keyboardinputadapter-event-driven-input)
+- [ADR-011: Comprehensive Unit Testing with Phaser Mocking](#adr-011-comprehensive-unit-testing-with-phaser-mocking)
 
 ---
 
@@ -638,6 +642,382 @@ git commit -m "implement: feature description"
 
 ---
 
+## ADR-008: Auto-Initializing Logger Architecture
+
+**Status**: Accepted ✅  
+**Date**: Sprint 3  
+**Deciders**: Development Team
+
+### Context
+
+The original Logger system required explicit initialization before use (`Logger.init()` must be called first), creating dependency ordering requirements and potential runtime errors if initialization was forgotten. This pattern was error-prone and created friction in development workflow.
+
+### Decision
+
+Implement auto-initializing Logger architecture with lazy loading:
+
+- **Automatic Initialization**: Logger initializes on first method call
+- **Backward Compatibility**: Explicit `init()` still supported but optional
+- **Environment Handling**: Graceful fallbacks for both Vite and Node.js environments
+- **Error Recovery**: Safe defaults if environment variable access fails
+
+### Rationale
+
+**Benefits:**
+
+- **Developer Experience**: No manual initialization required - Logger.debug() works immediately
+- **Error Prevention**: Eliminates runtime errors from forgotten initialization
+- **Backward Compatibility**: Existing code continues working without changes
+- **Robust Environment Handling**: Works reliably across different runtime environments
+- **Performance**: Lazy initialization only occurs once, on first use
+
+**Alternatives Considered:**
+
+- **Static Initialization**: Would execute at module load, potentially before environment ready
+- **Required Manual Init**: Current approach, error-prone and developer-unfriendly
+- **Dependency Injection**: Too complex for logging utility
+
+### Implementation
+
+```javascript
+class Logger {
+  static _ensureInitialized() {
+    if (!this.isInitialized) {
+      // Auto-initialize with environment detection
+      this.debugMode = this._getEnvVariable('VITE_DEBUG_MODE') === 'true';
+      this.logLevel = this._getEnvVariable('VITE_LOG_LEVEL') || 'info';
+      this.levels = { debug: 0, info: 1, warn: 2, error: 3 };
+      this.isInitialized = true;
+    }
+  }
+
+  static debug(message, ...args) {
+    this._ensureInitialized(); // Auto-initialize
+    if (this.debugMode && this.shouldLog('debug')) {
+      const timestamp = new Date().toLocaleTimeString();
+      console.log(`🔍 ${timestamp} [DEBUG] ${message}`, ...args);
+    }
+  }
+
+  static _getEnvVariable(name) {
+    // Dual environment support with fallbacks
+    try {
+      return import.meta?.env?.[name] || process?.env?.[name] || undefined;
+    } catch {
+      return undefined;
+    }
+  }
+}
+```
+
+### Consequences
+
+**Positive:**
+
+- ✅ Zero setup required - Logger works immediately
+- ✅ Eliminates entire class of initialization errors
+- ✅ Maintains all existing functionality
+- ✅ Robust environment handling
+- ✅ Comprehensive test coverage (32 test cases)
+
+**Negative:**
+
+- ❌ Slight performance overhead on first call (negligible)
+- ❌ Less explicit about initialization timing
+- ❌ Environment detection logic more complex
+
+**Mitigation:**
+
+- Performance impact minimal and one-time only
+- Clear documentation about auto-initialization behavior
+- Comprehensive error handling for environment detection failures
+
+---
+
+## ADR-009: Flexible BaseEntity GameObject Support
+
+**Status**: Accepted ✅  
+**Date**: Sprint 3  
+**Deciders**: Development Team
+
+### Context
+
+The original BaseEntity class was rigid, only supporting Phaser Rectangle GameObjects. As development progressed, different entity types needed different visual representations (sprites, circles, text) or no visual representation at all (logical entities). The single GameObject type limited flexibility and forced workarounds.
+
+### Decision
+
+Implement flexible BaseEntity architecture supporting multiple GameObject types:
+
+- **Multiple GameObject Types**: Rectangle, Sprite, Image, Circle, Polygon, Text, or null
+- **Backward Compatibility**: Existing constructor signature continues working
+- **Configuration Object**: New flexible constructor supporting type-specific parameters
+- **Runtime Type Changes**: Ability to change GameObject type dynamically
+- **Null-Safe Operations**: Full functionality even without visual representation
+
+### Rationale
+
+**Benefits:**
+
+- **Maximum Flexibility**: Supports any Phaser GameObject type or pure logical entities
+- **Future-Proof**: Easy transition from dev graphics to final sprites
+- **Backward Compatible**: All existing code continues working unchanged
+- **Performance**: Object pooling works with any GameObject type
+- **Clean Separation**: Visual representation separated from entity logic
+
+**Alternatives Considered:**
+
+- **Multiple Entity Classes**: Would create inheritance complexity
+- **GameObject Factory**: Would require external factory management
+- **Composition Pattern**: Current approach IS composition pattern implementation
+
+### Implementation
+
+```javascript
+// Backward compatibility - continues working
+const player = new BaseEntity(scene, 100, 100, 64, 64, 0x0099ff, 'player');
+
+// New configuration object approach
+const sprite = new BaseEntity(scene, {
+  type: 'sprite',
+  x: 200, y: 200,
+  texture: 'player-sprite',
+  frame: 0,
+  name: 'sprite-player'
+});
+
+// Logical entity with no visual representation
+const controller = new BaseEntity(scene, {
+  type: null,
+  x: 300, y: 300,
+  name: 'game-controller'
+});
+
+// Dynamic type changes at runtime
+entity.changeGameObjectType('sprite', { texture: 'upgraded-player' });
+```
+
+### Consequences
+
+**Positive:**
+
+- ✅ Supports all Phaser GameObject types
+- ✅ Enables pure logical entities (null GameObject)
+- ✅ Perfect backward compatibility
+- ✅ Runtime type switching capability
+- ✅ Null-safe property delegation
+
+**Negative:**
+
+- ❌ More complex constructor logic
+- ❌ Additional configuration validation required
+- ❌ Multiple code paths to maintain
+
+**Mitigation:**
+
+- Comprehensive unit testing covers all GameObject types and edge cases
+- Clear documentation with examples for each type
+- Fallback strategies for invalid configurations
+
+---
+
+## ADR-010: KeyboardInputAdapter Event-Driven Input
+
+**Status**: Accepted ✅  
+**Date**: Sprint 3  
+**Deciders**: Development Team
+
+### Context
+
+Input handling was scattered across scenes and systems, creating tight coupling and making it difficult to implement features like input recording, remapping, or multi-input support. Direct Phaser input handling in GameScene created maintenance challenges and limited extensibility.
+
+### Decision
+
+Implement centralized KeyboardInputAdapter with event-driven architecture:
+
+- **Centralized Input**: Single source of truth for keyboard input
+- **Event-Driven**: Uses EventBus for decoupled communication
+- **State Management**: Comprehensive input state tracking
+- **Normalized Movement**: Proper diagonal movement calculation
+- **Structured Events**: Consistent event format with timestamps
+
+### Rationale
+
+**Benefits:**
+
+- **Separation of Concerns**: Input logic separated from game logic
+- **Extensible**: Easy to add new input types or features
+- **Testable**: Input logic can be unit tested independently
+- **Consistent**: Standardized input event format
+- **Maintainable**: Centralized input handling
+
+**Alternatives Considered:**
+
+- **Direct Scene Input**: Current approach, creates tight coupling
+- **Input Manager Class**: Similar to adapter but less flexible
+- **Phaser Input Plugin**: Would require plugin development overhead
+
+### Implementation
+
+```javascript
+// KeyboardInputAdapter with comprehensive state management
+class KeyboardInputAdapter extends BaseAdapter {
+  constructor(scene) {
+    super(scene);
+    
+    this.inputState = {
+      movement: { x: 0, y: 0 },
+      keys: new Set(),
+      weaponFiring: false
+    };
+    
+    this.movementKeys = {
+      'KeyW': { x: 0, y: -1 },
+      'KeyA': { x: -1, y: 0 },
+      'KeyS': { x: 0, y: 1 },
+      'KeyD': { x: 1, y: 0 },
+      // Arrow keys also supported
+    };
+  }
+
+  updateMovementState() {
+    // Normalized diagonal movement calculation
+    let x = 0, y = 0;
+    for (const keyCode of this.inputState.keys) {
+      if (this.movementKeys[keyCode]) {
+        const direction = this.movementKeys[keyCode];
+        x += direction.x;
+        y += direction.y;
+      }
+    }
+    
+    // Normalize diagonal movement
+    if (x !== 0 && y !== 0) {
+      const length = Math.sqrt(x * x + y * y);
+      x /= length;
+      y /= length;
+    }
+    
+    this.inputState.movement = { x, y };
+  }
+}
+```
+
+### Consequences
+
+**Positive:**
+
+- ✅ Clean separation of input and game logic
+- ✅ Centralized input state management
+- ✅ Event-driven architecture enables extensibility
+- ✅ Proper diagonal movement normalization
+- ✅ Comprehensive input state tracking
+
+**Negative:**
+
+- ❌ Additional abstraction layer
+- ❌ More complex setup compared to direct input
+- ❌ EventBus dependency for communication
+
+**Mitigation:**
+
+- Clear documentation and examples for usage
+- BaseAdapter provides common adapter functionality
+- EventBus provides consistent communication pattern
+
+---
+
+## ADR-011: Comprehensive Unit Testing with Phaser Mocking
+
+**Status**: Accepted ✅  
+**Date**: Sprint 3  
+**Deciders**: Development Team
+
+### Context
+
+The original minimal testing strategy only covered pure utility functions, leaving complex game architecture components untested. As the codebase matured with sophisticated ECS base classes, adapters, and Logger systems, the lack of testing created maintenance risks and reduced confidence in refactoring.
+
+### Decision
+
+Implement comprehensive unit testing with strategic Phaser mocking:
+
+- **Expanded Test Coverage**: Test core architecture components beyond just utilities
+- **Phaser Mocking Strategy**: Mock Phaser dependencies where necessary for testing
+- **36+ Test Cases**: Comprehensive test suites for Logger, BaseEntity, and ObjectPool
+- **Testing Architecture Components**: Test BaseAdapter, EventBus integration, and ECS patterns
+- **Maintain Minimal Philosophy**: Still avoid testing visual/integration aspects
+
+### Rationale
+
+**Benefits:**
+
+- **Architecture Confidence**: Core systems have reliable test coverage
+- **Refactoring Safety**: Tests prevent regressions during code changes
+- **Documentation**: Tests serve as usage examples for complex components
+- **Quality Assurance**: Catch edge cases and error conditions
+- **Development Speed**: Faster feedback loop on architecture changes
+
+**Alternatives Considered:**
+
+- **Continue Minimal Testing**: Would leave architecture untested as complexity grows
+- **Full Integration Testing**: Too complex and fragile for game development
+- **Visual Testing**: Inappropriate for game graphics and animations
+
+### Implementation
+
+```javascript
+// Logger comprehensive testing (32 test cases)
+describe('Logger Auto-Initialization', () => {
+  it('should auto-initialize on first debug call', () => {
+    Logger.debug('test message');
+    expect(Logger.isInitialized).toBe(true);
+  });
+
+  it('should handle environment variable fallbacks', () => {
+    // Test dual environment support
+    // Test graceful fallbacks
+    // Test error recovery
+  });
+});
+
+// BaseEntity flexible GameObject testing
+describe('BaseEntity GameObject Types', () => {
+  it('should support rectangle creation (backward compatibility)', () => {
+    const entity = new BaseEntity(mockScene, 100, 100, 64, 64, 0xff0000);
+    expect(entity.gameObject).toBeInstanceOf(MockRectangle);
+  });
+
+  it('should support null GameObject for logical entities', () => {
+    const entity = new BaseEntity(mockScene, { type: null, x: 100, y: 100 });
+    expect(entity.gameObject).toBeNull();
+    expect(entity.x).toBe(100); // Null-safe property access
+  });
+});
+```
+
+### Consequences
+
+**Positive:**
+
+- ✅ Core architecture components have reliable test coverage
+- ✅ 36+ test cases provide comprehensive edge case coverage
+- ✅ Phaser mocking enables testing of game components
+- ✅ Tests serve as documentation for complex usage patterns
+- ✅ Maintains focus on testable architecture components
+
+**Negative:**
+
+- ❌ More complex test setup with mocking requirements
+- ❌ Test maintenance overhead as architecture evolves
+- ❌ Still avoid testing visual/integration aspects
+
+**Mitigation:**
+
+- Strategic mocking focuses on essential dependencies only
+- Clear separation between architecture testing and visual testing
+- Comprehensive documentation of testing patterns and approaches
+
+---
+
 ## Decision Summary
 
 | ADR     | Decision             | Status      | Impact                               |
@@ -649,6 +1029,10 @@ git commit -m "implement: feature description"
 | ADR-005 | BaseComponent Data Focus | ✅ Accepted | High - ECS implementation details    |
 | ADR-006 | Minimal Testing      | ✅ Accepted | Medium - Development process         |
 | ADR-007 | Single Branch        | ✅ Accepted | Low - Development workflow           |
+| ADR-008 | Auto-Init Logger     | ✅ Accepted | High - Eliminates initialization errors |
+| ADR-009 | Flexible BaseEntity  | ✅ Accepted | High - Maximum GameObject flexibility |
+| ADR-010 | KeyboardInputAdapter | ✅ Accepted | Medium - Centralized input handling |
+| ADR-011 | Comprehensive Testing| ✅ Accepted | Medium - Architecture test coverage |
 
 ---
 
@@ -656,24 +1040,60 @@ git commit -m "implement: feature description"
 
 ### Decisions to Revisit
 
-**ADR-002 (Development Graphics)**: Will need to transition to actual sprites in later sprints. Plan transition strategy and asset pipeline.
+**ADR-002 (Development Graphics)**: **READY FOR TRANSITION** - With flexible BaseEntity GameObject support (ADR-009), transitioning from dev graphics to sprites is now seamless. Plan asset pipeline and sprite loading strategy.
 
-**ADR-006 (Minimal Testing)**: As complexity grows, may need to expand testing strategy, particularly for save/load systems and game state management.
+**ADR-006 vs ADR-011 (Testing Strategy Evolution)**: Successfully evolved from minimal testing to comprehensive unit testing with Phaser mocking. Continue expanding test coverage for new systems while maintaining focus on architecture components.
+
+**ADR-009 (BaseEntity Flexibility)**: Monitor performance impact of flexible GameObject types and consider optimization strategies if needed.
+
+### Recently Implemented Decisions
+
+**Sprint 3 Achievements:**
+
+- ✅ **Auto-Initializing Logger** (ADR-008): Eliminated initialization errors and improved developer experience
+- ✅ **Flexible BaseEntity** (ADR-009): Maximum GameObject flexibility with backward compatibility
+- ✅ **KeyboardInputAdapter** (ADR-010): Centralized, event-driven input handling
+- ✅ **Comprehensive Testing** (ADR-011): 36+ test cases with Phaser mocking strategy
 
 ### Upcoming Decisions
 
-**Sprint 2 Decisions Needed:**
+**Sprint 4+ Decisions Needed:**
 
-- Audio system architecture (Web Audio API vs Phaser Audio)
-- Particle system approach (custom vs Phaser built-in)
-- Save game data format and versioning strategy
-- Performance optimization techniques (object pooling, etc.)
+- **Mobile Input Adapter**: Extend input adapter pattern for touch/mobile input
+- **Audio System Architecture**: Web Audio API integration with EventBus pattern
+- **Particle System Integration**: BaseEntity-based particle system design
+- **Save Game Versioning**: Data format evolution and migration strategies
+- **Performance Monitoring**: Real-time performance metrics and optimization
 
 **Future Architecture Considerations:**
 
-- Multiplayer support (if required)
-- Mobile input handling
-- Progressive Web App features
-- Content delivery and asset optimization
+- **Multi-Platform Input**: Extending adapter pattern for gamepad, touch, and keyboard
+- **Component Serialization**: Enhanced save/load support with component versioning
+- **Asset Management**: Integration with flexible BaseEntity GameObject types
+- **Progressive Web App**: Offline support and caching strategies
+- **Performance Optimization**: Object pooling patterns for all GameObject types
 
-This ADR document will be updated as new architectural decisions are made throughout the project development.
+### Architecture Maturity Assessment
+
+The project architecture has significantly matured through Sprint 3:
+
+**✅ Completed Foundations:**
+- Flexible ECS with multiple GameObject support
+- Auto-initializing utility systems
+- Event-driven architecture patterns
+- Comprehensive unit testing approach
+- Centralized input management
+
+**🔄 Continuing Evolution:**
+- Performance optimization patterns
+- Asset pipeline integration
+- Advanced game systems (audio, particles, etc.)
+- Cross-platform compatibility
+
+**🎯 Next Phase Focus:**
+- Multi-modal input support (mobile, gamepad)
+- Advanced game systems integration
+- Performance monitoring and optimization
+- Asset pipeline maturation
+
+This ADR document will be updated as new architectural decisions are made throughout the project development. The strong architectural foundation established in Sprint 3 provides excellent support for future feature development.

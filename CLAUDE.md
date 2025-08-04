@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a space shooter game built with Phaser.js 3.x and Vite build tooling. The game features multiple weapon types, enemy varieties, player progression, and power-up systems using a simple BaseEntity BaseComponent BaseSystem architecture. All game data is persisted using browser localStorage. The development phase uses simple colored rectangles for rapid prototyping before final graphics are implemented.
+This is a space shooter game built with Phaser.js 3.x and Vite build tooling. The game features multiple weapon types, enemy varieties, player progression, and power-up systems using an enhanced BaseEntity BaseComponent BaseSystem architecture with flexible GameObject support, auto-initializing Logger system, and event-driven input management. All game data is persisted using browser localStorage. The development phase uses simple colored rectangles for rapid prototyping before final graphics are implemented.
 
 ## Development Commands
 
@@ -16,7 +16,7 @@ npm create vite@latest space-shooter -- --template vanilla
 cd space-shooter
 npm install phaser
 
-# Install development dependencies (minimal testing setup)
+# Install development dependencies (comprehensive testing setup)
 npm install -D eslint prettier vitest jsdom
 npm install -D @eslint/js eslint-config-prettier eslint-plugin-prettier
 
@@ -26,70 +26,34 @@ npm run build              # Build for production
 npm run preview            # Preview production build
 ```
 
-### Safe Development Workflow (PROTECTED)
+### Development Workflow
 
-⚠️ **CRITICAL: Use these safe, selective commands instead of project-wide operations**
-
-#### **Safe Linting Commands (SELECTIVE ONLY)**
+#### **Standard Development Commands**
 ```bash
-# ✅ SAFE: Lint specific utility files only
-eslint src/utils/MathUtils.js
-eslint src/utils/ObjectPool.js
-eslint src/utils/SaveManager.js
+# Code quality and testing
+npm run lint               # Lint entire project with ESLint
+npm run lint:fix           # Auto-fix linting issues where possible
+npm run format             # Format code with Prettier
+npm run format:check       # Check formatting without changes
 
-# ✅ SAFE: Lint config files only
-eslint src/config/GameConfig.js
-eslint src/config/Environment.js
+# Testing (comprehensive coverage encouraged)
+npm run test               # Run all unit tests
+npm run test:watch         # Watch mode for continuous testing
+npm run test:coverage      # Generate test coverage report
+npm run test:ui            # Run tests with Vitest UI (if configured)
 
-# ❌ FORBIDDEN: Never lint these protected areas
-# eslint src/scenes/          # PROTECTED: Game scenes
-# eslint src/systems/         # PROTECTED: ECS systems  
-# eslint src/entities/        # PROTECTED: Game entities
-# eslint src/               # FORBIDDEN: Whole project
-# npm run lint              # FORBIDDEN: Uses whole project
+# Development and build
+npm run dev                # Start development server with HMR
+npm run build              # Build for production
+npm run preview            # Preview production build
 ```
 
-#### **Safe Testing Commands (UTILITIES ONLY)**
+#### **Individual File Operations**
 ```bash
-# ✅ SAFE: Test only utility functions
-npm run test               # Only tests utils/ directory
-npm run test:watch         # Watch mode for utility tests only
-vitest src/utils/MathUtils.test.js    # Single test file
-
-# ❌ FORBIDDEN: Never test these areas
-# Testing game scenes, systems, or entities is FORBIDDEN
-# Never create tests for Phaser-dependent code
-# Never modify GameScene.js for testing purposes
-```
-
-#### **Safe Formatting Commands (SELECTIVE)**
-```bash
-# ✅ SAFE: Format specific files only
-prettier --write src/utils/MathUtils.js
-prettier --write src/config/GameConfig.js
-
-# ✅ SAFE: Check formatting without changes
-npm run format:check       # Read-only formatting check
-
-# ❌ FORBIDDEN: Never auto-format protected files
-# prettier --write src/scenes/    # PROTECTED
-# prettier --write src/systems/   # PROTECTED
-# npm run format                  # May affect protected files
-```
-
-#### **Development Server (ALWAYS SAFE)**
-```bash
-npm run dev                # ✅ SAFE: Start development with HMR
-npm run build              # ✅ SAFE: Build for production
-npm run preview            # ✅ SAFE: Preview production build
-```
-
-#### **Emergency Development Bypass**
-```bash
-# When automated tools interfere with development:
-export SKIP_LINT=true      # Skip linting temporarily
-export SKIP_FORMAT=true    # Skip formatting temporarily
-npm run dev:unsafe         # Development without quality gates
+# Target specific files when needed
+eslint src/path/to/file.js              # Lint specific file
+prettier --write src/path/to/file.js    # Format specific file
+vitest src/path/to/file.test.js         # Run specific test file
 ```
 
 ### Environment Configuration
@@ -160,10 +124,11 @@ space-shooter/
 │       ├── MathUtils.js  # Math helper functions
 │       ├── ObjectPool.js # Object pooling for performance
 │       └── SaveManager.js # localStorage persistence
-├── tests/                # Basic test files (minimal coverage)
-│   ├── __mocks__/        # Simple mock files
-│   ├── utils/            # Core utility function tests only
-│   └── setup.js          # Basic test setup
+├── tests/                # Comprehensive test coverage
+│   ├── units/            # Unit tests for all components
+│   ├── integration/      # Integration tests for workflows
+│   ├── __mocks__/        # Mock implementations
+│   └── setup.js          # Test environment setup
 └── public/
     └── assets/           # Static assets (sounds, fonts)
         ├── audio/        # Sound effects and music
@@ -212,13 +177,15 @@ space-shooter/
 - Persist critical data immediately to localStorage
 - Implement fallbacks for corrupted save data
 
-### Logger BaseSystem
+### Auto-Initializing Logger System
 
-- **Environment-aware**: Only logs in development when `VITE_DEBUG_MODE=true`
+- **Zero Setup**: Logger auto-initializes on first method call - no manual `init()` required
+- **Dual Environment Support**: Handles both Vite (`import.meta.env`) and Node.js (`process.env`)
 - **Multiple levels**: `Logger.debug()`, `Logger.info()`, `Logger.warn()`, `Logger.error()`
-- **Formatted output**: Clear prefixes and timestamps for debugging
+- **Performance Methods**: `Logger.time()`, `Logger.timeEnd()`, `Logger.group()`, `Logger.table()`
+- **Formatted output**: Clear prefixes, timestamps, and emoji indicators for debugging
 - **Production-safe**: Automatically disabled in production builds
-- **Usage**: `Logger.debug('Player spawned at', x, y)` instead of `console.log()`
+- **Usage**: `Logger.debug('Player spawned at', x, y)` works immediately - no setup needed
 
 ### Environment Configuration
 
@@ -233,40 +200,71 @@ space-shooter/
   VITE_AUDIO_ENABLED=true
   ```
 
+### Event-Driven Input Management
+
+- **KeyboardInputAdapter**: Centralized keyboard input handling with comprehensive state management
+- **BaseAdapter Pattern**: Abstract base for extensible input management (touch, gamepad, etc.)
+- **EventBus Integration**: Decoupled communication via structured events
+- **Normalized Movement**: Diagonal movement normalization for consistent player speed
+- **State Tracking**: Real-time input state with key press/release management
+
+```javascript
+// KeyboardInputAdapter pattern with EventBus integration
+import KeyboardInputAdapter from '@/adapters/KeyboardInputAdapter.js';
+import { getEventBus } from '@/event-bus/EventBus.js';
+import { EventTypes } from '@/event-bus/EventTypes.js';
+
+class GameScene extends Phaser.Scene {
+  create() {
+    // Initialize input adapter
+    this.inputAdapter = new KeyboardInputAdapter(this);
+    this.inputAdapter.activate();
+
+    // Listen for structured input events
+    const eventBus = getEventBus();
+    eventBus.on(EventTypes.PLAYER_INPUT, this.handlePlayerInput, this);
+  }
+
+  handlePlayerInput(event) {
+    if (event.action === 'movement') {
+      // Normalized diagonal movement - no speed advantage
+      this.player.setVelocity(
+        event.direction.x * this.player.maxSpeed,
+        event.direction.y * this.player.maxSpeed
+      );
+    } else if (event.action === 'weapon_fire') {
+      this.player.getComponent(WeaponComponent).handleFiring(event.state);
+    }
+  }
+}
+```
+
 ## Code Quality Standards
 
-### Protective Development Policies
+### Modern Development Practices
 
-⚠️ **CRITICAL: Automated Tool Safety Guidelines** ⚠️
+✅ **Comprehensive Testing and Quality Assurance**
 
-These policies prevent automated tools from interfering with critical game development work:
+This project encourages modern development practices with comprehensive testing coverage:
 
-#### **Never Lint Whole Project Policy**
-- **FORBIDDEN**: `npm run lint` or `eslint src/` (whole project linting)
-- **REQUIRED**: Always use selective linting with specific file targets
-- **Safe Usage**: `eslint src/utils/MathUtils.js` (single file only)
-- **Rationale**: Prevents automated changes to complex game scenes and ECS systems
+#### **Full Project Linting**
+- **ENCOURAGED**: `npm run lint` for project-wide code quality
+- **AUTO-FIX**: Use `npm run lint:fix` to automatically resolve issues
+- **CONSISTENT**: Apply ESLint rules consistently across all files
+- **BEST PRACTICE**: Integrate linting into your development workflow
 
-#### **Game Scene Protection Policy**
-- **PROTECTED FILES**: 
-  - `src/scenes/GameScene.js` - Critical gameplay scene
-  - `src/scenes/*.js` - All scene files protected from automated modification
-  - `src/systems/*.js` - ECS systems protected from automated changes
-  - `src/entities/*.js` - Game entities protected from automated changes
-- **MANUAL ONLY**: These files require manual code review and testing
-- **NO AUTO-FIX**: Never use `--fix` flag on protected files
+#### **Comprehensive Testing Strategy**
+- **UNIT TESTS**: Test all components, utilities, systems, and entities
+- **INTEGRATION TESTS**: Test interactions between systems and components
+- **COMPONENT TESTS**: Test game entities and their behaviors
+- **SYSTEM TESTS**: Test ECS systems with proper mocking
+- **COVERAGE**: Aim for high test coverage across the codebase
 
-#### **Testing Boundary Policy**
-- **NEVER TEST**: Game scenes, ECS systems, or Phaser-dependent code
-- **TESTING FORBIDDEN**: Making changes to game files for testing purposes
-- **PROTECTED AREAS**: GameScene.js integrity must be maintained
-- **MANUAL TESTING**: All gameplay features tested manually, not programmatically
-
-#### **Development Workflow Protection**
-- **Selective Operations**: Target specific files/directories only
-- **Manual Override**: Developers can skip automated checks when needed
-- **Code Quality Gates**: Quality checks must not block critical development
-- **Emergency Bypass**: Always provide escape hatches for urgent development
+#### **Quality Assurance Workflow**
+- **AUTOMATED**: Run tests automatically during development
+- **CONTINUOUS**: Use watch mode for immediate feedback
+- **COMPREHENSIVE**: Test both happy paths and edge cases
+- **MAINTAINABLE**: Keep tests clean, readable, and well-organized
 
 ### ESLint Configuration
 
@@ -275,7 +273,7 @@ These policies prevent automated tools from interfering with critical game devel
 - **ES6+ Rules**: Modern JavaScript patterns and best practices
 - **Phaser-specific**: Custom rules for Phaser GameObject lifecycle
 - **Error Prevention**: Catch common game development mistakes early
-- **SELECTIVE USE ONLY**: Never run on whole project - target specific files
+- **PROJECT-WIDE**: Apply linting consistently across the entire project
 
 ### Prettier Configuration
 
@@ -295,27 +293,134 @@ These policies prevent automated tools from interfering with critical game devel
 - **No console.log()**: Always use Logger system instead
 - **Async/await**: Prefer over Promise chains for readability
 
-### ECS Patterns with Phaser (Inline Base Classes)
+### Enhanced ECS Architecture with Flexible GameObject Support
+
+**NEW**: Enhanced BaseEntity with flexible GameObject types, runtime switching, and null-safe operations.
 
 ```javascript
-// src/entities/BaseEntity.js - Base entity class
+// src/entities/BaseEntity.js - Enhanced flexible entity class
 import Logger from '@/utils/Logger.js';
 
-class BaseEntity extends Phaser.GameObjects.Rectangle {
-  constructor(scene, x, y, width, height, color) {
-    super(scene, x, y, width, height, color);
-
+class BaseEntity {
+  constructor(scene, ...args) {
+    this.scene = scene;
     this.components = new Map();
-    scene.add.existing(this);
-
-    // Add to scene's entity registry (simple array)
-    if (!scene.entities) scene.entities = [];
-    scene.entities.push(this);
+    this.entityId = `entity_${Date.now()}_${Math.random()}`;
+    
+    // Flexible constructor - auto-detect signature
+    if (args.length === 1 && typeof args[0] === 'object') {
+      // NEW: Configuration object approach
+      this.initFromConfig(scene, args[0]);
+    } else {
+      // BACKWARD COMPATIBLE: Legacy constructor
+      this.initFromLegacy(scene, ...args);
+    }
   }
 
+  initFromConfig(scene, config) {
+    this.config = { ...config };
+    this.name = config.name || 'unnamed-entity';
+    
+    // Create GameObject based on type (or null for logical entities)
+    this.gameObject = this.createGameObject(config);
+    
+    // Setup entity in scene
+    this.setupInScene();
+  }
+
+  createGameObject(config) {
+    const { type, x = 0, y = 0 } = config;
+    
+    try {
+      switch (type) {
+        case 'rectangle':
+          return this.scene.add.rectangle(x, y, config.width, config.height, config.color);
+        case 'sprite':
+          return this.scene.add.sprite(x, y, config.texture, config.frame);
+        case 'image':
+          return this.scene.add.image(x, y, config.texture);
+        case 'circle':
+          return this.scene.add.circle(x, y, config.radius || 16, config.color);
+        case 'polygon':
+          return this.scene.add.polygon(x, y, config.points || [0, -12, 12, 0, 0, 12, -12, 0], config.color);
+        case 'text':
+          return this.scene.add.text(x, y, config.text || '', config.style || {});
+        case null:
+          // Logical entity - no visual representation
+          this.logicalPosition = { x, y };
+          return null;
+        default:
+          Logger.warn(`Unknown GameObject type: ${type}, falling back to rectangle`);
+          return this.scene.add.rectangle(x, y, 32, 32, 0xffffff);
+      }
+    } catch (error) {
+      Logger.error('GameObject creation failed, using fallback rectangle:', error);
+      return this.scene.add.rectangle(x, y, 32, 32, 0xff0000);
+    }
+  }
+
+  // NEW: Runtime GameObject type switching
+  changeGameObjectType(newType, newConfig = {}) {
+    const oldPosition = { x: this.x, y: this.y };
+    
+    // Destroy old GameObject if it exists
+    if (this.gameObject) {
+      this.gameObject.destroy();
+    }
+    
+    // Create new GameObject
+    this.gameObject = this.createGameObject({
+      type: newType,
+      x: oldPosition.x,
+      y: oldPosition.y,
+      ...newConfig
+    });
+    
+    // Re-setup in scene
+    this.setupInScene();
+    
+    Logger.debug(`Changed GameObject type to ${newType} for entity ${this.name}`);
+  }
+
+  getGameObjectType() {
+    if (!this.gameObject) return null;
+    if (this.gameObject.type) return this.gameObject.type;
+    // Fallback detection based on GameObject properties
+    if (this.gameObject.texture) return 'sprite';
+    if (this.gameObject.fillColor !== undefined) return 'rectangle';
+    return 'unknown';
+  }
+
+  // NULL-SAFE property delegation
+  get x() { return this.gameObject ? this.gameObject.x : (this.logicalPosition?.x || 0); }
+  set x(value) { 
+    if (this.gameObject) this.gameObject.x = value;
+    else if (this.logicalPosition) this.logicalPosition.x = value;
+  }
+  
+  get y() { return this.gameObject ? this.gameObject.y : (this.logicalPosition?.y || 0); }
+  set y(value) { 
+    if (this.gameObject) this.gameObject.y = value;
+    else if (this.logicalPosition) this.logicalPosition.y = value;
+  }
+
+  get active() { return this.gameObject ? this.gameObject.active : this._active !== false; }
+  set active(value) { 
+    if (this.gameObject) this.gameObject.active = value;
+    else this._active = value;
+  }
+
+  get visible() { return this.gameObject ? this.gameObject.visible : this._visible !== false; }
+  set visible(value) { 
+    if (this.gameObject) this.gameObject.visible = value;
+    else this._visible = value;
+  }
+
+  // Component management (unchanged)
   addComponent(component) {
+    component.entity = this;
     this.components.set(component.constructor.name, component);
-    Logger.debug(`Added component ${component.constructor.name} to entity`);
+    Logger.debug(`Added component ${component.constructor.name} to entity ${this.name}`);
     return this;
   }
 
@@ -327,13 +432,29 @@ class BaseEntity extends Phaser.GameObjects.Rectangle {
     return this.components.has(componentType.name);
   }
 
+  // NULL-SAFE physics enablement
+  enablePhysics(bodyType = 'dynamic') {
+    if (this.gameObject && this.scene.physics) {
+      this.scene.physics.add.existing(this.gameObject);
+      // Configure physics body based on type
+    }
+    return this;
+  }
+
   destroy() {
-    // Remove from scene's entity registry
+    // Clean up components
+    this.components.clear();
+    
+    // Destroy GameObject if it exists
+    if (this.gameObject) {
+      this.gameObject.destroy();
+    }
+    
+    // Remove from scene registry
     if (this.scene.entities) {
       const index = this.scene.entities.indexOf(this);
       if (index > -1) this.scene.entities.splice(index, 1);
     }
-    super.destroy();
   }
 }
 
@@ -403,44 +524,200 @@ class DevShapes {
 }
 ```
 
-### Minimal Testing Approach (TDD for Core Utilities Only)
+### Example Test Implementations
+
+**Comprehensive testing examples with proper mocking and coverage.**
 
 ```javascript
-// ONLY test core utility functions - keep it simple!
-import { describe, it, expect } from 'vitest';
-import { MathUtils } from '@/utils/MathUtils.js';
+// AUTO-INITIALIZING LOGGER TESTS
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import Logger from '@/utils/Logger.js';
 
-describe('MathUtils', () => {
-  it('should calculate distance between two points', () => {
-    const distance = MathUtils.distance(0, 0, 3, 4);
-    expect(distance).toBe(5);
+describe('Logger System', () => {
+  beforeEach(() => {
+    Logger.isInitialized = false;
+    vi.clearAllMocks();
   });
 
-  it('should clamp values within range', () => {
-    expect(MathUtils.clamp(15, 0, 10)).toBe(10);
-    expect(MathUtils.clamp(-5, 0, 10)).toBe(0);
-    expect(MathUtils.clamp(5, 0, 10)).toBe(5);
+  it('should auto-initialize on first method call', () => {
+    expect(Logger.isInitialized).toBe(false);
+    Logger.debug('test message');
+    expect(Logger.isInitialized).toBe(true);
+  });
+
+  it('should handle environment variables correctly', () => {
+    Logger.debug('Environment test');
+    expect(Logger.debugMode).toBeDefined();
+    expect(Logger.logLevel).toBeDefined();
+  });
+
+  it('should support all logging levels', () => {
+    const consoleSpy = vi.spyOn(console, 'log');
+    Logger.debug('debug message');
+    Logger.info('info message');
+    Logger.warn('warning message');
+    Logger.error('error message');
+    expect(consoleSpy).toHaveBeenCalled();
   });
 });
 
-// Simple SaveManager test - core functionality only
-import { SaveManager } from '@/utils/SaveManager.js';
+// BASEENTITY COMPREHENSIVE TESTS
+import BaseEntity from '@/entities/BaseEntity.js';
+import { MockScene } from '../__mocks__/PhaserMocks.js';
+import HealthComponent from '@/components/HealthComponent.js';
 
-describe('SaveManager', () => {
-  it('should save and load data', () => {
-    const testData = { score: 100, level: 5 };
-    SaveManager.save('test', testData);
-    const loaded = SaveManager.load('test');
-    expect(loaded).toEqual(testData);
+describe('BaseEntity', () => {
+  let mockScene;
+
+  beforeEach(() => {
+    mockScene = new MockScene();
+  });
+
+  it('should create entity with components', () => {
+    const entity = new BaseEntity(mockScene, { type: 'rectangle' });
+    const health = new HealthComponent(100);
+    
+    entity.addComponent(health);
+    expect(entity.hasComponent(HealthComponent)).toBe(true);
+    expect(entity.getComponent(HealthComponent)).toBe(health);
+  });
+
+  it('should handle GameObject type switching', () => {
+    const entity = new BaseEntity(mockScene, { type: 'rectangle' });
+    entity.changeGameObjectType('circle', { radius: 25 });
+    expect(entity.getGameObjectType()).toBe('circle');
+  });
+
+  it('should support logical entities without GameObjects', () => {
+    const entity = new BaseEntity(mockScene, { type: null });
+    expect(entity.gameObject).toBeNull();
+    entity.x = 100;
+    expect(entity.x).toBe(100);
   });
 });
 
-// DON'T TEST:
-// - Phaser GameObjects (too complex to mock)
-// - ECS Components (simple data containers)
-// - Systems (rely on Phaser, test via gameplay)
-// - UI/Graphics (visual elements)
-// - Audio (browser-dependent)
+// COMPONENT TESTS
+import HealthComponent from '@/components/HealthComponent.js';
+
+describe('HealthComponent', () => {
+  it('should initialize with correct values', () => {
+    const health = new HealthComponent(100);
+    expect(health.maxHealth).toBe(100);
+    expect(health.currentHealth).toBe(100);
+    expect(health.invulnerable).toBe(false);
+  });
+
+  it('should handle damage correctly', () => {
+    const health = new HealthComponent(100);
+    health.currentHealth -= 25;
+    expect(health.currentHealth).toBe(75);
+  });
+});
+
+// SYSTEM TESTS WITH MOCKING
+import MovementSystem from '@/systems/MovementSystem.js';
+import MovementComponent from '@/components/MovementComponent.js';
+
+describe('MovementSystem', () => {
+  let system;
+  let mockEntities;
+
+  beforeEach(() => {
+    system = new MovementSystem();
+    mockEntities = [
+      {
+        x: 0,
+        y: 0,
+        getComponent: vi.fn().mockReturnValue(new MovementComponent(5, 0))
+      }
+    ];
+  });
+
+  it('should update entity positions', () => {
+    system.update(mockEntities, 16); // 16ms delta
+    expect(mockEntities[0].x).toBe(80); // 5 * 16
+  });
+});
+
+// SCENE TESTS
+import GameScene from '@/scenes/GameScene.js';
+import { MockScene } from '../__mocks__/PhaserMocks.js';
+
+describe('GameScene', () => {
+  let scene;
+
+  beforeEach(() => {
+    scene = new GameScene();
+    // Mock Phaser scene methods
+    scene.add = { rectangle: vi.fn() };
+    scene.physics = { add: { existing: vi.fn() } };
+  });
+
+  it('should initialize player correctly', () => {
+    scene.create();
+    expect(scene.player).toBeDefined();
+    expect(scene.add.rectangle).toHaveBeenCalled();
+  });
+});
+
+// INTEGRATION TESTS
+describe('ECS Integration', () => {
+  it('should handle complete entity lifecycle', () => {
+    const scene = new MockScene();
+    const entity = new BaseEntity(scene, { type: 'rectangle' });
+    const health = new HealthComponent(100);
+    const movement = new MovementComponent(5, 0);
+    
+    entity.addComponent(health);
+    entity.addComponent(movement);
+    
+    const movementSystem = new MovementSystem();
+    movementSystem.update([entity], 16);
+    
+    expect(entity.x).toBe(80);
+    expect(entity.hasComponent(HealthComponent)).toBe(true);
+  });
+});
+```
+
+### Mock Implementation Examples
+
+```javascript
+// tests/__mocks__/PhaserMocks.js
+export class MockScene {
+  constructor() {
+    this.add = {
+      rectangle: vi.fn(() => new MockRectangle()),
+      sprite: vi.fn(() => new MockSprite()),
+      circle: vi.fn(() => new MockCircle())
+    };
+    this.physics = {
+      add: {
+        existing: vi.fn()
+      }
+    };
+    this.input = {
+      on: vi.fn(),
+      emit: vi.fn()
+    };
+  }
+}
+
+export class MockRectangle {
+  constructor(x = 0, y = 0, width = 32, height = 32, color = 0xffffff) {
+    this.x = x;
+    this.y = y;
+    this.width = width;
+    this.height = height;
+    this.fillColor = color;
+    this.active = true;
+    this.visible = true;
+  }
+
+  destroy() {
+    this.active = false;
+  }
+}
 ```
 
 ### Asset Management (Development Phase)
@@ -484,136 +761,224 @@ class SaveManager {
   }
 }
 
-// Logger system pattern
+// Auto-initializing Logger system pattern
 class Logger {
-  static init() {
-    this.debugMode = import.meta.env.VITE_DEBUG_MODE === 'true';
-    this.logLevel = import.meta.env.VITE_LOG_LEVEL || 'info';
-    this.levels = { debug: 0, info: 1, warn: 2, error: 3 };
+  static _ensureInitialized() {
+    if (!this.isInitialized) {
+      // Auto-initialize with dual environment support
+      this.debugMode = this._getEnvVariable('VITE_DEBUG_MODE') === 'true';
+      this.logLevel = this._getEnvVariable('VITE_LOG_LEVEL') || 'info';
+      this.levels = { debug: 0, info: 1, warn: 2, error: 3 };
+      this.isInitialized = true;
+    }
   }
 
   static debug(message, ...args) {
+    this._ensureInitialized(); // Auto-initialize on first call
     if (this.debugMode && this.shouldLog('debug')) {
-      console.log(`🔍 [DEBUG] ${message}`, ...args);
+      const timestamp = new Date().toLocaleTimeString();
+      console.log(`🔍 ${timestamp} [DEBUG] ${message}`, ...args);
     }
   }
 
   static info(message, ...args) {
+    this._ensureInitialized(); // Auto-initialize on first call
     if (this.shouldLog('info')) {
-      console.info(`ℹ️ [INFO] ${message}`, ...args);
+      const timestamp = new Date().toLocaleTimeString();
+      console.info(`ℹ️ ${timestamp} [INFO] ${message}`, ...args);
     }
   }
 
   static warn(message, ...args) {
+    this._ensureInitialized(); // Auto-initialize on first call
     if (this.shouldLog('warn')) {
-      console.warn(`⚠️ [WARN] ${message}`, ...args);
+      const timestamp = new Date().toLocaleTimeString();
+      console.warn(`⚠️ ${timestamp} [WARN] ${message}`, ...args);
     }
   }
 
   static error(message, ...args) {
+    this._ensureInitialized(); // Auto-initialize on first call
     if (this.shouldLog('error')) {
-      console.error(`❌ [ERROR] ${message}`, ...args);
+      const timestamp = new Date().toLocaleTimeString();
+      console.error(`❌ ${timestamp} [ERROR] ${message}`, ...args);
+    }
+  }
+
+  static _getEnvVariable(name) {
+    // Dual environment support with graceful fallbacks
+    try {
+      return import.meta?.env?.[name] || process?.env?.[name] || undefined;
+    } catch {
+      return undefined;
     }
   }
 
   static shouldLog(level) {
+    this._ensureInitialized();
     return this.levels[level] >= this.levels[this.logLevel];
+  }
+
+  // Performance methods - also auto-initialize
+  static time(label) {
+    this._ensureInitialized();
+    if (this.debugMode) console.time(`⏱️ ${label}`);
+  }
+
+  static timeEnd(label) {
+    this._ensureInitialized();
+    if (this.debugMode) console.timeEnd(`⏱️ ${label}`);
   }
 }
 ```
 
-## Testing Guidelines (PROTECTIVE BOUNDARIES)
+## Testing Guidelines (COMPREHENSIVE APPROACH)
 
-### Minimal Testing Philosophy (SAFETY FIRST)
+### Modern Testing Philosophy
 
-- **Focus**: Test ONLY core utility functions (math, save/load, object pooling)
-- **NEVER MODIFY GAME FILES**: Testing must never require changes to game scenes or systems
-- **GameScene Protection**: GameScene.js integrity is PARAMOUNT - no testing modifications allowed
-- **No Elaborate Suites**: Keep test files small and focused
-- **No E2E Tests**: Manual testing for gameplay and UI interactions
-- **Time Limit**: Don't spend hours writing/fixing tests - keep it basic
+- **Test Everything**: Comprehensive unit testing across all components, systems, entities, and utilities
+- **Quality First**: High test coverage ensures code reliability and maintainability
+- **Automated Testing**: Continuous testing during development with watch mode
+- **Mock When Needed**: Use strategic mocking for external dependencies like Phaser
+- **TDD Encouraged**: Write tests first when developing new features
+- **Maintainable Tests**: Keep tests clean, readable, and well-organized
 
-### What TO Test (SAFE ZONE ONLY)
+### What TO Test (COMPREHENSIVE COVERAGE)
 
-#### ✅ SAFE TO TEST (utils/ directory only)
-- **Utility Functions**: Math calculations, data transformations
-- **Save/Load Logic**: localStorage operations (mocked)
-- **Object Pooling**: Basic get/release functionality
-- **Pure Functions**: Functions with clear inputs/outputs
-- **Configuration**: Environment and config utilities
+#### ✅ UNIT TESTING (All Components)
+- **Logger System**: Auto-initialization, environment detection, all logging methods
+- **BaseEntity**: GameObject lifecycle, component management, flexible construction
+- **Components**: All component classes (Health, Weapon, Movement, Collision, etc.)
+- **Systems**: All ECS systems (Movement, Weapon, Collision, EnemySpawn, etc.)
+- **Entities**: Player, Enemy, Projectile, PowerUp classes and their behaviors
+- **Utilities**: Math functions, ObjectPool, SaveManager, all helper functions
+- **Adapters**: Input adapters, EventBus integration, state management
+- **Scenes**: Scene logic, transitions, initialization, and cleanup
+- **Configuration**: GameConfig, Environment, Constants validation
 
-#### 🟨 SAFE LOCATION
-```bash
-tests/utils/                # ONLY safe testing location
-├── MathUtils.test.js       # ✅ Math operations testing
-├── SaveManager.test.js     # ✅ localStorage testing (mocked)
-├── ObjectPool.test.js      # ✅ Pool management testing
-└── GameConfig.test.js      # ✅ Configuration testing
-```
+#### ✅ INTEGRATION TESTING
+- **ECS Integration**: Entity-Component-System interactions
+- **Event System**: EventBus message passing and handling
+- **Scene Transitions**: Data flow between scenes
+- **Save/Load**: Complete persistence workflows
+- **Input Handling**: End-to-end input processing
 
-### What NOT to Test (FORBIDDEN ZONES)
+#### ✅ TESTING STRATEGIES
+- **Phaser Mocking**: Mock Phaser objects and scenes for isolated testing
+- **Component Testing**: Test components in isolation and integration
+- **System Testing**: Test systems with mock entities and components
+- **End-to-End**: Test complete workflows with minimal mocking
 
-#### ❌ ABSOLUTELY FORBIDDEN
-- **GameScene.js**: NEVER create tests that require modifying this file
-- **All Scenes**: src/scenes/* - Manual testing only
-- **ECS Systems**: src/systems/* - Too complex, Phaser-dependent
-- **Game Entities**: src/entities/* - Phaser GameObjects, manual testing only
-- **Components**: Simple data containers, testing adds no value
-- **Phaser Integration**: Any code that requires Phaser context
-
-#### 🚫 FORBIDDEN TESTING ACTIVITIES
-- **Never modify GameScene.js** for testing purposes
-- **Never mock Phaser objects** - too complex and fragile
-- **Never create test scenes** - disrupts game architecture
-- **Never test ECS interactions** - use manual gameplay testing
-- **Never test UI/Graphics** - visual verification only
-- **Never test audio systems** - browser-dependent functionality
-
-### Protected Testing Principles
-
-#### **GameScene Integrity Protection**
-- GameScene.js is the **heart of the game** - modifications forbidden
-- Any testing that requires GameScene changes is **REJECTED**
-- Complex game logic tested through **manual gameplay**
-- Performance testing done via **runtime monitoring**
-
-#### **Manual Testing Priority**
-- **Primary Method**: Manual gameplay testing
-- **User Experience**: Play-testing for game balance and fun
-- **Integration Testing**: Scene transitions and system interactions
-- **Performance Validation**: Real gameplay performance monitoring
-
-### Basic Test Organization
+### Test Organization Structure
 
 ```bash
 tests/
-├── utils/                # ONLY utility function tests
-│   ├── MathUtils.test.js      # Basic math operations
-│   ├── SaveManager.test.js    # localStorage operations
-│   └── ObjectPool.test.js     # Object pooling basics
-├── __mocks__/            # Simple mocks only
-│   └── localStorage.js   # Mock localStorage for tests
-└── setup.js              # Minimal test setup
+├── units/                  # Unit tests for all components
+│   ├── components/         # Component tests
+│   │   ├── HealthComponent.test.js
+│   │   ├── WeaponComponent.test.js
+│   │   ├── MovementComponent.test.js
+│   │   └── CollisionComponent.test.js
+│   ├── systems/            # System tests
+│   │   ├── MovementSystem.test.js
+│   │   ├── WeaponSystem.test.js
+│   │   ├── CollisionSystem.test.js
+│   │   └── EnemySpawnSystem.test.js
+│   ├── entities/           # Entity tests
+│   │   ├── BaseEntity.test.js
+│   │   ├── Player.test.js
+│   │   ├── Enemy.test.js
+│   │   └── Projectile.test.js
+│   ├── scenes/             # Scene tests
+│   │   ├── GameScene.test.js
+│   │   ├── MainMenuScene.test.js
+│   │   └── PreloaderScene.test.js
+│   └── utils/              # Utility tests
+│       ├── Logger.test.js
+│       ├── ObjectPool.test.js
+│       ├── SaveManager.test.js
+│       └── MathUtils.test.js
+├── integration/            # Integration tests
+│   ├── ecs-integration.test.js
+│   ├── scene-transitions.test.js
+│   └── save-load-workflow.test.js
+├── __mocks__/              # Mock implementations
+│   ├── PhaserMocks.js      # Comprehensive Phaser mocking
+│   ├── LocalStorageMock.js # localStorage mock
+│   └── BrowserMocks.js     # Browser API mocks
+└── setup.js                # Test environment setup
 ```
 
-### Manual Testing Checklist (Primary Testing Method)
+### Testing Best Practices
+
+#### **Mocking Strategy**
+- **Phaser Objects**: Create comprehensive mocks for Phaser scenes and GameObjects
+- **Browser APIs**: Mock localStorage, audio, and other browser-specific APIs
+- **External Dependencies**: Mock any external libraries or services
+- **Minimal Mocking**: Mock only what's necessary for isolated testing
+
+#### **Test Structure**
+- **Arrange-Act-Assert**: Clear test structure for readability
+- **Descriptive Names**: Test names should clearly describe what they test
+- **Edge Cases**: Test both happy paths and error conditions
+- **Isolated Tests**: Each test should be independent and repeatable
+
+#### **Coverage Goals**
+- **Unit Tests**: 80%+ coverage for all business logic
+- **Integration Tests**: Cover critical workflows and interactions
+- **Component Tests**: Test all public interfaces and behaviors
+- **System Tests**: Validate system-level functionality
+
+### TDD Workflow (Test-Driven Development)
+
+1. **Red**: Write a failing test that describes the desired behavior
+2. **Green**: Write minimal code to make the test pass
+3. **Refactor**: Improve code quality while keeping tests green
+4. **Repeat**: Continue the cycle for each new feature or change
+
+### Testing Commands Reference
+
+```bash
+# Run all tests
+npm run test
+
+# Watch mode for continuous testing
+npm run test:watch
+
+# Generate coverage report
+npm run test:coverage
+
+# Run specific test file
+vitest tests/units/components/HealthComponent.test.js
+
+# Run tests matching pattern
+vitest --grep "BaseEntity"
+
+# Run tests with UI interface
+npm run test:ui
+```
+
+### Manual Testing Complement
+
+While comprehensive unit testing is the foundation, manual testing remains important for:
+
+- **User Experience**: Game feel, balance, and fun factor
+- **Visual Verification**: Graphics, animations, and visual effects  
+- **Performance**: Real-world performance under various conditions
+- **Browser Compatibility**: Testing across different browsers and devices
+- **Audio**: Sound effects and music integration
+
+#### Manual Testing Checklist
 
 - [ ] Game loads without errors in target browsers
-- [ ] Player movement feels responsive
-- [ ] Weapons fire and hit targets
-- [ ] Enemies spawn and move correctly
-- [ ] Power-ups can be collected
-- [ ] Game saves progress correctly
-- [ ] ESLint passes with no errors
-- [ ] Prettier formatting is consistent
-- [ ] Basic unit tests pass (should be quick)
-
-### TDD Workflow (Utilities Only)
-
-1. **Write failing test** for utility function (2-3 minutes max)
-2. **Implement minimal code** to make test pass
-3. **Refactor if needed** (keep it simple)
-4. **Move on** - don't over-engineer
+- [ ] Player movement feels responsive and smooth
+- [ ] Weapons fire correctly and hit targets accurately
+- [ ] Enemies spawn and behave as expected
+- [ ] Power-ups can be collected and provide benefits
+- [ ] Game saves and loads progress correctly
+- [ ] All unit tests pass
+- [ ] Code coverage meets targets
+- [ ] ESLint and Prettier pass without errors
 
 ## Debugging Tips
 

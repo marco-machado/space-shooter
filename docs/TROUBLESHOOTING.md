@@ -1,10 +1,14 @@
 # Space Shooter Troubleshooting Guide
 
-This guide provides solutions for common issues encountered during development and deployment of the Space Shooter game.
+This guide provides solutions for common issues encountered during development and deployment of the Space Shooter game, including architectural enhancements like auto-initializing Logger, flexible BaseEntity system, and comprehensive testing setup.
 
 ## Table of Contents
 
 - [Setup Issues](#setup-issues)
+- [Auto-Initializing Logger Issues](#auto-initializing-logger-issues)
+- [Flexible BaseEntity Issues](#flexible-baseentity-issues)
+- [Input Adapter Issues](#input-adapter-issues)
+- [Testing Setup Issues](#testing-setup-issues)
 - [Development Server Issues](#development-server-issues)
 - [Environment Configuration Issues](#environment-configuration-issues)
 - [Code Quality Issues](#code-quality-issues)
@@ -101,6 +105,476 @@ npm install phaser@^3.90.0
 # Check import syntax in main.js
 # Should be: import Phaser from 'phaser';
 # Not: import * as Phaser from 'phaser';
+```
+
+---
+
+## Auto-Initializing Logger Issues
+
+### Problem: Logger messages not appearing in console
+
+**Symptoms:**
+
+- No debug messages despite `VITE_DEBUG_MODE=true`
+- Logger appears to work but produces no output
+- Console remains empty during game execution
+
+**Solutions:**
+
+```javascript
+// Solution 1: Verify auto-initialization is working
+import Logger from '@/utils/Logger.js';
+
+// Check initialization status
+console.log('Logger initialized:', Logger.isInitialized); // Should be false initially
+Logger.debug('Test message'); // Should auto-initialize
+console.log('Logger initialized:', Logger.isInitialized); // Should be true now
+
+// Solution 2: Verify environment variables
+Logger.debug('Debug mode:', Logger.debugMode);
+Logger.debug('Log level:', Logger.logLevel);
+
+// Solution 3: Force re-initialization if needed
+Logger.isInitialized = false;
+Logger.debug('Force re-initialization test');
+```
+
+**Environment Troubleshooting:**
+
+```bash
+# Check environment variables in .env file
+grep VITE_DEBUG_MODE .env
+grep VITE_LOG_LEVEL .env
+
+# Verify Vite is loading environment variables
+# In browser console:
+console.log(import.meta.env.VITE_DEBUG_MODE);
+console.log(import.meta.env.VITE_LOG_LEVEL);
+```
+
+**Prevention:**
+
+- Use `Logger.error()` for testing - it should always appear regardless of settings
+- Check that `.env` file contains `VITE_DEBUG_MODE=true`
+- Verify `VITE_LOG_LEVEL=debug` for maximum verbosity
+
+### Problem: Logger performance methods not working
+
+**Symptoms:**
+
+- `Logger.time()` and `Logger.timeEnd()` produce no output
+- `Logger.group()` and `Logger.table()` not working
+- Only basic logging methods function
+
+**Solutions:**
+
+```javascript
+// Performance methods only work in debug mode
+// Verify debug mode is enabled:
+if (!Logger.debugMode) {
+  console.warn('Performance methods require VITE_DEBUG_MODE=true');
+}
+
+// Test performance methods:
+Logger.time('test-operation');
+// ... some operation ...
+Logger.timeEnd('test-operation'); // Should output timing
+
+// Test grouping:
+Logger.group('Test Group');
+Logger.info('Grouped message');
+Logger.groupEnd();
+
+// Test table display:
+Logger.table([
+  { entity: 'Player', health: 100 },
+  { entity: 'Enemy', health: 50 }
+]);
+```
+
+### Problem: Environment detection failing
+
+**Symptoms:**
+
+- Logger defaults to production mode unexpectedly
+- Environment variables not being read correctly
+- Fallback behavior not working as expected
+
+**Solutions:**
+
+```javascript
+// Manual environment debugging:
+Logger._getEnvVariable = function(name) {
+  console.log('Checking env var:', name);
+  
+  // Check import.meta.env first
+  if (import.meta?.env?.[name]) {
+    console.log('Found in import.meta.env:', import.meta.env[name]);
+    return import.meta.env[name];
+  }
+  
+  // Check process.env fallback
+  if (process?.env?.[name]) {
+    console.log('Found in process.env:', process.env[name]);
+    return process.env[name];
+  }
+  
+  console.log('Environment variable not found:', name);
+  return undefined;
+};
+
+// Force re-initialization with debug
+Logger.isInitialized = false;
+Logger.debug('Environment test');
+```
+
+---
+
+## Flexible BaseEntity Issues
+
+### Problem: GameObject creation failures
+
+**Symptoms:**
+
+- Entities default to error rectangles (red color)
+- `"GameObject creation failed"` error messages
+- Unexpected GameObject types
+
+**Solutions:**
+
+```javascript
+// Debug GameObject creation:
+const entity = new BaseEntity(scene, {
+  type: 'sprite', 
+  texture: 'missing-texture' // This will fail
+});
+
+console.log('GameObject type:', entity.getGameObjectType()); // Should be 'rectangle' (fallback)
+console.log('GameObject color:', entity.gameObject.fillColor); // Should be red (0xff0000)
+
+// Check texture loading:
+console.log('Texture loaded:', scene.textures.exists('missing-texture'));
+
+// Use proper texture loading:
+scene.load.image('player-sprite', 'path/to/sprite.png');
+scene.load.start();
+```
+
+**Common Causes:**
+
+1. **Missing Textures**: Sprite/image creation fails when texture doesn't exist
+2. **Invalid Configuration**: Incorrect parameters passed to GameObject creation
+3. **Scene Context Issues**: Scene not properly initialized when creating entities
+
+**Prevention:**
+
+- Always verify textures are loaded before creating sprite entities
+- Use development rectangles first, then upgrade to sprites
+- Check console for GameObject creation error messages
+
+### Problem: Runtime type switching not working
+
+**Symptoms:**
+
+- `changeGameObjectType()` doesn't change visual appearance
+- Position not preserved during type changes
+- Components lost during type switching
+
+**Solutions:**
+
+```javascript
+// Debug type switching:
+const entity = new BaseEntity(scene, { type: 'rectangle', x: 100, y: 100 });
+console.log('Initial type:', entity.getGameObjectType());
+console.log('Initial position:', entity.x, entity.y);
+
+// Ensure new texture exists before switching:
+if (scene.textures.exists('new-sprite')) {
+  entity.changeGameObjectType('sprite', { 
+    texture: 'new-sprite',
+    frame: 0 
+  });
+  
+  console.log('New type:', entity.getGameObjectType());
+  console.log('Preserved position:', entity.x, entity.y);
+} else {
+  console.error('Texture "new-sprite" not loaded');
+}
+
+// Verify components are preserved:
+const health = entity.getComponent(HealthComponent);
+console.log('Component preserved:', !!health);
+```
+
+### Problem: Null-safe operations failing
+
+**Symptoms:**
+
+- Property access errors on logical entities (type: null)
+- Methods called on null GameObjects causing crashes
+- Position updates not working on logical entities
+
+**Solutions:**
+
+```javascript
+// Test null-safe operations:
+const logicalEntity = new BaseEntity(scene, { 
+  type: null, 
+  x: 200, 
+  y: 300,
+  name: 'test-logical' 
+});
+
+// These should all work safely:
+console.log('Position:', logicalEntity.x, logicalEntity.y); // Should be 200, 300
+logicalEntity.x = 250;
+console.log('Updated position:', logicalEntity.x); // Should be 250
+
+// These should not crash:
+logicalEntity.enablePhysics('dynamic'); // Should be ignored safely
+logicalEntity.setDepth(10); // Should be ignored safely
+
+// Verify logical position tracking:
+console.log('Logical position:', logicalEntity.logicalPosition);
+```
+
+---
+
+## Input Adapter Issues
+
+### Problem: KeyboardInputAdapter not responding to input
+
+**Symptoms:**
+
+- Key presses not triggering movement
+- No events emitted to EventBus
+- Player character doesn't respond to WASD/Arrow keys
+
+**Solutions:**
+
+```javascript
+// Debug adapter activation:
+import KeyboardInputAdapter from '@/adapters/KeyboardInputAdapter.js';
+import { getEventBus } from '@/event-bus/EventBus.js';
+import { EventTypes } from '@/event-bus/EventTypes.js';
+
+// Verify adapter is activated:
+const adapter = new KeyboardInputAdapter(scene);
+console.log('Adapter active before:', adapter.active);
+adapter.activate();
+console.log('Adapter active after:', adapter.active);
+
+// Test event emission:
+const eventBus = getEventBus();
+eventBus.on(EventTypes.PLAYER_INPUT, (event) => {
+  console.log('Player input received:', event);
+});
+
+// Check Phaser input setup:
+console.log('Scene input keyboard:', !!scene.input.keyboard);
+console.log('Scene input enabled:', scene.input.enabled);
+```
+
+**Common Causes:**
+
+1. **Adapter Not Activated**: Forgot to call `adapter.activate()`
+2. **EventBus Not Connected**: Missing event listeners
+3. **Scene Input Disabled**: Phaser input system not working
+4. **Key Event Conflicts**: Other systems consuming key events
+
+### Problem: Movement not normalized properly
+
+**Symptoms:**
+
+- Diagonal movement faster than cardinal directions
+- Player speed inconsistent
+- Movement direction calculation incorrect
+
+**Solutions:**
+
+```javascript
+// Debug movement calculation:
+const adapter = new KeyboardInputAdapter(scene);
+
+// Monitor input state:
+setInterval(() => {
+  console.log('Input state:', {
+    keys: Array.from(adapter.inputState.keys),
+    movement: adapter.inputState.movement,
+    weaponFiring: adapter.inputState.weaponFiring
+  });
+}, 1000);
+
+// Verify normalization:
+// Press W+D (diagonal) - should output movement: { x: 0.707, y: -0.707 }
+// Press W only - should output movement: { x: 0, y: -1 }
+```
+
+### Problem: EventBus integration issues
+
+**Symptoms:**
+
+- Events not received by game systems
+- Multiple event listeners not working
+- Event data structure incorrect
+
+**Solutions:**
+
+```javascript
+// Debug EventBus singleton:
+const eventBus1 = getEventBus();
+const eventBus2 = getEventBus();
+console.log('EventBus singleton:', eventBus1 === eventBus2); // Should be true
+
+// Test event emission and listening:
+eventBus1.on(EventTypes.PLAYER_INPUT, (event) => {
+  console.log('Listener 1:', event.action);
+});
+
+eventBus1.on(EventTypes.PLAYER_INPUT, (event) => {
+  console.log('Listener 2:', event.action);
+});
+
+// Manually emit test event:
+eventBus1.emit(EventTypes.PLAYER_INPUT, {
+  action: 'test',
+  timestamp: performance.now()
+});
+
+// Should see both listeners fire
+```
+
+---
+
+## Testing Setup Issues
+
+### Problem: Tests failing with import errors
+
+**Symptoms:**
+
+- `Cannot resolve module` errors in tests
+- Path alias `@/` not working in test files
+- Vitest configuration issues
+
+**Solutions:**
+
+```bash
+# Verify vitest configuration:
+cat vitest.config.js
+
+# Should contain path alias:
+# resolve: {
+#   alias: {
+#     '@': path.resolve(__dirname, './src'),
+#   },
+# },
+
+# Check test file imports:
+# Use: import Logger from '@/utils/Logger.js';
+# Not: import Logger from '../../../src/utils/Logger.js';
+
+# Run tests with verbose output:
+npm run test -- --reporter=verbose
+```
+
+### Problem: Phaser mocks not working
+
+**Symptoms:**
+
+- Tests crash with Phaser-related errors
+- Mock objects behaving unexpectedly
+- `MockScene` or `MockRectangle` not found
+
+**Solutions:**
+
+```javascript
+// Verify mock imports in test files:
+import { MockScene, MockRectangle } from '../__mocks__/PhaserMocks.js';
+
+// Test mock functionality:
+const mockScene = new MockScene();
+console.log('Mock scene add methods:', Object.keys(mockScene.add));
+
+// Create test entity with mocks:
+const entity = new BaseEntity(mockScene, {
+  type: 'rectangle',
+  x: 100, y: 100
+});
+
+console.log('Mock GameObject created:', !!entity.gameObject);
+console.log('GameObject type:', entity.gameObject.constructor.name);
+```
+
+### Problem: Auto-initializing Logger tests failing
+
+**Symptoms:**
+
+- Logger initialization state not resetting between tests
+- Environment variable mocking not working
+- Performance method tests inconsistent
+
+**Solutions:**
+
+```javascript
+// Proper test setup in beforeEach:
+beforeEach(() => {
+  // Reset Logger state for fresh testing
+  Logger.isInitialized = false;
+  
+  // Clear all mocks
+  vi.clearAllMocks();
+  
+  // Reset environment variables
+  global.importMeta = {
+    env: {
+      VITE_DEBUG_MODE: 'true',
+      VITE_LOG_LEVEL: 'debug'
+    }
+  };
+});
+
+// Test auto-initialization properly:
+it('should auto-initialize on first call', () => {
+  expect(Logger.isInitialized).toBe(false);
+  Logger.error('test'); // Use error as it always logs
+  expect(Logger.isInitialized).toBe(true);
+});
+```
+
+### Problem: Test execution performance
+
+**Symptoms:**
+
+- Tests take longer than 5 seconds to complete
+- Memory usage climbing during test runs
+- Test suite hanging or timing out
+
+**Solutions:**
+
+```javascript
+// Optimize test cleanup:
+afterEach(() => {
+  vi.clearAllMocks();
+  
+  // Clean up large objects
+  if (testEntities) {
+    testEntities.forEach(entity => entity.destroy());
+    testEntities.length = 0;
+  }
+  
+  // Reset global state
+  Logger.isInitialized = false;
+});
+
+// Use focused tests for debugging:
+it.only('should test specific behavior', () => {
+  // Only this test will run
+});
+
+// Skip problematic tests temporarily:
+it.skip('should test complex behavior', () => {
+  // This test will be skipped
+});
 ```
 
 ---
