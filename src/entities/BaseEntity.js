@@ -1,37 +1,161 @@
 import Logger from '@/utils/Logger.js';
 
 /**
- * Base Entity class using composition pattern with Phaser GameObjects
- * Provides ECS foundation with component management
- * Uses colored rectangles for development graphics
+ * Base Entity class using composition pattern with flexible Phaser GameObjects
+ * Supports multiple GameObject types or no GameObject for pure logical entities
+ * Maintains backward compatibility with rectangle-based usage
+ * Uses colored rectangles for development graphics following project standards
  */
-class Entity {
-  constructor(scene, x, y, width, height, color, name = 'noname') {
-    this.name = name;
+export default class BaseEntity {
+  /**
+   * Create a new BaseEntity with flexible GameObject support
+   *
+   * @param {Phaser.Scene} scene - Phaser scene reference
+   * @param {Object|number} configOrX - Configuration object or X position (backward compatibility)
+   * @param {number} [y] - Y position (backward compatibility)
+   * @param {number} [width] - Width (backward compatibility)
+   * @param {number} [height] - Height (backward compatibility)
+   * @param {number} [color] - Color (backward compatibility)
+   * @param {string} [name] - Entity name (backward compatibility)
+   */
+  constructor(scene, configOrX, y, width, height, color, name = 'noname') {
+    // Handle backward compatibility: if configOrX is a number, use old constructor signature
+    if (typeof configOrX === 'number') {
+      this._initWithLegacyParams(scene, configOrX, y, width, height, color, name);
+    } else {
+      this._initWithConfig(scene, configOrX || {});
+    }
 
-    // Component storage
+    // BaseComponent storage
     this.components = new Map();
 
     // Entity metadata
-    this.entityId = Entity.generateId();
+    this.entityId = BaseEntity.generateId();
 
-    // Create the Phaser GameObject using composition
-    this.gameObject = scene.add.rectangle(x, y, width, height, color);
+    // Internal event system for when gameObject is null
+    this._eventListeners = new Map();
 
-    // Add to scene display list
-    scene.add.existing(this.gameObject);
+    // Create the GameObject based on configuration
+    this.gameObject = this._createGameObject();
 
     // Register with scene's entity system
-    if (!scene.entities) {
-      scene.entities = [];
-    }
-    scene.entities.push(this);
+    this._registerWithScene(scene);
 
-    Logger.debug(`Entity created: ${this.entityId}`, {
-      position: { x, y },
-      size: { width, height },
-      color: color.toString(16),
+    Logger.debug(`[BaseEntity] Entity created: ${this.entityId}`, {
+      type: this.config.type,
+      position: { x: this.config.x, y: this.config.y },
+      hasGameObject: !!this.gameObject,
+      name: this.name,
     });
+  }
+
+  /**
+   * Get/Set X position
+   */
+  get x() {
+    return this.gameObject ? this.gameObject.x : this.config.x;
+  }
+
+  set x(value) {
+    this.config.x = value;
+    if (this.gameObject) {
+      this.gameObject.x = value;
+    }
+  }
+
+  /**
+   * Get/Set Y position
+   */
+  get y() {
+    return this.gameObject ? this.gameObject.y : this.config.y;
+  }
+
+  set y(value) {
+    this.config.y = value;
+    if (this.gameObject) {
+      this.gameObject.y = value;
+    }
+  }
+
+  /**
+   * Get/Set width (null-safe)
+   */
+  get width() {
+    if (this.gameObject && this.gameObject.width !== undefined) {
+      return this.gameObject.width;
+    }
+    return this.config.width || 32;
+  }
+
+  set width(value) {
+    this.config.width = value;
+    if (this.gameObject && this.gameObject.width !== undefined) {
+      this.gameObject.width = value;
+    }
+  }
+
+  /**
+   * Get/Set height (null-safe)
+   */
+  get height() {
+    if (this.gameObject && this.gameObject.height !== undefined) {
+      return this.gameObject.height;
+    }
+    return this.config.height || 32;
+  }
+
+  set height(value) {
+    this.config.height = value;
+    if (this.gameObject && this.gameObject.height !== undefined) {
+      this.gameObject.height = value;
+    }
+  }
+
+  /**
+   * Get scene reference
+   */
+  get scene() {
+    return this._scene || (this.gameObject ? this.gameObject.scene : null);
+  }
+
+  set scene(value) {
+    this._scene = value;
+  }
+
+  /**
+   * Get/Set active state (null-safe)
+   */
+  get active() {
+    return this.gameObject ? this.gameObject.active : true;
+  }
+
+  set active(value) {
+    if (this.gameObject) {
+      this.gameObject.active = value;
+    }
+  }
+
+  // Property delegation getters and setters for commonly accessed properties
+  // Handle cases where gameObject might be null
+
+  /**
+   * Get/Set visible state (null-safe)
+   */
+  get visible() {
+    return this.gameObject ? this.gameObject.visible : true;
+  }
+
+  set visible(value) {
+    if (this.gameObject) {
+      this.gameObject.visible = value;
+    }
+  }
+
+  /**
+   * Get physics body (null-safe)
+   */
+  get body() {
+    return this.gameObject ? this.gameObject.body : null;
   }
 
   /**
@@ -42,92 +166,276 @@ class Entity {
     return `entity_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 
-  // Property delegation getters and setters for commonly accessed properties
-  
   /**
-   * Get/Set X position
+   * Initialize with legacy constructor parameters (backward compatibility)
+   * @private
    */
-  get x() {
-    return this.gameObject.x;
-  }
-
-  set x(value) {
-    this.gameObject.x = value;
-  }
-
-  /**
-   * Get/Set Y position
-   */
-  get y() {
-    return this.gameObject.y;
-  }
-
-  set y(value) {
-    this.gameObject.y = value;
+  _initWithLegacyParams(scene, x, y, width, height, color, name) {
+    this.scene = scene;
+    this.name = name;
+    this.config = {
+      type: 'rectangle',
+      x,
+      y,
+      width,
+      height,
+      color,
+    };
   }
 
   /**
-   * Get/Set width
+   * Initialize with configuration object
+   * @private
    */
-  get width() {
-    return this.gameObject.width;
-  }
+  _initWithConfig(scene, config) {
+    this.scene = scene;
+    this.name = config.name || 'noname';
 
-  set width(value) {
-    this.gameObject.width = value;
+    // Default configuration
+    this.config = {
+      type: config.type || 'rectangle',
+      x: config.x || 0,
+      y: config.y || 0,
+      ...config,
+    };
   }
 
   /**
-   * Get/Set height
+   * Create GameObject based on configuration
+   * @private
+   * @returns {Phaser.GameObjects.GameObject|null} Created GameObject or null
    */
-  get height() {
-    return this.gameObject.height;
-  }
+  _createGameObject() {
+    if (this.config.type === null || this.config.type === 'null') {
+      return null;
+    }
 
-  set height(value) {
-    this.gameObject.height = value;
+    try {
+      switch (this.config.type) {
+        case 'rectangle':
+          return this._createRectangle();
+        case 'sprite':
+          return this._createSprite();
+        case 'image':
+          return this._createImage();
+        case 'circle':
+          return this._createCircle();
+        case 'polygon':
+          return this._createPolygon();
+        case 'text':
+          return this._createText();
+        default:
+          Logger.warn(
+            `[BaseEntity] Unknown GameObject type: ${this.config.type}, falling back to rectangle`
+          );
+          return this._createRectangle();
+      }
+    } catch (error) {
+      Logger.error(`[BaseEntity] Failed to create GameObject of type ${this.config.type}:`, error);
+      Logger.info('[BaseEntity] Falling back to rectangle GameObject');
+      return this._createRectangle();
+    }
   }
 
   /**
-   * Get scene reference
+   * Create rectangle GameObject (default/fallback)
+   * @private
+   * @returns {Phaser.GameObjects.Rectangle}
    */
-  get scene() {
-    return this.gameObject.scene;
+  _createRectangle() {
+    const rectangle = this.scene.add.rectangle(
+      this.config.x,
+      this.config.y,
+      this.config.width || 32,
+      this.config.height || 32,
+      this.config.color || 0xffffff
+    );
+    // this.scene.add.existing(rectangle);
+    return rectangle;
   }
 
   /**
-   * Get/Set active state
+   * Create sprite GameObject
+   * @private
+   * @returns {Phaser.GameObjects.Sprite}
    */
-  get active() {
-    return this.gameObject.active;
-  }
-
-  set active(value) {
-    this.gameObject.active = value;
+  _createSprite() {
+    if (!this.config.texture) {
+      throw new Error('Sprite type requires texture parameter');
+    }
+    const sprite = this.scene.add.sprite(
+      this.config.x,
+      this.config.y,
+      this.config.texture,
+      this.config.frame
+    );
+    return sprite;
   }
 
   /**
-   * Get/Set visible state
+   * Create image GameObject
+   * @private
+   * @returns {Phaser.GameObjects.Image}
    */
-  get visible() {
-    return this.gameObject.visible;
-  }
-
-  set visible(value) {
-    this.gameObject.visible = value;
+  _createImage() {
+    if (!this.config.texture) {
+      throw new Error('Image type requires texture parameter');
+    }
+    const image = this.scene.add.image(this.config.x, this.config.y, this.config.texture);
+    return image;
   }
 
   /**
-   * Get physics body
+   * Create circle GameObject
+   * @private
+   * @returns {Phaser.GameObjects.Arc}
    */
-  get body() {
-    return this.gameObject.body;
+  _createCircle() {
+    const circle = this.scene.add.circle(
+      this.config.x,
+      this.config.y,
+      this.config.radius || 16,
+      this.config.color || 0xffffff
+    );
+    this.scene.add.existing(circle);
+    return circle;
+  }
+
+  /**
+   * Create polygon GameObject
+   * @private
+   * @returns {Phaser.GameObjects.Polygon}
+   */
+  _createPolygon() {
+    if (!this.config.points) {
+      // Default diamond shape for power-ups following development graphics strategy
+      this.config.points = [0, -16, 14, 14, -14, 14];
+    }
+    const polygon = this.scene.add.polygon(
+      this.config.x,
+      this.config.y,
+      this.config.points,
+      this.config.color || 0x00ff00
+    );
+    this.scene.add.existing(polygon);
+    return polygon;
+  }
+
+  /**
+   * Create text GameObject
+   * @private
+   * @returns {Phaser.GameObjects.Text}
+   */
+  _createText() {
+    const text = this.scene.add.text(
+      this.config.x,
+      this.config.y,
+      this.config.text || 'Entity',
+      this.config.style || { fontSize: '16px', color: '#ffffff' }
+    );
+    return text;
+  }
+
+  /**
+   * Recreate GameObject when it has been destroyed (for object pooling)
+   * @returns {BaseEntity} This entity for chaining
+   */
+  recreateGameObject() {
+    // Check if recreation is needed
+    if (this.gameObject) {
+      Logger.debug(`[BaseEntity] Entity ${this.entityId}: GameObject already exists, skipping recreation`);
+      return this;
+    }
+
+    // Validate scene state before recreation
+    if (!this.scene || this.scene.sys.isDestroyed) {
+      Logger.error(`[BaseEntity] Entity ${this.entityId}: Cannot recreate GameObject - scene is destroyed`);
+      return this;
+    }
+
+    try {
+      // Recreate GameObject using existing configuration
+      this.gameObject = this._createGameObject();
+
+      if (this.gameObject) {
+        // Re-enable physics if scene has physics and original entity had physics
+        if (this.scene.physics && this.config.requiresPhysics !== false) {
+          this.enablePhysics('dynamic');
+        }
+
+        // Restore position from config
+        this.gameObject.setPosition(this.config.x, this.config.y);
+
+        // Set visibility and active state
+        this.gameObject.visible = true;
+        this.gameObject.active = true;
+
+        Logger.debug(`[BaseEntity] Entity ${this.entityId}: GameObject successfully recreated`, {
+          type: this.config.type,
+          position: { x: this.config.x, y: this.config.y },
+          hasPhysics: !!this.body,
+        });
+      } else {
+        Logger.error(`[BaseEntity] Entity ${this.entityId}: Failed to recreate GameObject`);
+      }
+    } catch (error) {
+      Logger.error(`[BaseEntity] Entity ${this.entityId}: GameObject recreation failed`, {
+        error: error.message,
+        config: this.config,
+      });
+    }
+
+    return this;
+  }
+
+  /**
+   * Register entity with scene's entity system
+   * @private
+   * @param {Phaser.Scene} scene - Scene reference
+   */
+  _registerWithScene(scene) {
+    if (!scene.entities) {
+      scene.entities = [];
+    }
+    scene.entities.push(this);
+  }
+
+  /**
+   * Change GameObject type at runtime
+   * @param {string} newType - New GameObject type
+   * @param {Object} newConfig - New configuration for GameObject
+   * @returns {BaseEntity} This entity for chaining
+   */
+  changeGameObjectType(newType, newConfig = {}) {
+    // Preserve current position if not specified
+    const currentX = this.gameObject ? this.gameObject.x : this.config.x;
+    const currentY = this.gameObject ? this.gameObject.y : this.config.y;
+
+    // Destroy current GameObject if it exists
+    if (this.gameObject) {
+      this.gameObject.destroy();
+    }
+
+    // Update configuration
+    this.config = {
+      ...this.config,
+      ...newConfig,
+      type: newType,
+      x: newConfig.x !== undefined ? newConfig.x : currentX,
+      y: newConfig.y !== undefined ? newConfig.y : currentY,
+    };
+
+    // Create new GameObject
+    this.gameObject = this._createGameObject();
+
+    Logger.debug(`[BaseEntity] Entity ${this.entityId} changed GameObject type to: ${newType}`);
+    return this;
   }
 
   /**
    * Add a component to this entity
-   * @param {Object} component - Component instance to add
-   * @returns {Entity} This entity for chaining
+   * @param {Object} component - BaseComponent instance to add
+   * @returns {BaseEntity} This entity for chaining
    */
   addComponent(component) {
     const componentName = component.constructor.name;
@@ -136,14 +444,14 @@ class Entity {
     // Set reference back to entity
     component.entity = this;
 
-    Logger.debug(`Component added: ${componentName} to ${this.entityId}-${this.name}`);
+    Logger.debug(`[BaseEntity] Component added: ${componentName} to ${this.entityId}-${this.name}`);
     return this;
   }
 
   /**
    * Remove a component from this entity
-   * @param {Function} componentType - Component class/constructor
-   * @returns {Entity} This entity for chaining
+   * @param {Function} componentType - BaseComponent class/constructor
+   * @returns {BaseEntity} This entity for chaining
    */
   removeComponent(componentType) {
     const componentName = componentType.name;
@@ -153,7 +461,7 @@ class Entity {
       // Clear entity reference
       component.entity = null;
       this.components.delete(componentName);
-      Logger.debug(`Component removed: ${componentName} from ${this.entityId}`);
+      Logger.debug(`[BaseEntity] Component removed: ${componentName} from ${this.entityId}`);
     }
 
     return this;
@@ -161,8 +469,8 @@ class Entity {
 
   /**
    * Get a component of the specified type
-   * @param {Function} componentType - Component class/constructor
-   * @returns {Object|null} Component instance or null if not found
+   * @param {Function} componentType - BaseComponent class/constructor
+   * @returns {Object|null} BaseComponent instance or null if not found
    */
   getComponent(componentType) {
     return this.components.get(componentType.name) || null;
@@ -170,7 +478,7 @@ class Entity {
 
   /**
    * Check if entity has a component of the specified type
-   * @param {Function} componentType - Component class/constructor
+   * @param {Function} componentType - BaseComponent class/constructor
    * @returns {boolean} True if component exists
    */
   hasComponent(componentType) {
@@ -200,7 +508,7 @@ class Entity {
    * Properly removes from entity registry and cleans up components
    */
   destroy() {
-    Logger.debug(`Entity destroyed: ${this.entityId}`);
+    this.active = false;
 
     // Clean up all components
     this.components.forEach(component => {
@@ -210,6 +518,11 @@ class Entity {
     });
     this.components.clear();
 
+    // Clean up internal event listeners
+    if (this._eventListeners) {
+      this._eventListeners.clear();
+    }
+
     // Remove from scene's entity registry
     if (this.scene && this.scene.entities) {
       const index = this.scene.entities.indexOf(this);
@@ -218,16 +531,25 @@ class Entity {
       }
     }
 
-    // Call Phaser GameObject's destroy method
-    this.gameObject.destroy();
+    // Call GameObject's destroy method if it exists
+    if (this.gameObject) {
+      this.gameObject.destroy();
+    }
+
+    Logger.debug(`[BaseEntity] Entity destroyed: ${this.entityId}`);
   }
 
   /**
-   * Enable physics for this entity
+   * Enable physics for this entity (null-safe)
    * @param {string} bodyType - Physics body type ('dynamic', 'static', 'kinematic')
-   * @returns {Entity} This entity for chaining
+   * @returns {BaseEntity} This entity for chaining
    */
   enablePhysics(bodyType = 'dynamic') {
+    if (!this.gameObject) {
+      Logger.warn(`[BaseEntity] Entity ${this.entityId}: Cannot enable physics - no GameObject`);
+      return this;
+    }
+
     if (this.scene.physics && this.scene.physics.world) {
       this.scene.physics.add.existing(this.gameObject, bodyType === 'static');
 
@@ -248,62 +570,88 @@ class Entity {
         }
       }
 
-      Logger.debug(`Physics enabled for ${this.entityId}: ${bodyType}`);
+      Logger.debug(`[BaseEntity] Physics enabled for ${this.entityId}: ${bodyType}`);
     }
 
     return this;
   }
 
   /**
-   * Set entity position
+   * Set entity position (null-safe)
    * @param {number} x - X coordinate
    * @param {number} y - Y coordinate
-   * @returns {Entity} This entity for chaining
+   * @returns {BaseEntity} This entity for chaining
    */
   setPosition(x, y) {
-    this.gameObject.setPosition(x, y);
-    Logger.debug(`Entity ${this.entityId} moved to (${x}, ${y})`);
+    this.config.x = x;
+    this.config.y = y;
+
+    if (this.gameObject) {
+      this.gameObject.setPosition(x, y);
+    }
+
+    Logger.debug(`[BaseEntity] Entity ${this.entityId} moved to (${x}, ${y})`);
     return this;
   }
 
   /**
-   * Set entity size
+   * Set entity size (null-safe)
    * @param {number} width - Width
    * @param {number} height - Height
-   * @returns {Entity} This entity for chaining
+   * @returns {BaseEntity} This entity for chaining
    */
   setSize(width, height) {
     try {
-      // Validate entity state before calling setSize
-      if (!this.scene || this.scene.sys.isDestroyed) {
-        Logger.error(`Entity ${this.entityId}: Cannot setSize - scene is destroyed`);
-        return this;
-      }
-
       // Validate parameters
       if (typeof width !== 'number' || typeof height !== 'number' || width <= 0 || height <= 0) {
-        Logger.error(`Entity ${this.entityId}: Invalid size parameters`, { width, height });
+        Logger.error(`[BaseEntity] Entity ${this.entityId}: Invalid size parameters`, {
+          width,
+          height,
+        });
         return this;
       }
 
-      // Check if gameObject is in valid state
-      if (!this.gameObject || !this.gameObject.active) {
-        Logger.error(`Entity ${this.entityId}: GameObject appears to be corrupted or destroyed`);
+      if (this.config.width === width || this.config.height === height) {
+        Logger.debug(`[BaseEntity] Entity ${this.entityId} has correct size already`);
         return this;
       }
 
-      // Call gameObject's setSize with error handling
-      this.gameObject.setSize(width, height);
-      
-      // Update physics body size if it exists
-      if (this.body && this.body.setSize) {
-        this.body.setSize(width * 0.8, height * 0.8);
-        this.body.setOffset(width * 0.1, height * 0.1);
+      // Update config
+      this.config.width = width;
+      this.config.height = height;
+
+      // Update GameObject if it exists and supports setSize
+      if (this.gameObject && typeof this.gameObject.setSize === 'function') {
+
+        // Validate entity state before calling setSize
+        if (!this.scene || this.scene.sys.isDestroyed) {
+          Logger.error(`[BaseEntity] Entity ${this.entityId}: Cannot setSize - scene is destroyed`);
+          return this;
+        }
+
+        // Check if gameObject is in valid state
+        if (!this.gameObject.active) {
+          Logger.error(
+            `[BaseEntity] Entity ${this.entityId}: GameObject appears to be corrupted or destroyed`
+          );
+          return this;
+        }
+
+        // Call gameObject's setSize with error handling
+        Logger.debug('[BaseEntity] GameObject has size parameters', this.gameObject);
+        this.gameObject.setSize(width, height);
+        Logger.debug(`[BaseEntity] GameObject has been resized`);
+
+        // Update physics body size if it exists
+        if (this.body && this.body.setSize) {
+          this.body.setSize(width * 0.8, height * 0.8);
+          this.body.setOffset(width * 0.1, height * 0.1);
+        }
       }
 
-      Logger.debug(`Entity ${this.entityId} resized to ${width}x${height}`);
+      Logger.debug(`[BaseEntity] Entity ${this.entityId} resized to ${width}x${height}`);
     } catch (error) {
-      Logger.error(`Entity ${this.entityId}: setSize failed`, {
+      Logger.error(`[BaseEntity] Entity ${this.entityId}: setSize failed`, {
         error: error.message,
         width,
         height,
@@ -312,12 +660,187 @@ class Entity {
           visible: this.visible,
           hasScene: !!this.scene,
           hasBody: !!this.body,
-          hasGameObject: !!this.gameObject
-        }
+          hasGameObject: !!this.gameObject,
+        },
       });
     }
     return this;
   }
-}
 
-export default Entity;
+  // ========================================
+  // EventEmitter Methods (Phaser Integration)
+  // ========================================
+
+  /**
+   * Add event listener (delegates to gameObject or uses internal system)
+   * @param {string} event - Event name
+   * @param {Function} callback - Event callback
+   * @returns {BaseEntity} This entity for chaining
+   */
+  on(event, callback) {
+    if (this.gameObject && this.gameObject.on) {
+      this.gameObject.on(event, callback);
+    } else {
+      // Fallback internal event system
+      if (!this._eventListeners.has(event)) {
+        this._eventListeners.set(event, []);
+      }
+      this._eventListeners.get(event).push(callback);
+    }
+    return this;
+  }
+
+  /**
+   * Remove event listener (delegates to gameObject or uses internal system)
+   * @param {string} event - Event name
+   * @param {Function} callback - Event callback to remove
+   * @returns {BaseEntity} This entity for chaining
+   */
+  off(event, callback) {
+    if (this.gameObject && this.gameObject.off) {
+      this.gameObject.off(event, callback);
+    } else {
+      // Fallback internal event system
+      if (this._eventListeners.has(event)) {
+        const listeners = this._eventListeners.get(event);
+        const index = listeners.indexOf(callback);
+        if (index > -1) {
+          listeners.splice(index, 1);
+        }
+        if (listeners.length === 0) {
+          this._eventListeners.delete(event);
+        }
+      }
+    }
+    return this;
+  }
+
+  /**
+   * Add one-time event listener (delegates to gameObject or uses internal system)
+   * @param {string} event - Event name
+   * @param {Function} callback - Event callback
+   * @returns {BaseEntity} This entity for chaining
+   */
+  once(event, callback) {
+    if (this.gameObject && this.gameObject.once) {
+      this.gameObject.once(event, callback);
+    } else {
+      // Fallback internal event system
+      const onceWrapper = (...args) => {
+        callback(...args);
+        this.off(event, onceWrapper);
+      };
+      this.on(event, onceWrapper);
+    }
+    return this;
+  }
+
+  /**
+   * Emit event (delegates to gameObject or uses internal system)
+   * @param {string} event - Event name
+   * @param {...any} args - Event arguments
+   * @returns {BaseEntity} This entity for chaining
+   */
+  emit(event, ...args) {
+    if (this.gameObject && this.gameObject.emit) {
+      this.gameObject.emit(event, ...args);
+    } else {
+      // Fallback internal event system
+      if (this._eventListeners.has(event)) {
+        const listeners = this._eventListeners.get(event).slice(); // Copy to avoid modification during iteration
+        listeners.forEach(callback => {
+          try {
+            callback(...args);
+          } catch (error) {
+            Logger.error(`[BaseEntity] Event handler error for event '${event}':`, error);
+          }
+        });
+      }
+    }
+    return this;
+  }
+
+  /**
+   * Remove all listeners for an event (delegates to gameObject or uses internal system)
+   * @param {string} [event] - Event name (if not provided, removes all listeners)
+   * @returns {BaseEntity} This entity for chaining
+   */
+  removeAllListeners(event) {
+    if (this.gameObject && this.gameObject.removeAllListeners) {
+      this.gameObject.removeAllListeners(event);
+    } else {
+      // Fallback internal event system
+      if (event) {
+        this._eventListeners.delete(event);
+      } else {
+        this._eventListeners.clear();
+      }
+    }
+    return this;
+  }
+
+  // ========================================
+  // Phaser GameObject Method Delegation
+  // ========================================
+
+  /**
+   * Set depth for rendering layer (delegates to gameObject)
+   * @param {number} depth - Rendering depth
+   * @returns {BaseEntity} This entity for chaining
+   */
+  setDepth(depth) {
+    if (this.gameObject && this.gameObject.setDepth) {
+      this.gameObject.setDepth(depth);
+    }
+    return this;
+  }
+
+  /**
+   * Set scale (delegates to gameObject)
+   * @param {number} x - X scale
+   * @param {number} [y] - Y scale (defaults to x)
+   * @returns {BaseEntity} This entity for chaining
+   */
+  setScale(x, y) {
+    if (this.gameObject && this.gameObject.setScale) {
+      this.gameObject.setScale(x, y);
+    }
+    return this;
+  }
+
+  /**
+   * Set rotation (delegates to gameObject)
+   * @param {number} rotation - Rotation in radians
+   * @returns {BaseEntity} This entity for chaining
+   */
+  setRotation(rotation) {
+    if (this.gameObject && this.gameObject.setRotation) {
+      this.gameObject.setRotation(rotation);
+    }
+    return this;
+  }
+
+  /**
+   * Set alpha transparency (delegates to gameObject)
+   * @param {number} alpha - Alpha value (0-1)
+   * @returns {BaseEntity} This entity for chaining
+   */
+  setAlpha(alpha) {
+    if (this.gameObject && this.gameObject.setAlpha) {
+      this.gameObject.setAlpha(alpha);
+    }
+    return this;
+  }
+
+  /**
+   * Set tint color (delegates to gameObject)
+   * @param {number} tint - Tint color
+   * @returns {BaseEntity} This entity for chaining
+   */
+  setTint(tint) {
+    if (this.gameObject && this.gameObject.setTint) {
+      this.gameObject.setTint(tint);
+    }
+    return this;
+  }
+}

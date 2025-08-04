@@ -1,17 +1,19 @@
-import Logger from '../utils/Logger.js';
+import Logger from '@/utils/Logger.js';
 
 /**
- * Base Component class
+ * Base BaseComponent class
  * Components are pure data containers in the ECS architecture
  * All game behavior is handled by Systems, not Components
  */
-class Component {
+export default class BaseComponent {
   constructor() {
     this.entity = null; // Reference to the entity this component is attached to
     this.active = true; // Whether this component is active
-    this.componentId = Component.generateId();
+    this.componentId = BaseComponent.generateId();
 
-    Logger.debug(`Component created: ${this.constructor.name} (${this.componentId})`);
+    Logger.debug(
+      `[BaseComponent] Component created: ${this.constructor.name} (${this.componentId})`
+    );
   }
 
   /**
@@ -29,7 +31,7 @@ class Component {
    */
   init(data = {}) {
     // Override in subclasses
-    Logger.debug(`Component initialized: ${this.constructor.name}`, data);
+    Logger.debug(`[BaseComponent] Component initialized: ${this.constructor.name}`, data);
   }
 
   /**
@@ -63,7 +65,7 @@ class Component {
   deserialize(data) {
     this.componentId = data.componentId || this.componentId;
     this.active = data.active !== undefined ? data.active : true;
-    Logger.debug(`Component deserialized: ${this.constructor.name}`, data);
+    Logger.debug(`[BaseComponent] Component deserialized: ${this.constructor.name}`, data);
   }
 
   /**
@@ -73,8 +75,8 @@ class Component {
   destroy() {
     this.entity = null;
     this.active = false;
-    Logger.debug(`Component destroyed: ${this.constructor.name} (${this.componentId})`);
+    Logger.debug(
+      `[BaseComponent] Component destroyed: ${this.constructor.name} (${this.componentId})`
+    );
   }
 }
-
-export default Component;

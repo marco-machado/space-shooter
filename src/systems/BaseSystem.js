@@ -1,23 +1,23 @@
 import Logger from '@/utils/Logger.js';
 
 /**
- * Base System class for ECS architecture
+ * Base BaseSystem class for ECS architecture
  * Systems contain logic and operate on entities with specific components
  * All game behavior is implemented in systems, not components
  */
-export default class System {
+export default class BaseSystem {
   constructor() {
     this.name = this.constructor.name;
     this.active = true;
     this.priority = 0; // Lower numbers run first
-    this.systemId = System.generateId();
+    this.systemId = BaseSystem.generateId();
 
     // Performance tracking
     this.updateCount = 0;
     this.totalUpdateTime = 0;
     this.averageUpdateTime = 0;
 
-    Logger.debug(`System created: ${this.name} (${this.systemId})`);
+    Logger.debug(`[BaseSystem] System created: ${this.name} (${this.systemId})`);
   }
 
   /**
@@ -31,12 +31,12 @@ export default class System {
   /**
    * Initialize system with configuration
    * Override in subclasses for system-specific setup
-   * @param {Object} config - System configuration
+   * @param {Object} config - BaseSystem configuration
    */
   init(config = {}) {
     this.active = config.active !== undefined ? config.active : true;
     this.priority = config.priority || 0;
-    Logger.debug(`System initialized: ${this.name}`, config);
+    Logger.debug(`[BaseSystem] System initialized: ${this.name}`, config);
   }
 
   /**
@@ -62,7 +62,7 @@ export default class System {
       this.update(entities, delta);
       this.updateCount++;
     } catch (error) {
-      Logger.error(`Error in system ${this.name}:`, error);
+      Logger.error(`[BaseSystem] Error processing system ${this.name}:`, error);
     }
 
     const endTime = performance.now();
@@ -73,7 +73,7 @@ export default class System {
     // Log performance warnings for slow systems
     if (updateTime > 16.67) {
       // More than one frame at 60fps
-      Logger.warn(`Slow system update: ${this.name} took ${updateTime.toFixed(2)}ms`);
+      Logger.warn(`[BaseSystem] Slow system update: ${this.name} took ${updateTime.toFixed(2)}ms`);
     }
   }
 
@@ -111,7 +111,7 @@ export default class System {
    * @param {Phaser.Scene} scene - The scene this system is added to
    */
   onAddedToScene(scene) {
-    Logger.debug(`System ${this.name} added to scene: ${scene.scene.key}`);
+    Logger.debug(`[BaseSystem] System ${this.name} added to scene: ${scene.scene.key}`);
   }
 
   /**
@@ -120,7 +120,7 @@ export default class System {
    * @param {Phaser.Scene} scene - The scene this system is removed from
    */
   onRemovedFromScene(scene) {
-    Logger.debug(`System ${this.name} removed from scene: ${scene.scene.key}`);
+    Logger.debug(`[BaseSystem] System ${this.name} removed from scene: ${scene.scene.key}`);
   }
 
   /**
@@ -132,7 +132,7 @@ export default class System {
     this.active = active;
 
     if (wasActive !== active) {
-      Logger.debug(`System ${this.name} ${active ? 'enabled' : 'disabled'}`);
+      Logger.debug(`[BaseSystem] System ${this.name} ${active ? 'enabled' : 'disabled'}`);
     }
   }
 
@@ -142,7 +142,7 @@ export default class System {
    */
   setPriority(priority) {
     this.priority = priority;
-    Logger.debug(`System ${this.name} priority set to ${priority}`);
+    Logger.debug(`[BaseSystem] System ${this.name} priority set to ${priority}`);
   }
 
   /**
@@ -167,7 +167,7 @@ export default class System {
     this.updateCount = 0;
     this.totalUpdateTime = 0;
     this.averageUpdateTime = 0;
-    Logger.debug(`Performance stats reset for system: ${this.name}`);
+    Logger.debug(`[BaseSystem] Performance stats reset for system: ${this.name}`);
   }
 
   /**
@@ -176,7 +176,7 @@ export default class System {
    */
   destroy() {
     this.active = false;
-    Logger.debug(`System destroyed: ${this.name} (${this.systemId})`);
+    Logger.debug(`[BaseSystem] System destroyed: ${this.name} (${this.systemId})`);
   }
 
   /**
@@ -202,6 +202,6 @@ export default class System {
     this.systemId = data.systemId || this.systemId;
     this.active = data.active !== undefined ? data.active : true;
     this.priority = data.priority || 0;
-    Logger.debug(`System deserialized: ${this.name}`, data);
+    Logger.debug(`[BaseSystem] System deserialized: ${this.name}`, data);
   }
 }
