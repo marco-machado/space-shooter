@@ -2,7 +2,7 @@
 
 ## Issue Description
 **Error**: `TypeError: Cannot read properties of null (reading 'setSize')`
-- **Location**: Entity.js:193, Projectile.js:300, WeaponSystem.js:193
+- **Location**: BaseEntity.js:193, Projectile.js:300, WeaponSystem.js:193
 - **Trigger**: SPACEBAR weapon firing
 - **Impact**: Complete prevention of weapon firing functionality
 
@@ -14,7 +14,7 @@ The error occurred due to corrupted objects in the projectile object pool:
 
 ## Comprehensive Solution Implemented
 
-### 1. Entity.setSize Defensive Programming
+### 1. BaseEntity.setSize Defensive Programming
 - Added comprehensive null checks and validation
 - Implemented try-catch error handling
 - Added physics body validation before setSize calls
@@ -71,7 +71,7 @@ The error occurred due to corrupted objects in the projectile object pool:
 - ✅ Performance maintained (object pooling still efficient)
 
 ## Files Modified
-- `/src/entities/Entity.js` - Enhanced setSize with defensive programming
+- `/src/entities/BaseEntity.js` - Enhanced setSize with defensive programming
 - `/src/entities/Projectile.js` - Improved pool management and validation
 - `/src/systems/WeaponSystem.js` - Added comprehensive error handling
 

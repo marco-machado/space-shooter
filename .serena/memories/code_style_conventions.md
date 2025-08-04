@@ -29,7 +29,7 @@
 - **Constants**: UPPER_SNAKE_CASE (e.g., `MAX_ENEMIES`, `WEAPON_TYPES`)
 - **Files**: PascalCase for classes, camelCase for utilities
 
-## Logger System Usage:
+## Logger BaseSystem Usage:
 ```javascript
 // ALWAYS use Logger instead of console
 Logger.debug('Player spawned at', x, y);

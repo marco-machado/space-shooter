@@ -70,5 +70,5 @@
 ## Risk Management
 - **Technical Risk**: Phaser learning curve - Mitigate with comprehensive documentation study
 - **Scope Creep**: Feature additions - Stick to Sprint 1-4 core features first
-- **Performance**: Entity count scaling - Implement object pooling early
+- **Performance**: BaseEntity count scaling - Implement object pooling early
 - **Timeline**: Unrealistic estimates - Buffer time in Sprints 5-6

@@ -100,7 +100,7 @@
 ## Critical Path Analysis
 
 ### Current Critical Path (Sprint 3)
-1. **Power-Up System** → **Audio Integration** → **Enhanced UI** → **Weapon Upgrades**
+1. **Power-Up BaseSystem** → **Audio Integration** → **Enhanced UI** → **Weapon Upgrades**
 2. **Dependencies**: Mostly parallel development possible
 3. **Bottlenecks**: None identified (systems designed for independent development)
 4. **Risk Points**: Audio integration complexity (mitigated with fallback plans)

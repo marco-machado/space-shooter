@@ -41,7 +41,7 @@
 ### Performance Monitoring Tools
 - **Debug Mode**: FPS counter and debug overlay implemented
 - **Browser DevTools**: Memory tab shows stable usage
-- **Logger System**: Performance timing capabilities
+- **Logger BaseSystem**: Performance timing capabilities
 - **Environment Variables**: Performance debugging toggles
 
 ### Sprint 2 Performance Planning

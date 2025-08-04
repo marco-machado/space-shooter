@@ -24,8 +24,8 @@
 
 **Detailed Breakdown**:
 - Day 1-2: Core Components (Weapon, Collision, Movement)
-- Day 2-3: Entity Systems (Projectiles, Enemies, Enhanced Player)
-- Day 3-4: System Logic (Weapon, Collision, Enemy Spawn)
+- Day 2-3: BaseEntity Systems (Projectiles, Enemies, Enhanced Player)
+- Day 3-4: BaseSystem Logic (Weapon, Collision, Enemy Spawn)
 - Day 4-5: Game State & Integration
 - Day 5: Polish & Quality Assurance
 

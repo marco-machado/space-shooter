@@ -11,10 +11,10 @@
 ## Sprint 3 Objectives
 
 ### Primary Goals
-1. **Power-Up System**: Collectible power-ups that enhance player capabilities
+1. **Power-Up BaseSystem**: Collectible power-ups that enhance player capabilities
 2. **Audio Integration**: Sound effects and background music system
 3. **Enhanced UI**: Improved user interface with better visual feedback
-4. **Weapon Upgrade System**: Progressive weapon improvements and variants
+4. **Weapon Upgrade BaseSystem**: Progressive weapon improvements and variants
 
 ### Success Criteria
 - **Performance**: Maintain ≥120 FPS with new systems
@@ -25,7 +25,7 @@
 
 ## Detailed Task Breakdown
 
-### 1. Power-Up System Implementation
+### 1. Power-Up BaseSystem Implementation
 
 #### 1.1 Power-Up Architecture (Day 1)
 **Estimated Time**: 4-6 hours  
@@ -33,22 +33,23 @@
 **Dependencies**: None
 
 **Tasks**:
-- Design PowerUp entity extending base Entity class
+- Design PowerUp entity extending base BaseEntity class
 - Create PowerUpComponent with type, duration, effect properties
 - Implement PowerUpSystem for spawning and collection logic
 - Design power-up visual indicators (colored geometric shapes)
 
 **Components to Create**:
+
 ```javascript
 // PowerUpComponent.js
-class PowerUpComponent extends Component {
-    constructor(type, duration, effectValue) {
-        super();
-        this.type = type; // 'speed', 'damage', 'health', 'multishot'
-        this.duration = duration; // in milliseconds
-        this.effectValue = effectValue; // multiplier or flat value
-        this.timer = 0;
-    }
+class PowerUpComponent extends BaseComponent {
+  constructor(type, duration, effectValue) {
+    super();
+    this.type = type; // 'speed', 'damage', 'health', 'multishot'
+    this.duration = duration; // in milliseconds
+    this.effectValue = effectValue; // multiplier or flat value
+    this.timer = 0;
+  }
 }
 ```
 
@@ -90,25 +91,26 @@ class PowerUpComponent extends Component {
 - Implement power-up stacking rules (if applicable)
 - Performance validation with multiple active power-ups
 
-### 2. Audio Integration System
+### 2. Audio Integration BaseSystem
 
-#### 2.1 Audio System Architecture (Day 2-3)
+#### 2.1 Audio BaseSystem Architecture (Day 2-3)
 **Estimated Time**: 4-6 hours  
 **Priority**: High  
 **Dependencies**: None
 
 **Components to Implement**:
+
 ```javascript
 // AudioSystem.js
-class AudioSystem extends System {
-    constructor(scene) {
-        super();
-        this.scene = scene;
-        this.sounds = new Map();
-        this.musicVolume = 0.6;
-        this.sfxVolume = 0.8;
-        this.audioEnabled = true;
-    }
+class AudioSystem extends BaseSystem {
+   constructor(scene) {
+      super();
+      this.scene = scene;
+      this.sounds = new Map();
+      this.musicVolume = 0.6;
+      this.sfxVolume = 0.8;
+      this.audioEnabled = true;
+   }
 }
 ```
 
@@ -155,7 +157,7 @@ class AudioSystem extends System {
 - Settings persistence via localStorage
 - Real-time audio adjustment
 
-### 3. Enhanced UI System
+### 3. Enhanced UI BaseSystem
 
 #### 3.1 HUD Enhancement (Day 4)
 **Estimated Time**: 3-4 hours  
@@ -199,25 +201,26 @@ class AudioSystem extends System {
 - Damage flash effects
 - Weapon firing visual enhancements
 
-### 4. Weapon Upgrade System
+### 4. Weapon Upgrade BaseSystem
 
 #### 4.1 Weapon Progression Architecture (Day 5-6)
 **Estimated Time**: 4-5 hours  
 **Priority**: High  
 **Dependencies**: Power-up system complete
 
-**Upgrade System Design**:
+**Upgrade BaseSystem Design**:
+
 ```javascript
 // WeaponUpgradeComponent.js
-class WeaponUpgradeComponent extends Component {
-    constructor() {
-        super();
-        this.levels = {
-            laser: { level: 1, damage: 10, fireRate: 200, maxLevel: 5 },
-            plasma: { level: 1, damage: 15, fireRate: 400, maxLevel: 5 },
-            missile: { level: 1, damage: 25, fireRate: 800, maxLevel: 5 }
-        };
-    }
+class WeaponUpgradeComponent extends BaseComponent {
+  constructor() {
+    super();
+    this.levels = {
+      laser: { level: 1, damage: 10, fireRate: 200, maxLevel: 5 },
+      plasma: { level: 1, damage: 15, fireRate: 400, maxLevel: 5 },
+      missile: { level: 1, damage: 25, fireRate: 800, maxLevel: 5 }
+    };
+  }
 }
 ```
 
@@ -238,9 +241,9 @@ class WeaponUpgradeComponent extends Component {
 - Implement upgrade UI feedback
 - Test weapon progression through gameplay
 
-### 5. System Integration & Polish
+### 5. BaseSystem Integration & Polish
 
-#### 5.1 Cross-System Integration (Day 6-7)
+#### 5.1 Cross-BaseSystem Integration (Day 6-7)
 **Estimated Time**: 3-4 hours  
 **Priority**: High  
 **Dependencies**: All core systems complete

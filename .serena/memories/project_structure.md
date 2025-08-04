@@ -43,7 +43,7 @@ space-shooter/
 
 ## Key Directories:
 - **src/scenes/**: BootScene, PreloaderScene, MainMenuScene, GameScene, GameOverScene
-- **src/entities/**: Entity.js (base), Player.js, Enemy.js, Projectile.js, PowerUp.js
+- **src/entities/**: BaseEntity.js (base), Player.js, Enemy.js, Projectile.js, PowerUp.js
 - **src/components/**: Health, Weapon, Movement, Collision, Render components
 - **src/systems/**: Movement, Weapon, Collision, EnemySpawn, Progression, Audio systems
 - **src/utils/**: MathUtils, ObjectPool, SaveManager

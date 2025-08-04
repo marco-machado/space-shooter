@@ -35,16 +35,16 @@
    - Create directory structure: config/, core/, scenes/, entities/, components/, systems/, graphics/, utils/
    - Set up basic file structure according to CLAUDE.md specifications
 
-2. **Logger System Implementation** (2 hours)
+2. **Logger BaseSystem Implementation** (2 hours)
    - Create src/core/Logger.js with environment-aware logging
    - Implement debug, info, warn, error methods with prefixes
    - Configure with VITE_DEBUG_MODE environment variable
 
 3. **Base ECS Classes** (3 hours)
-   - Create src/entities/Entity.js (extends Phaser.GameObjects.Rectangle)
-   - Create src/components/Component.js (base component class)
-   - Create src/systems/System.js (base system class)
-   - Implement component add/get/has methods on Entity
+   - Create src/entities/BaseEntity.js (extends Phaser.GameObjects.Rectangle)
+   - Create src/components/BaseComponent.js (base component class)
+   - Create src/systems/BaseSystem.js (base system class)
+   - Implement component add/get/has methods on BaseEntity
 
 **Deliverable**: ECS architecture foundation with Logger system
 
@@ -68,15 +68,15 @@
 
 **Deliverable**: Scene management system ready for gameplay
 
-### Day 4: Player Entity Implementation (High Priority)
+### Day 4: Player BaseEntity Implementation (High Priority)
 **Estimated Time**: 6-8 hours
 **Tasks**:
-1. **Player Entity** (3 hours)
-   - Create src/entities/Player.js extending Entity
+1. **Player BaseEntity** (3 hours)
+   - Create src/entities/Player.js extending BaseEntity
    - Implement as blue 64x64px rectangle using DevShapes
    - Add to GameScene with proper physics body
 
-2. **Movement Component** (2 hours)
+2. **Movement BaseComponent** (2 hours)
    - Create src/components/MovementComponent.js
    - Store velocity, speed, and movement state data
    - Handle boundary constraints
@@ -88,10 +88,10 @@
 
 **Deliverable**: Player entity with component-based movement
 
-### Day 5: Movement System & Polish (High Priority)
+### Day 5: Movement BaseSystem & Polish (High Priority)
 **Estimated Time**: 6-8 hours
 **Tasks**:
-1. **Movement System** (3 hours)
+1. **Movement BaseSystem** (3 hours)
    - Create src/systems/MovementSystem.js
    - Implement update method for entity movement
    - Handle screen boundary collision
@@ -134,5 +134,5 @@
 ## Success Metrics
 - **Technical**: Player movement at 60fps, no console errors
 - **Code Quality**: 100% ESLint pass rate, consistent formatting
-- **Architecture**: Clean separation of Entity/Component/System responsibilities
+- **Architecture**: Clean separation of BaseEntity/BaseComponent/BaseSystem responsibilities
 - **Documentation**: All major functions have Logger debug statements

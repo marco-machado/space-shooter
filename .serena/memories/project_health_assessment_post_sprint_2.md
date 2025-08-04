@@ -40,7 +40,7 @@
 |--------|--------|----------|----------|-------|
 | Frame Rate | 60 FPS | 60 FPS | 125 FPS | ⬆️ +108% |
 | Memory Usage | <100MB | 60MB | 45MB | ⬇️ -25% |
-| Entity Capacity | 100+ | 50 | 258+ | ⬆️ +416% |
+| BaseEntity Capacity | 100+ | 50 | 258+ | ⬆️ +416% |
 | Load Time | <3s | 3s | 2s | ⬇️ -33% |
 
 ### Quality Metrics ✅
@@ -153,7 +153,7 @@
 1. **Enhanced Gameplay**: Power-ups and weapon upgrades add depth
 2. **Audio Experience**: Professional game experience with sound
 3. **User Interface**: Polished UI improves user experience
-4. **Progression System**: Player retention through advancement
+4. **Progression BaseSystem**: Player retention through advancement
 
 ### Project Completion Value
 - **Market-Ready Game**: Professional quality space shooter
@@ -186,7 +186,7 @@
 5. **Quality Gates**: Maintain code quality and architectural standards
 
 ### Enhanced Monitoring for Sprint 3
-1. **Audio System Complexity**: Monitor WebAudio API integration closely
+1. **Audio BaseSystem Complexity**: Monitor WebAudio API integration closely
 2. **Memory Usage**: Track audio asset impact on memory budget
 3. **Performance Regression**: Validate frame rate with new systems
 4. **Integration Testing**: Ensure new systems don't disrupt existing functionality

@@ -18,11 +18,11 @@ Successfully updated all comprehensive documentation to reflect Sprint 2 complet
 - **How to Play**: Added complete gameplay instructions for new users
 
 ### 2. API_DOCUMENTATION.md  
-- **Table of Contents**: Added new sections for Entity Types, Game State Management, Performance Optimization
-- **Component API**: Added WeaponComponent and CollisionComponent with full API documentation
+- **Table of Contents**: Added new sections for BaseEntity Types, Game State Management, Performance Optimization
+- **BaseComponent API**: Added WeaponComponent and CollisionComponent with full API documentation
 - **MovementComponent**: Enhanced with AI patterns and boundary behaviors
-- **System API**: Added WeaponSystem, CollisionSystem, EnemySpawnSystem documentation
-- **Entity Types**: Added Player, Projectile, and Enemy entity documentation
+- **BaseSystem API**: Added WeaponSystem, CollisionSystem, EnemySpawnSystem documentation
+- **BaseEntity Types**: Added Player, Projectile, and Enemy entity documentation
 - **Game State Management**: Added GameStateManager API with progression and persistence
 - **Performance Optimization**: Added object pooling and spatial grid collision documentation
 - **Development Workflow**: Added guides for adding new weapons and enemy types

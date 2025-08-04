@@ -11,11 +11,11 @@ Sprint 2 has been **successfully completed** with all objectives met and exceede
 - **CollisionComponent.js**: Comprehensive collision system with layers, damage dealing/receiving, and configurable collision response behaviors  
 - **MovementComponent.js**: Enhanced with 6 AI movement patterns (straight, curve, formation, chase, circle, zigzag) and 4 boundary behaviors
 
-### Phase 2: New Entity Types (100% Complete)
+### Phase 2: New BaseEntity Types (100% Complete)
 - **Projectile.js**: Complete projectile system with object pooling, physics integration, auto-cleanup, and weapon-specific configurations
 - **Enemy.js**: Full enemy AI system with 3 enemy types (Scout 32x32, Fighter 48x48, Bomber 64x64), state machines, and formation support
 
-### Phase 3: System Logic (100% Complete)
+### Phase 3: BaseSystem Logic (100% Complete)
 - **WeaponSystem.js**: Complete weapon firing system with input handling, projectile creation, object pooling, and performance optimization
 - **CollisionSystem.js**: Advanced collision detection with spatial grid optimization, collision response handling, and performance monitoring
 - **EnemySpawnSystem.js**: Comprehensive wave generation system with enemy progression, formation patterns, and difficulty scaling
@@ -61,7 +61,7 @@ Sprint 2 has been **successfully completed** with all objectives met and exceede
 
 ## 🏗️ Technical Architecture
 
-- **Clean ECS Implementation**: Entity-Component-System architecture with proper separation of concerns
+- **Clean ECS Implementation**: BaseEntity-BaseComponent-BaseSystem architecture with proper separation of concerns
 - **Performance Optimized**: Object pooling, spatial grid collision detection, and efficient update loops
 - **Modular Design**: All systems are independent and can be easily extended
 - **Code Quality**: 100% ESLint/Prettier compliance with comprehensive logging

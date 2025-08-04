@@ -13,7 +13,7 @@
 - **Environment**: .env files for configuration variables
 
 ## Architecture:
-- **ECS Pattern**: Simple Entity Component System using Phaser's API
+- **ECS Pattern**: Simple BaseEntity BaseComponent BaseSystem using Phaser's API
 - **Components**: Leverage Phaser's built-in systems (Transform, Physics, Render, Input)
 - **Systems**: Use Phaser's scene update loop and event system
 - **Logging**: Custom Logger system with environment-based debug modes

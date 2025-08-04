@@ -39,7 +39,7 @@ When finishing any development task, ALWAYS run:
 2. `npm run format` - Ensure consistent formatting
 3. `npm run test` - Ensure basic tests pass
 
-## System Commands (Darwin/macOS):
+## BaseSystem Commands (Darwin/macOS):
 ```bash
 # File operations
 ls -la                     # List files with details

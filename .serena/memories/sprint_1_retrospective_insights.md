@@ -30,7 +30,7 @@
 
 **Lesson**: ECS + Phaser hybrid approach optimal for this project type
 
-### 3. Logger System Implementation ⭐⭐⭐
+### 3. Logger BaseSystem Implementation ⭐⭐⭐
 **Decision**: Environment-aware logging system, no console.log  
 **Outcome**: PRODUCTION-READY DEBUGGING
 - **Development**: Rich debugging information when needed
@@ -72,8 +72,8 @@
 - **Action**: Use Sprint 1 velocity data for Sprint 2 estimates
 - **Benefit**: More accurate timeline predictions
 
-### 2. Component Interdependency Planning
-**Issue**: Component relationships not fully mapped initially  
+### 2. BaseComponent Interdependency Planning
+**Issue**: BaseComponent relationships not fully mapped initially  
 **Impact**: Minor - resolved during implementation  
 **Improvement**: Detailed component interaction design before Sprint 2
 - **Action**: Create component dependency matrix for Sprint 2
@@ -93,7 +93,7 @@
 **Process**: Design all components and systems before implementation  
 **Benefit**: Reduce refactoring, cleaner interfaces
 - **Phase A**: Complete component design
-- **Phase B**: System interaction mapping  
+- **Phase B**: BaseSystem interaction mapping  
 - **Phase C**: Implementation with clear contracts
 
 ### 2. Performance Monitoring Integration
@@ -122,7 +122,7 @@
 - **Debugging**: Live code updates without losing game state
 - **Productivity**: Significantly faster than traditional game dev cycles
 
-### 2. Component-Based Architecture Scaling
+### 2. BaseComponent-Based Architecture Scaling
 **Finding**: Map-based component storage performs excellently  
 **Impact**: Ready for hundreds of entities in Sprint 2  
 **Future**: Pattern proven for complex game systems
@@ -166,9 +166,9 @@
 
 ## Sprint 2 Preparation Insights 🎯
 
-### 1. Component Dependency Complexity
+### 1. BaseComponent Dependency Complexity
 **Preparation Needed**: Map component relationships before implementation  
-**Risk**: Component coupling could impact ECS clean architecture  
+**Risk**: BaseComponent coupling could impact ECS clean architecture  
 **Mitigation**: Clear interface design, minimal component dependencies
 
 ### 2. Object Pooling Priority
@@ -176,7 +176,7 @@
 **Risk**: Memory usage and garbage collection with many entities  
 **Mitigation**: Implement pooling for projectiles and enemies early
 
-### 3. Collision System Performance
+### 3. Collision BaseSystem Performance
 **Preparation Needed**: Efficient collision detection with many entities  
 **Risk**: N² collision checking performance degradation  
 **Mitigation**: Leverage Phaser physics optimizations, spatial partitioning if needed
@@ -185,8 +185,8 @@
 
 1. **Maintain ECS Architecture**: Proven pattern, don't deviate
 2. **Performance Monitoring**: Continuous FPS and memory tracking
-3. **Logger System Usage**: No console.log, maintain debugging standards
-4. **Component Interface Design**: Clean, minimal dependencies
+3. **Logger BaseSystem Usage**: No console.log, maintain debugging standards
+4. **BaseComponent Interface Design**: Clean, minimal dependencies
 5. **Development Graphics**: Continue colored rectangle approach
 6. **Documentation Standards**: Maintain validation gate quality
 

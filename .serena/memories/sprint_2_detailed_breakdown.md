@@ -20,22 +20,22 @@
 
 #### A1: WeaponComponent Implementation
 - **Effort**: 4 hours
-- **Dependencies**: Sprint 1 Component architecture
+- **Dependencies**: Sprint 1 BaseComponent architecture
 - **Deliverables**:
   - WeaponComponent class with fireRate, damage, projectileSpeed
   - Weapon configuration system (pistol, machinegun, shotgun)
   - Ammunition tracking and reload mechanics
-- **Success Criteria**: Component can be attached to Player entity
+- **Success Criteria**: BaseComponent can be attached to Player entity
 - **Testing**: Unit tests for weapon stat calculations
 
 #### A2: CollisionComponent Implementation  
 - **Effort**: 3 hours
-- **Dependencies**: Sprint 1 Component architecture
+- **Dependencies**: Sprint 1 BaseComponent architecture
 - **Deliverables**:
   - CollisionComponent with bounds, collision groups
   - Integration with Phaser physics system
   - Collision event handling structure
-- **Success Criteria**: Component enables physics collision detection
+- **Success Criteria**: BaseComponent enables physics collision detection
 - **Testing**: Unit tests for collision bounds calculations
 
 #### A3: MovementComponent Enhancement
@@ -48,21 +48,21 @@
 - **Success Criteria**: Supports both player and AI movement
 - **Testing**: Unit tests for movement calculations
 
-### Phase B: Entity Systems (Day 2-3)
+### Phase B: BaseEntity Systems (Day 2-3)
 **Core entity types with ECS integration**
 
-#### B1: Projectile Entity Implementation
+#### B1: Projectile BaseEntity Implementation
 - **Effort**: 5 hours
 - **Dependencies**: A1 WeaponComponent, A2 CollisionComponent
 - **Deliverables**:
-  - Projectile class extending Entity base
+  - Projectile class extending BaseEntity base
   - Yellow/orange rectangles for development graphics
   - Automatic cleanup when off-screen
   - Damage dealing capability
 - **Success Criteria**: Projectiles can be fired and hit targets
 - **Implementation**: 16x8px colored rectangles, pool-ready
 
-#### B2: Enemy Entity Implementation
+#### B2: Enemy BaseEntity Implementation
 - **Effort**: 6 hours
 - **Dependencies**: A3 MovementComponent, A2 CollisionComponent
 - **Deliverables**:
@@ -73,7 +73,7 @@
 - **Success Criteria**: Enemies spawn, move, and can be destroyed
 - **Development Graphics**: Red rectangles with size indicating type
 
-#### B3: Enhanced Player Entity
+#### B3: Enhanced Player BaseEntity
 - **Effort**: 3 hours
 - **Dependencies**: A1 WeaponComponent, existing Player
 - **Deliverables**:
@@ -84,7 +84,7 @@
 - **Success Criteria**: Player can fire weapons and switch types
 - **Testing**: Player weapon integration verified
 
-### Phase C: System Logic (Day 3-4)
+### Phase C: BaseSystem Logic (Day 3-4)
 **Core game logic systems**
 
 #### C1: WeaponSystem Implementation
@@ -111,7 +111,7 @@
 
 #### C3: EnemySpawnSystem Implementation
 - **Effort**: 5 hours
-- **Dependencies**: B2 Enemy Entity
+- **Dependencies**: B2 Enemy BaseEntity
 - **Deliverables**:
   - Wave-based enemy spawning
   - Spawn timing and positioning logic
@@ -134,7 +134,7 @@
 - **Success Criteria**: Complete game loop from start to game over
 - **UI Integration**: Updates existing UI components
 
-#### D2: Enhanced UI System
+#### D2: Enhanced UI BaseSystem
 - **Effort**: 3 hours
 - **Dependencies**: D1 GameState, A1 WeaponComponent
 - **Deliverables**:
@@ -146,9 +146,9 @@
 - **Development Graphics**: Simple text-based UI enhancements
 
 ### Phase E: Integration & Polish (Day 5)
-**System integration and testing**
+**BaseSystem integration and testing**
 
-#### E1: System Integration Testing
+#### E1: BaseSystem Integration Testing
 - **Effort**: 4 hours
 - **Dependencies**: All previous phases
 - **Deliverables**:
@@ -181,7 +181,7 @@
    - **Mitigation**: Phaser physics engine optimization
    - **Alternative**: Spatial partitioning if needed
 
-3. **ECS Complexity**: Component dependencies becoming complex  
+3. **ECS Complexity**: BaseComponent dependencies becoming complex  
    - **Mitigation**: Keep components focused and minimal
    - **Review**: Daily architecture review
 

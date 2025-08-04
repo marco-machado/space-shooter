@@ -1,4 +1,4 @@
-# Logger System Usage
+# Logger BaseSystem Usage
 
 ## Core Principle:
 **NEVER use console.log()** - Always use the Logger system for all debugging output.
@@ -47,8 +47,8 @@ class Logger {
 ```
 
 ## Usage Throughout Codebase:
-- **Entity creation**: `Logger.debug('Created player at', x, y)`
-- **System updates**: `Logger.debug('Movement system updated', entityCount, 'entities')`
+- **BaseEntity creation**: `Logger.debug('Created player at', x, y)`
+- **BaseSystem updates**: `Logger.debug('Movement system updated', entityCount, 'entities')`
 - **State changes**: `Logger.info('Game state changed to', newState)`
 - **Errors**: `Logger.error('Failed to load save data', error)`
 - **Performance**: `Logger.debug('Frame time:', deltaTime, 'ms')`
