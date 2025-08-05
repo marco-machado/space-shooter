@@ -393,6 +393,19 @@ export default class MovementSystem extends BaseSystem {
 
     let shouldDestroy = false;
 
+    // Initialize tracking for entities that have never been inside screen bounds
+    if (movement.hasBeenInBounds === undefined) {
+      movement.hasBeenInBounds = false;
+    }
+
+    // Check if entity is currently within screen bounds
+    const isInBounds = entity.x >= minX && entity.x <= maxX && entity.y >= minY && entity.y <= maxY;
+    
+    // Update tracking - once an entity has been in bounds, it stays marked as such
+    if (!movement.hasBeenInBounds && isInBounds) {
+      movement.hasBeenInBounds = true;
+    }
+
     // Handle X bounds
     if (entity.x < minX) {
       switch (movement.boundaryBehavior) {
@@ -408,8 +421,22 @@ export default class MovementSystem extends BaseSystem {
           movement.velocityX = Math.abs(movement.velocityX) * 0.8; // Reduce velocity on bounce
           break;
         case 'destroy':
-          shouldDestroy = true;
+          // Only destroy if entity has been in bounds before OR is moving away from screen
+          if (movement.hasBeenInBounds || movement.velocityX < 0) {
+            shouldDestroy = true;
+          }
           break;
+        case 'offscreen-deactivate': {
+          // Allow entities to travel further off-screen before deactivation
+          const bufferZone = 150; // Buffer zone beyond screen boundary
+          if (movement.hasBeenInBounds && movement.velocityX < 0) {
+            // Only deactivate if entity is beyond the buffer zone AND moving away
+            if (entity.x < minX - bufferZone) {
+              shouldDestroy = true;
+            }
+          }
+          break;
+        }
       }
     } else if (entity.x > maxX) {
       switch (movement.boundaryBehavior) {
@@ -425,8 +452,22 @@ export default class MovementSystem extends BaseSystem {
           movement.velocityX = -Math.abs(movement.velocityX) * 0.8;
           break;
         case 'destroy':
-          shouldDestroy = true;
+          // Only destroy if entity has been in bounds before OR is moving away from screen
+          if (movement.hasBeenInBounds || movement.velocityX > 0) {
+            shouldDestroy = true;
+          }
           break;
+        case 'offscreen-deactivate': {
+          // Allow entities to travel further off-screen before deactivation
+          const bufferZone = 150; // Buffer zone beyond screen boundary
+          if (movement.hasBeenInBounds && movement.velocityX > 0) {
+            // Only deactivate if entity is beyond the buffer zone AND moving away
+            if (entity.x > maxX + bufferZone) {
+              shouldDestroy = true;
+            }
+          }
+          break;
+        }
       }
     }
 
@@ -445,8 +486,22 @@ export default class MovementSystem extends BaseSystem {
           movement.velocityY = Math.abs(movement.velocityY) * 0.8;
           break;
         case 'destroy':
-          shouldDestroy = true;
+          // Only destroy if entity has been in bounds before OR is moving away from screen
+          if (movement.hasBeenInBounds || movement.velocityY < 0) {
+            shouldDestroy = true;
+          }
           break;
+        case 'offscreen-deactivate': {
+          // Allow entities to travel further off-screen before deactivation
+          const bufferZone = 150; // Buffer zone beyond screen boundary
+          if (movement.hasBeenInBounds && movement.velocityY < 0) {
+            // Only deactivate if entity is beyond the buffer zone AND moving away
+            if (entity.y < minY - bufferZone) {
+              shouldDestroy = true;
+            }
+          }
+          break;
+        }
       }
     } else if (entity.y > maxY) {
       switch (movement.boundaryBehavior) {
@@ -462,21 +517,60 @@ export default class MovementSystem extends BaseSystem {
           movement.velocityY = -Math.abs(movement.velocityY) * 0.8;
           break;
         case 'destroy':
-          shouldDestroy = true;
+          // Only destroy if entity has been in bounds before OR is moving away from screen
+          if (movement.hasBeenInBounds || movement.velocityY > 0) {
+            shouldDestroy = true;
+          }
           break;
+        case 'offscreen-deactivate': {
+          // Allow entities to travel further off-screen before deactivation
+          const bufferZone = 150; // Buffer zone beyond screen boundary
+          if (movement.hasBeenInBounds && movement.velocityY > 0) {
+            // Only deactivate if entity is beyond the buffer zone AND moving away
+            if (entity.y > maxY + bufferZone) {
+              shouldDestroy = true;
+            }
+          }
+          break;
+        }
       }
     }
 
-    // Handle entity destruction
+    // Handle entity destruction/deactivation
     if (shouldDestroy) {
-      Logger.debug('MovementSystem: Entity destroyed by boundary behavior');
-      // Schedule destruction to avoid physics update conflicts
-      if (this.scene) {
-        this.scene.time.delayedCall(10, () => {
-          if (entity && entity.destroy) {
-            entity.destroy();
-          }
-        });
+      if (this.scene && entity.active) {
+        entity.active = false; // Mark as inactive immediately
+        
+        // Determine if entity should be pooled or permanently destroyed
+        const shouldPool = this.isPoolableEntity(entity);
+        
+        if (shouldPool) {
+          Logger.debug('MovementSystem: Entity deactivated for pooling by boundary behavior', {
+            entityType: entity.entityType,
+            entityId: entity.entityId,
+            boundaryBehavior: movement.boundaryBehavior
+          });
+          
+          // Use deactivation to preserve GameObject for pooling
+          this.scene.events.once('postupdate', () => {
+            if (entity && entity.deactivate) {
+              entity.deactivate();
+            }
+          });
+        } else {
+          Logger.debug('MovementSystem: Entity permanently destroyed by boundary behavior', {
+            entityType: entity.entityType,
+            entityId: entity.entityId,
+            boundaryBehavior: movement.boundaryBehavior
+          });
+          
+          // Use permanent destruction for non-pooled entities
+          this.scene.events.once('postupdate', () => {
+            if (entity && entity.destroy) {
+              entity.destroy();
+            }
+          });
+        }
       }
     }
   }
@@ -514,6 +608,27 @@ export default class MovementSystem extends BaseSystem {
     super.onAddedToScene(scene);
     this.scene = scene;
     Logger.debug(`[MovementSystem] Movement system added to scene: ${scene.scene.key}`);
+  }
+
+  /**
+   * Determine if an entity should be pooled (deactivated) or permanently destroyed
+   * @param {BaseEntity} entity - Entity to check
+   * @returns {boolean} True if entity should be pooled
+   */
+  isPoolableEntity(entity) {
+    if (!entity) return false;
+    
+    // Check by entity type (most reliable)
+    if (entity.entityType) {
+      const poolableTypes = ['projectile', 'enemy', 'powerup', 'particle'];
+      return poolableTypes.includes(entity.entityType);
+    }
+    
+    // Check by constructor name as fallback
+    const constructorName = entity.constructor.name;
+    const poolableConstructors = ['Projectile', 'Enemy', 'PowerUp', 'Particle'];
+    
+    return poolableConstructors.includes(constructorName);
   }
 
   /**

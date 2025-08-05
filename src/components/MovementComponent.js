@@ -56,7 +56,7 @@ export default class MovementComponent extends BaseComponent {
         direction: Math.PI / 2, // Downward
         speed: 150,
       },
-      boundaryBehavior: 'destroy',
+      boundaryBehavior: 'offscreen-deactivate',
       maxSpeed: 180,
     };
   }
@@ -70,7 +70,7 @@ export default class MovementComponent extends BaseComponent {
         baseDirection: Math.PI / 2,
         speed: 120,
       },
-      boundaryBehavior: 'destroy',
+      boundaryBehavior: 'offscreen-deactivate',
       maxSpeed: 150,
     };
   }
@@ -84,7 +84,7 @@ export default class MovementComponent extends BaseComponent {
         baseDirection: Math.PI / 2,
         speed: 80,
       },
-      boundaryBehavior: 'destroy',
+      boundaryBehavior: 'offscreen-deactivate',
       maxSpeed: 100,
     };
   }
@@ -335,7 +335,7 @@ export default class MovementComponent extends BaseComponent {
       ['none', 'straight', 'curve', 'formation', 'chase', 'circle', 'zigzag'].includes(
         this.aiPattern
       ) &&
-      ['clamp', 'wrap', 'bounce', 'destroy'].includes(this.boundaryBehavior)
+      ['clamp', 'wrap', 'bounce', 'destroy', 'offscreen-deactivate'].includes(this.boundaryBehavior)
     );
   }
 }

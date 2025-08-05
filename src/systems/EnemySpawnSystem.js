@@ -1,13 +1,13 @@
-import System from './System.js';
-import Enemy from '../entities/Enemy.js';
-import Logger from '../core/Logger.js';
+import BaseSystem from './BaseSystem.js';
+import Enemy from '@/entities/Enemy.js';
+import Logger from '@/utils/Logger.js';
 
 /**
- * Enemy Spawn System
+ * Enemy Spawn BaseSystem
  * Handles enemy wave generation, formation patterns, and spawn timing
  * Manages difficulty progression and enemy variety
  */
-class EnemySpawnSystem extends System {
+export default class EnemySpawnSystem extends BaseSystem {
   constructor(scene) {
     super();
     this.scene = scene;
@@ -40,6 +40,9 @@ class EnemySpawnSystem extends System {
     };
     this.poolSize = 20; // Per enemy type
 
+    // X-axis buffer to ensure enemies spawn completely on-screen
+    this.SPAWN_BUFFER_X = 80; // Buffer for largest enemy (bomber 64px + 16px safety)
+
     // Spawn locations
     this.spawnZones = [];
     this.initializeSpawnZones();
@@ -71,12 +74,13 @@ class EnemySpawnSystem extends System {
    */
   initializeSpawnZones() {
     const sceneWidth = this.scene.scale.width;
-    const zoneWidth = sceneWidth / 5; // 5 spawn zones
+    const availableWidth = sceneWidth - (2 * this.SPAWN_BUFFER_X);
+    const zoneWidth = availableWidth / 5; // 5 spawn zones within safe area
 
     for (let i = 0; i < 5; i++) {
       this.spawnZones.push({
-        x: i * zoneWidth + zoneWidth / 2,
-        y: -50, // Above screen
+        x: this.SPAWN_BUFFER_X + (i * zoneWidth) + (zoneWidth / 2),
+        y: -150, // Further above screen for proper lifecycle
         width: zoneWidth * 0.8,
         height: 100,
         active: true,
@@ -85,7 +89,7 @@ class EnemySpawnSystem extends System {
       });
     }
 
-    Logger.debug(`Spawn zones initialized: ${this.spawnZones.length} zones`);
+    Logger.debug(`Spawn zones initialized: ${this.spawnZones.length} zones with X-buffer ${this.SPAWN_BUFFER_X}px`);
   }
 
   /**
@@ -351,13 +355,30 @@ class EnemySpawnSystem extends System {
     const enemy = this.getEnemyFromPool(enemyType);
     if (!enemy) return;
 
-    // Position enemy in spawn zone
-    const spawnX = spawnZone.x + (Math.random() - 0.5) * spawnZone.width;
+    // Position enemy in spawn zone with size awareness
+    const enemyConfig = Enemy.getEnemyConfig(enemyType);
+    const enemyHalfWidth = enemyConfig.size.width / 2;
+    const minSpawnX = this.SPAWN_BUFFER_X + enemyHalfWidth;
+    const maxSpawnX = this.scene.scale.width - this.SPAWN_BUFFER_X - enemyHalfWidth;
+
+    let spawnX = spawnZone.x + (Math.random() - 0.5) * spawnZone.width;
+    spawnX = Math.max(minSpawnX, Math.min(maxSpawnX, spawnX)); // Clamp to safe bounds
+
     const spawnY = spawnZone.y + Math.random() * spawnZone.height;
 
     enemy.setPosition(spawnX, spawnY);
     enemy.setActive(true);
     enemy.setVisible(true);
+
+    // Add to scene entities array for system processing
+    if (this.scene.entities && !this.scene.entities.includes(enemy)) {
+      this.scene.entities.push(enemy);
+    }
+
+    // Add to enemy group for collision detection
+    if (this.scene.enemyGroup) {
+      this.scene.enemyGroup.add(enemy);
+    }
 
     // Mark spawn zone as used
     spawnZone.lastUsed = Date.now();
@@ -387,17 +408,33 @@ class EnemySpawnSystem extends System {
       startTime: Date.now(),
     };
 
-    // Spawn formation members
+    // Spawn formation members with buffer validation
+    const enemyConfig = Enemy.getEnemyConfig(enemyType);
+    const enemyHalfWidth = enemyConfig.size.width / 2;
+    const minSpawnX = this.SPAWN_BUFFER_X + enemyHalfWidth;
+    const maxSpawnX = this.scene.scale.width - this.SPAWN_BUFFER_X - enemyHalfWidth;
+
     pattern.positions.forEach((pos, index) => {
       const enemy = this.getEnemyFromPool(enemyType);
       if (!enemy) return;
 
-      const spawnX = spawnZone.x + pos.x;
+      let spawnX = spawnZone.x + pos.x;
+      spawnX = Math.max(minSpawnX, Math.min(maxSpawnX, spawnX)); // Clamp to safe bounds
       const spawnY = spawnZone.y + pos.y;
 
       enemy.setPosition(spawnX, spawnY);
       enemy.setActive(true);
       enemy.setVisible(true);
+
+      // Add to scene entities array for system processing
+      if (this.scene.entities && !this.scene.entities.includes(enemy)) {
+        this.scene.entities.push(enemy);
+      }
+
+      // Add to enemy group for collision detection
+      if (this.scene.enemyGroup) {
+        this.scene.enemyGroup.add(enemy);
+      }
 
       if (index === 0) {
         // First enemy is the leader
@@ -566,6 +603,19 @@ class EnemySpawnSystem extends System {
     Object.keys(this.enemyPool).forEach(enemyType => {
       this.enemyPool[enemyType].forEach(enemy => {
         if (!enemy.active && enemy.x !== -100) {
+          // Remove from scene entities array
+          if (this.scene.entities) {
+            const index = this.scene.entities.indexOf(enemy);
+            if (index !== -1) {
+              this.scene.entities.splice(index, 1);
+            }
+          }
+
+          // Remove from enemy group
+          if (this.scene.enemyGroup && enemy.body) {
+            this.scene.enemyGroup.remove(enemy);
+          }
+
           // Reset enemy to pool state
           enemy.setPosition(-100, -100);
           enemy.setVisible(false);
@@ -661,7 +711,7 @@ class EnemySpawnSystem extends System {
 
   /**
    * Get spawn system statistics
-   * @returns {Object} System statistics
+   * @returns {Object} BaseSystem statistics
    */
   getStats() {
     return {
@@ -718,5 +768,3 @@ class EnemySpawnSystem extends System {
     Logger.info('EnemySpawnSystem destroyed');
   }
 }
-
-export default EnemySpawnSystem;
