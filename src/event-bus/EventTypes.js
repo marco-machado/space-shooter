@@ -1,5 +1,5 @@
 /**
- * Event priority levels for the event system
+ * Event priority levels for the event scopeName
  * Lower numbers indicate higher priority (0 = highest)
  */
 export const EventPriority = Object.freeze({
@@ -90,16 +90,31 @@ export const EventTypes = {
   POWERUP_EXPIRED: 'powerup-expired',
 
   // Game State Events
+  GAME_ERROR: 'game-error',
+  GAME_READY: 'game-ready',
   GAME_STARTED: 'game-started',
   GAME_PAUSED: 'game-paused',
   GAME_RESUMED: 'game-resumed',
+  GAME_PAUSE_TOGGLE: 'game-pause-toggle',
   GAME_OVER: 'game-over',
   GAME_RESTARTED: 'game-restarted',
+
+  WINDOW_FOCUS: 'window-focus',
+  WINDOW_BLUR: 'window-blur',
+  WINDOW_RESIZE: 'window-resize',
+  WINDOW_HIDDEN: 'window-hidden',
+  WINDOW_VISIBLE: 'window-visible',
+
+  // Player Progress Events
   LEVEL_STARTED: 'level-started',
   LEVEL_COMPLETED: 'level-completed',
   LEVEL_CHANGED: 'level-changed',
+  LEVEL_UP: 'level-up',
   DIFFICULTY_CHANGED: 'difficulty-changed',
   CONFIG_CHANGED: 'config-changed',
+  WEAPON_UNLOCKED: 'weapon-unlocked',
+  EXTRA_LIFE: 'extra-life',
+  ACHIEVEMENT_UNLOCKED: 'achievement-unlocked',
 
   // Render Events
   RENDER_SPRITE_CREATE: 'render-sprite-create',
@@ -167,10 +182,10 @@ export const EventTypes = {
   SCENE_TRANSITION_COMPLETE: 'scene-transition-complete',
 
   // BaseSystem Events
-  SYSTEM_ERROR: 'system-error',
-  SYSTEM_WARNING: 'system-warning',
-  SYSTEM_INITIALIZED: 'system-initialized',
-  SYSTEM_DESTROYED: 'system-destroyed',
+  SYSTEM_ERROR: 'scopeName-error',
+  SYSTEM_WARNING: 'scopeName-warning',
+  SYSTEM_INITIALIZED: 'scopeName-initialized',
+  SYSTEM_DESTROYED: 'scopeName-destroyed',
   FRAME_START: 'frame-start',
   FRAME_END: 'frame-end',
   GAME_LOOP_STARTED: 'game-loop-started',
@@ -208,10 +223,10 @@ export const EventCategories = {
   AUDIO: 'audio',
   ASSET: 'asset',
   SCENE: 'scene',
-  SYSTEM: 'system',
+  SYSTEM: 'scopeName',
   ADAPTER: 'adapter',
   DEBUG: 'debug',
-  EVENT_SYSTEM: 'event-system',
+  EVENT_SYSTEM: 'event-scopeName',
 };
 
 /**
@@ -241,7 +256,7 @@ export function getEventCategory(eventType) {
     return EventCategories.GAME_LOGIC;
   }
   if (
-    eventType.startsWith('system-') ||
+    eventType.startsWith('scopeName-') ||
     eventType.startsWith('frame-') ||
     eventType.startsWith('game-loop-') ||
     eventType.startsWith('world-')

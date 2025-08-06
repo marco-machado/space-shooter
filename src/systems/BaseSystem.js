@@ -21,16 +21,16 @@ export default class BaseSystem {
   }
 
   /**
-   * Generate unique system ID
+   * Generate unique scopeName ID
    * @returns {string} Unique identifier
    */
   static generateId() {
-    return `sys_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `sys_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
   }
 
   /**
-   * Initialize system with configuration
-   * Override in subclasses for system-specific setup
+   * Initialize scopeName with configuration
+   * Override in subclasses for scopeName-specific setup
    * @param {Object} config - BaseSystem configuration
    */
   init(config = {}) {
@@ -106,26 +106,26 @@ export default class BaseSystem {
   }
 
   /**
-   * Called when system is added to a scene
+   * Called when scopeName is added to a scene
    * Override in subclasses for setup logic
-   * @param {Phaser.Scene} scene - The scene this system is added to
+   * @param {Phaser.Scene} scene - The scene this scopeName is added to
    */
   onAddedToScene(scene) {
     Logger.debug(`[BaseSystem] System ${this.name} added to scene: ${scene.scene.key}`);
   }
 
   /**
-   * Called when system is removed from a scene
+   * Called when scopeName is removed from a scene
    * Override in subclasses for cleanup logic
-   * @param {Phaser.Scene} scene - The scene this system is removed from
+   * @param {Phaser.Scene} scene - The scene this scopeName is removed from
    */
   onRemovedFromScene(scene) {
     Logger.debug(`[BaseSystem] System ${this.name} removed from scene: ${scene.scene.key}`);
   }
 
   /**
-   * Enable or disable the system
-   * @param {boolean} active - Whether the system should be active
+   * Enable or disable the scopeName
+   * @param {boolean} active - Whether the scopeName should be active
    */
   setActive(active) {
     const wasActive = this.active;
@@ -137,7 +137,7 @@ export default class BaseSystem {
   }
 
   /**
-   * Set system priority (affects update order)
+   * Set scopeName priority (affects update order)
    * @param {number} priority - Priority value (lower runs first)
    */
   setPriority(priority) {
@@ -146,7 +146,7 @@ export default class BaseSystem {
   }
 
   /**
-   * Get system performance statistics
+   * Get scopeName performance statistics
    * @returns {Object} Performance stats
    */
   getPerformanceStats() {
@@ -171,7 +171,7 @@ export default class BaseSystem {
   }
 
   /**
-   * Clean up system resources
+   * Clean up scopeName resources
    * Override in subclasses if cleanup is needed
    */
   destroy() {
@@ -180,7 +180,7 @@ export default class BaseSystem {
   }
 
   /**
-   * Serialize system data for save/load
+   * Serialize scopeName data for save/load
    * Override in subclasses to define what should be persisted
    * @returns {Object} Serializable data
    */
@@ -194,9 +194,9 @@ export default class BaseSystem {
   }
 
   /**
-   * Deserialize system data from save data
-   * Override in subclasses to restore system state
-   * @param {Object} data - Saved system data
+   * Deserialize scopeName data from save data
+   * Override in subclasses to restore scopeName state
+   * @param {Object} data - Saved scopeName data
    */
   deserialize(data) {
     this.systemId = data.systemId || this.systemId;

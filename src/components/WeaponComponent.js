@@ -62,7 +62,7 @@ class WeaponComponent extends BaseComponent {
     this.continuousFire = false;
     this.isFiring = false;
 
-    // Upgrade system
+    // Upgrade scopeName
     this.upgradeLevel = 1;
     this.upgradeBonuses = {
       damage: 0,

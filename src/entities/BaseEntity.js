@@ -1,4 +1,5 @@
 import Logger from '@/utils/Logger.js';
+import ConfigManager from '@/config/ConfigManager.js';
 
 /**
  * Base Entity class using composition pattern with flexible Phaser GameObjects
@@ -32,13 +33,13 @@ export default class BaseEntity {
     // Entity metadata
     this.entityId = BaseEntity.generateId();
 
-    // Internal event system for when gameObject is null
+    // Internal event scopeName for when gameObject is null
     this._eventListeners = new Map();
 
     // Create the GameObject based on configuration
     this.gameObject = this._createGameObject();
 
-    // Register with scene's entity system
+    // Register with scene's entity scopeName
     this._registerWithScene(scene);
 
     Logger.debug(`[BaseEntity] Entity created: ${this.entityId}`, {
@@ -163,7 +164,7 @@ export default class BaseEntity {
    * @returns {string} Unique identifier
    */
   static generateId() {
-    return `entity_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `entity_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
   }
 
   /**
@@ -359,8 +360,12 @@ export default class BaseEntity {
 
       if (this.gameObject) {
         // Re-enable physics if scene has physics and original entity had physics
-        if (this.scene.physics && this.config.requiresPhysics !== false) {
-          this.enablePhysics('dynamic');
+        if (this.scene.physics && this.config.requiresPhysics) {
+          this.enablePhysics(
+            this.config.physicsBodyType || 'dynamic',
+            this.config.collisionGroup,
+            this.config.physicsOptions || {}
+          );
         }
 
         // Restore position from config
@@ -389,7 +394,7 @@ export default class BaseEntity {
   }
 
   /**
-   * Register entity with scene's entity system
+   * Register entity with scene's entity scopeName
    * @private
    * @param {Phaser.Scene} scene - Scene reference
    */
@@ -504,8 +509,41 @@ export default class BaseEntity {
   }
 
   /**
+   * Deactivate entity for pooling (keeps GameObject intact)
+   * Makes entity inactive and invisible but preserves GameObject for reuse
+   */
+  deactivate() {
+    this.active = false;
+    this.visible = false;
+    
+    // Move out of view but don't destroy GameObject
+    if (this.gameObject) {
+      this.gameObject.setPosition(-1000, -1000);
+      this.gameObject.setVisible(false);
+      this.gameObject.setActive(false);
+    }
+
+    // Reset physics velocity if body exists
+    if (this.body && this.body.setVelocity) {
+      this.body.setVelocity(0, 0);
+    }
+
+    // Reset component states without destroying them
+    this.components.forEach(component => {
+      if (component.reset) {
+        component.reset();
+      } else if (component.stop) {
+        component.stop();
+      }
+    });
+
+    Logger.debug(`[BaseEntity] Entity deactivated for pooling: ${this.entityId}`);
+  }
+
+  /**
    * Clean up entity and remove from scene
    * Properly removes from entity registry and cleans up components
+   * WARNING: This permanently destroys the GameObject - use deactivate() for pooling
    */
   destroy() {
     this.active = false;
@@ -540,40 +578,215 @@ export default class BaseEntity {
   }
 
   /**
-   * Enable physics for this entity (null-safe)
+   * Enable physics for this entity with collision group support
    * @param {string} bodyType - Physics body type ('dynamic', 'static', 'kinematic')
+   * @param {string} [collisionGroup] - Collision group name from ConfigManager.COLLISION_GROUPS
+   * @param {Object} [options] - Additional physics options
+   * @param {number} [options.bodyScale] - Scale factor for physics body size (default: 0.8)
+   * @param {number} [options.offsetScale] - Scale factor for physics body offset (default: 0.1)
    * @returns {BaseEntity} This entity for chaining
    */
-  enablePhysics(bodyType = 'dynamic') {
+  enablePhysics(bodyType = 'dynamic', collisionGroup = null, options = {}) {
     if (!this.gameObject) {
       Logger.warn(`[BaseEntity] Entity ${this.entityId}: Cannot enable physics - no GameObject`);
       return this;
     }
 
-    if (this.scene.physics && this.scene.physics.world) {
-      this.scene.physics.add.existing(this.gameObject, bodyType === 'static');
+    if (!this.scene.physics || !this.scene.physics.world) {
+      Logger.warn(`[BaseEntity] Entity ${this.entityId}: Scene has no physics world`);
+      return this;
+    }
 
-      // Configure physics body based on type
-      if (this.body) {
-        switch (bodyType) {
-          case 'static':
-            this.body.setImmovable(true);
-            break;
-          case 'kinematic':
-            this.body.setImmovable(true);
-            this.body.moves = true;
-            break;
-          case 'dynamic':
-          default:
-            this.body.setImmovable(false);
-            break;
-        }
-      }
+    // Add physics body to the gameObject
+    this.scene.physics.add.existing(this.gameObject, bodyType === 'static');
 
-      Logger.debug(`[BaseEntity] Physics enabled for ${this.entityId}: ${bodyType}`);
+    // Configure physics body
+    if (this.body) {
+      this._configurePhysicsBody(bodyType, collisionGroup, options);
+
+      // Store physics configuration for recreation
+      this.config.physicsBodyType = bodyType;
+      this.config.collisionGroup = collisionGroup;
+      this.config.physicsOptions = { ...options };
+      this.config.requiresPhysics = true;
+
+      Logger.debug(`[BaseEntity] Physics enabled for ${this.entityId}`, {
+        bodyType,
+        collisionGroup,
+        bodySize: { width: this.body.width, height: this.body.height },
+        position: { x: this.body.x, y: this.body.y }
+      });
     }
 
     return this;
+  }
+
+  /**
+   * Configure physics body properties based on type and options
+   * @private
+   */
+  _configurePhysicsBody(bodyType, collisionGroup, options) {
+    if (!this.body) return;
+
+    // Configure physics body based on type
+    switch (bodyType) {
+      case 'static':
+        this.body.setImmovable(true);
+        break;
+      case 'kinematic':
+        this.body.setImmovable(true);
+        this.body.moves = true;
+        break;
+      case 'dynamic':
+      default:
+        this.body.setImmovable(false);
+        break;
+    }
+
+    // Set physics body size to match visual representation
+    this._updatePhysicsBodySize(options);
+
+    // Set collision group if provided
+    if (collisionGroup) {
+      this.setCollisionGroup(collisionGroup);
+    }
+
+    Logger.debug(`[BaseEntity] Physics configuration applied for ${this.entityId}`);
+  }
+
+  /**
+   * Update physics body size to match visual representation
+   * @private
+   * @param {Object} options - Physics options
+   */
+  _updatePhysicsBodySize(options = {}) {
+    if (!this.body) return;
+
+    const bodyScale = options.bodyScale || 0.8;
+    const offsetScale = options.offsetScale || 0.1;
+    
+    const visualWidth = this.width;
+    const visualHeight = this.height;
+    
+    const physicsWidth = visualWidth * bodyScale;
+    const physicsHeight = visualHeight * bodyScale;
+    const offsetX = visualWidth * offsetScale;
+    const offsetY = visualHeight * offsetScale;
+
+    this.body.setSize(physicsWidth, physicsHeight);
+    this.body.setOffset(offsetX, offsetY);
+
+    Logger.debug(`[BaseEntity] Physics body sized for ${this.entityId}`, {
+      visual: { width: visualWidth, height: visualHeight },
+      physics: { width: physicsWidth, height: physicsHeight },
+      offset: { x: offsetX, y: offsetY }
+    });
+  }
+
+  /**
+   * Set collision group for this entity
+   * @param {string} groupName - Collision group name from ConfigManager.COLLISION_GROUPS
+   * @returns {BaseEntity} This entity for chaining
+   */
+  setCollisionGroup(groupName) {
+    if (!this.body) {
+      Logger.warn(`[BaseEntity] Entity ${this.entityId}: Cannot set collision group - no physics body`);
+      return this;
+    }
+
+    const constants = ConfigManager.getConstants();
+    
+    if (!constants.COLLISION_GROUPS[groupName.toUpperCase()]) {
+      Logger.warn(`[BaseEntity] Entity ${this.entityId}: Unknown collision group: ${groupName}`);
+      return this;
+    }
+
+    // Store collision group for reference
+    this.collisionGroup = groupName;
+    this.config.collisionGroup = groupName;
+
+    // Set collision category if available
+    const categoryKey = groupName.toUpperCase();
+    if (constants.COLLISION_CATEGORIES[categoryKey]) {
+      this.body.collisionCategory = constants.COLLISION_CATEGORIES[categoryKey];
+    }
+
+    Logger.debug(`[BaseEntity] Collision group set for ${this.entityId}: ${groupName}`);
+    return this;
+  }
+
+  /**
+   * Add collision callback for when this entity collides with another
+   * @param {Function} callback - Callback function (thisEntity, otherEntity) => void
+   * @returns {BaseEntity} This entity for chaining
+   */
+  onCollision(callback) {
+    if (!this.body) {
+      Logger.warn(`[BaseEntity] Entity ${this.entityId}: Cannot add collision callback - no physics body`);
+      return this;
+    }
+
+    // Store callback for use in collision handlers
+    if (!this._collisionCallbacks) {
+      this._collisionCallbacks = [];
+    }
+    this._collisionCallbacks.push(callback);
+
+    Logger.debug(`[BaseEntity] Collision callback added for ${this.entityId}`);
+    return this;
+  }
+
+  /**
+   * Add overlap callback for when this entity overlaps with another (trigger collision)
+   * @param {Function} callback - Callback function (thisEntity, otherEntity) => void
+   * @returns {BaseEntity} This entity for chaining
+   */
+  onOverlap(callback) {
+    if (!this.body) {
+      Logger.warn(`[BaseEntity] Entity ${this.entityId}: Cannot add overlap callback - no physics body`);
+      return this;
+    }
+
+    // Store callback for use in overlap handlers
+    if (!this._overlapCallbacks) {
+      this._overlapCallbacks = [];
+    }
+    this._overlapCallbacks.push(callback);
+
+    Logger.debug(`[BaseEntity] Overlap callback added for ${this.entityId}`);
+    return this;
+  }
+
+  /**
+   * Execute collision callbacks when collision occurs
+   * @param {BaseEntity} otherEntity - The other entity in the collision
+   */
+  _executeCollisionCallbacks(otherEntity) {
+    if (this._collisionCallbacks) {
+      this._collisionCallbacks.forEach(callback => {
+        try {
+          callback(this, otherEntity);
+        } catch (error) {
+          Logger.error(`[BaseEntity] Error in collision callback for ${this.entityId}:`, error);
+        }
+      });
+    }
+  }
+
+  /**
+   * Execute overlap callbacks when overlap occurs
+   * @param {BaseEntity} otherEntity - The other entity in the overlap
+   */
+  _executeOverlapCallbacks(otherEntity) {
+    if (this._overlapCallbacks) {
+      this._overlapCallbacks.forEach(callback => {
+        try {
+          callback(this, otherEntity);
+        } catch (error) {
+          Logger.error(`[BaseEntity] Error in overlap callback for ${this.entityId}:`, error);
+        }
+      });
+    }
   }
 
   /**
@@ -672,7 +885,7 @@ export default class BaseEntity {
   // ========================================
 
   /**
-   * Add event listener (delegates to gameObject or uses internal system)
+   * Add event listener (delegates to gameObject or uses internal scopeName)
    * @param {string} event - Event name
    * @param {Function} callback - Event callback
    * @returns {BaseEntity} This entity for chaining
@@ -681,7 +894,7 @@ export default class BaseEntity {
     if (this.gameObject && this.gameObject.on) {
       this.gameObject.on(event, callback);
     } else {
-      // Fallback internal event system
+      // Fallback internal event scopeName
       if (!this._eventListeners.has(event)) {
         this._eventListeners.set(event, []);
       }
@@ -691,7 +904,7 @@ export default class BaseEntity {
   }
 
   /**
-   * Remove event listener (delegates to gameObject or uses internal system)
+   * Remove event listener (delegates to gameObject or uses internal scopeName)
    * @param {string} event - Event name
    * @param {Function} callback - Event callback to remove
    * @returns {BaseEntity} This entity for chaining
@@ -700,7 +913,7 @@ export default class BaseEntity {
     if (this.gameObject && this.gameObject.off) {
       this.gameObject.off(event, callback);
     } else {
-      // Fallback internal event system
+      // Fallback internal event scopeName
       if (this._eventListeners.has(event)) {
         const listeners = this._eventListeners.get(event);
         const index = listeners.indexOf(callback);
@@ -716,7 +929,7 @@ export default class BaseEntity {
   }
 
   /**
-   * Add one-time event listener (delegates to gameObject or uses internal system)
+   * Add one-time event listener (delegates to gameObject or uses internal scopeName)
    * @param {string} event - Event name
    * @param {Function} callback - Event callback
    * @returns {BaseEntity} This entity for chaining
@@ -725,7 +938,7 @@ export default class BaseEntity {
     if (this.gameObject && this.gameObject.once) {
       this.gameObject.once(event, callback);
     } else {
-      // Fallback internal event system
+      // Fallback internal event scopeName
       const onceWrapper = (...args) => {
         callback(...args);
         this.off(event, onceWrapper);
@@ -736,7 +949,7 @@ export default class BaseEntity {
   }
 
   /**
-   * Emit event (delegates to gameObject or uses internal system)
+   * Emit event (delegates to gameObject or uses internal scopeName)
    * @param {string} event - Event name
    * @param {...any} args - Event arguments
    * @returns {BaseEntity} This entity for chaining
@@ -745,7 +958,7 @@ export default class BaseEntity {
     if (this.gameObject && this.gameObject.emit) {
       this.gameObject.emit(event, ...args);
     } else {
-      // Fallback internal event system
+      // Fallback internal event scopeName
       if (this._eventListeners.has(event)) {
         const listeners = this._eventListeners.get(event).slice(); // Copy to avoid modification during iteration
         listeners.forEach(callback => {
@@ -761,7 +974,7 @@ export default class BaseEntity {
   }
 
   /**
-   * Remove all listeners for an event (delegates to gameObject or uses internal system)
+   * Remove all listeners for an event (delegates to gameObject or uses internal scopeName)
    * @param {string} [event] - Event name (if not provided, removes all listeners)
    * @returns {BaseEntity} This entity for chaining
    */
@@ -769,7 +982,7 @@ export default class BaseEntity {
     if (this.gameObject && this.gameObject.removeAllListeners) {
       this.gameObject.removeAllListeners(event);
     } else {
-      // Fallback internal event system
+      // Fallback internal event scopeName
       if (event) {
         this._eventListeners.delete(event);
       } else {
@@ -841,6 +1054,26 @@ export default class BaseEntity {
     if (this.gameObject && this.gameObject.setTint) {
       this.gameObject.setTint(tint);
     }
+    return this;
+  }
+
+  /**
+   * Set active state (delegates to gameObject)
+   * @param {boolean} value - Active state
+   * @returns {BaseEntity} This entity for chaining
+   */
+  setActive(value) {
+    this.active = value;
+    return this;
+  }
+
+  /**
+   * Set visible state (delegates to gameObject)
+   * @param {boolean} value - Visible state
+   * @returns {BaseEntity} This entity for chaining
+   */
+  setVisible(value) {
+    this.visible = value;
     return this;
   }
 }

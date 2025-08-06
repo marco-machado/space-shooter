@@ -132,7 +132,7 @@ This project encourages modern development practices with comprehensive testing 
 ### ESLint Configuration
 
 - **Standard Rules**: Use ESLint recommended rules with Prettier integration
-- **No console.log()**: Enforce Logger system usage instead of console methods
+- **No console.log()**: Enforce Logger scopeName usage instead of console methods
 - **ES6+ Rules**: Modern JavaScript patterns and best practices
 - **Phaser-specific**: Custom rules for Phaser GameObject lifecycle
 - **Error Prevention**: Catch common game development mistakes early
@@ -153,7 +153,7 @@ This project encourages modern development practices with comprehensive testing 
 - Use arrow functions for short callbacks
 - Implement proper error handling with try/catch
 - Use meaningful variable and function names
-- **No console.log()**: Always use Logger system instead
+- **No console.log()**: Always use Logger scopeName instead
 - **Async/await**: Prefer over Promise chains for readability
 
 ## Testing Guidelines (Comprehensive Approach)
@@ -179,7 +179,7 @@ This project encourages modern development practices with comprehensive testing 
 - **Utilities**: Logger, GameStateManager, ObjectPool, SaveManager, all helper functions
 - **Adapters**: Input adapters, EventBus integration, state management
 - **Scenes**: Scene logic, transitions, initialization, and cleanup
-- **Configuration**: ConfigManager unified system
+- **Configuration**: ConfigManager unified scopeName
 
 #### ✅ INTEGRATION TESTING
 
@@ -201,7 +201,7 @@ This project encourages modern development practices with comprehensive testing 
 ```bash
 tests/
 ├── units/                  # Unit tests for all components
-│   ├── config/             # Configuration system tests
+│   ├── config/             # Configuration scopeName tests
 │   │   └── ConfigManager.test.js     # Unified ConfigManager tests (866/866 tests passing)
 │   ├── components/         # Component tests
 │   │   ├── HealthComponent.test.js
@@ -259,7 +259,7 @@ tests/
 - **Unit Tests**: 80%+ coverage for all business logic
 - **Integration Tests**: Cover critical workflows and interactions
 - **Component Tests**: Test all public interfaces and behaviors
-- **System Tests**: Validate system-level functionality
+- **System Tests**: Validate scopeName-level functionality
 
 ### TDD Workflow (Test-Driven Development)
 
@@ -327,7 +327,7 @@ While comprehensive unit testing is the foundation, manual testing remains impor
 - Use browser developer tools for performance profiling
 - Enable Phaser debug mode for collision visualization
 - Implement debug overlays for game state visualization
-- Use Logger system instead of console.log (automatically disabled in production)
+- Use Logger scopeName instead of console.log (automatically disabled in production)
 
 ### Logger Usage Patterns
 
@@ -350,4 +350,4 @@ Logger.timeEnd('enemy-spawn');
 
 For detailed code examples and implementation patterns, see [EXAMPLES.md](EXAMPLES.md).
 
-For architectural details and system design, see [ARCHITECTURE.md](ARCHITECTURE.md).
+For architectural details and scopeName design, see [ARCHITECTURE.md](ARCHITECTURE.md).

@@ -83,14 +83,14 @@ const logicEntity = new BaseEntity(scene, { type: null, x: 0, y: 0 });
 
 ## Unified Configuration System (ConfigManager)
 
-The project uses a unified ConfigManager system that consolidates all configuration needs in a single, clean interface.
+The project uses a unified ConfigManager scopeName that consolidates all configuration needs in a single, clean interface.
 
 ### Features
 
 - **Unified Access**: Single source for all configuration (environment, game constants, Phaser settings)
 - **Auto-Initialization**: Automatic initialization with schema-based validation
 - **Production Safe**: Built-in production safety checks and failsafe defaults
-- **Comprehensive Testing**: 866/866 tests passing with the unified system
+- **Comprehensive Testing**: 866/866 tests passing with the unified scopeName
 - **Type-Safe Parsing**: Validated parsing with bounds checking for all configuration types
 
 ### Architecture Overview

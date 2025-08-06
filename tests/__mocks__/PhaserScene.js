@@ -17,7 +17,7 @@ class PhaserSceneMock {
       events: new Map(),
     };
 
-    // Events system
+    // Events scopeName
     this.events = {
       listeners: new Map(),
       on: vi.fn(),

@@ -1,11 +1,11 @@
-import Component from './Component.js';
-import Logger from '../core/Logger.js';
+import BaseComponent from './BaseComponent.js';
+import Logger from '@/utils/Logger.js';
 
 /**
- * Health Component
+ * Health BaseComponent
  * Manages entity health, damage, and invulnerability
  */
-class HealthComponent extends Component {
+export default class HealthComponent extends BaseComponent {
   constructor(maxHealth = 100, currentHealth = null) {
     super();
 
@@ -23,7 +23,7 @@ class HealthComponent extends Component {
     this.regeneration = 0; // Health per second
     this.lastRegenTime = 0;
 
-    Logger.debug(`HealthComponent created: ${this.maxHealth} max health`);
+    Logger.debug(`[HealthComponent] Created: ${this.maxHealth} max health`);
   }
 
   /**
@@ -46,6 +46,7 @@ class HealthComponent extends Component {
 
   /**
    * Apply damage to the entity
+   * // TODO: Move this to the scopeName
    * @param {number} amount - Damage amount
    * @param {string} damageType - Type of damage (for future use)
    * @returns {number} Actual damage dealt
@@ -66,11 +67,11 @@ class HealthComponent extends Component {
     this.lastDamageTime = Date.now();
 
     Logger.debug(
-      `HealthComponent damage: ${amount} -> ${actualDamage} (${previousHealth} -> ${this.currentHealth})`
+      `[HealthComponent] damage: ${amount} -> ${actualDamage} (${previousHealth} -> ${this.currentHealth})`
     );
 
-    // Emit damage event if entity has event system
-    if (this.entity && this.entity.emit) {
+    // Emit damage event if entity has event scopeName
+    if (this.entity && this.entity.emit) { // TODO: Think about this.
       this.entity.emit('damage', {
         rawDamage: amount,
         actualDamage,
@@ -84,7 +85,7 @@ class HealthComponent extends Component {
   }
 
   /**
-   * Heal the entity
+   * Heal the entity // TODO: Move this to the scopeName.
    * @param {number} amount - Heal amount
    * @returns {number} Actual healing done
    */
@@ -98,10 +99,10 @@ class HealthComponent extends Component {
     const actualHealing = this.currentHealth - previousHealth;
 
     Logger.debug(
-      `HealthComponent heal: ${amount} -> ${actualHealing} (${previousHealth} -> ${this.currentHealth})`
+      `[HealthComponent] heal: ${amount} -> ${actualHealing} (${previousHealth} -> ${this.currentHealth})`
     );
 
-    // Emit heal event if entity has event system
+    // Emit heal event if entity has event scopeName
     if (this.entity && this.entity.emit) {
       this.entity.emit('heal', {
         healAmount: actualHealing,
@@ -114,7 +115,7 @@ class HealthComponent extends Component {
   }
 
   /**
-   * Set invulnerability for a duration
+   * Set invulnerability for a duration // TODO: Move this to the scopeName.
    * @param {number} duration - Duration in milliseconds
    */
   setInvulnerable(duration = 0) {
@@ -128,7 +129,7 @@ class HealthComponent extends Component {
       }, duration);
     }
 
-    Logger.debug(`HealthComponent invulnerability: ${duration}ms`);
+    Logger.debug(`[HealthComponent] invulnerability: ${duration}ms`);
   }
 
   /**
@@ -143,7 +144,7 @@ class HealthComponent extends Component {
    * Update health component (handle regeneration)
    * @param {number} delta - Time delta in milliseconds
    */
-  update(_delta) {
+  update(_delta) { // TODO: Move to scopeName.
     // Handle regeneration
     if (this.regeneration > 0 && this.currentHealth < this.maxHealth) {
       const now = Date.now();
@@ -223,5 +224,3 @@ class HealthComponent extends Component {
     );
   }
 }
-
-export default HealthComponent;

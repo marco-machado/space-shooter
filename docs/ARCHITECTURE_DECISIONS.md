@@ -49,7 +49,7 @@ Implement an BaseEntity BaseComponent BaseSystem (ECS) architecture built on top
 **Alternatives Considered:**
 
 - **Pure Phaser Approach**: Too rigid for complex entity behaviors
-- **Full ECS Library**: Overhead not justified for game scope
+- **Full ECS Library**: Overhead not justified for game scopeName
 - **Traditional Inheritance**: Becomes unwieldy with multiple entity types
 
 ### Implementation
@@ -203,7 +203,7 @@ Console logging is essential for development debugging but should be completely 
 
 ### Decision
 
-Implement a centralized Logger system that respects environment configuration:
+Implement a centralized Logger scopeName that respects environment configuration:
 
 - **Environment-Aware**: Automatically disabled in production builds
 - **Log Levels**: Debug, Info, Warn, Error with filtering capability
@@ -224,7 +224,7 @@ Implement a centralized Logger system that respects environment configuration:
 
 - **Console.log with manual removal**: Error-prone and labor-intensive
 - **Build-time log removal**: Complex build configuration
-- **Third-party logging library**: Overkill for project scope
+- **Third-party logging library**: Overkill for project scopeName
 
 ### Implementation
 
@@ -274,7 +274,7 @@ Logger.error('Failed to load asset', error);
 
 - ESLint rule prevents console.log usage
 - Clear documentation and examples
-- Logger.init() called early in startup sequence
+- Logger auto-initializes on first use
 
 ---
 
@@ -290,7 +290,7 @@ The game requires multiple distinct states (loading, menu, gameplay, game over) 
 
 ### Decision
 
-Implement a structured scene flow using Phaser's scene management system:
+Implement a structured scene flow using Phaser's scene management scopeName:
 
 ```
 BootScene → PreloaderScene → MainMenuScene → GameScene
@@ -326,7 +326,7 @@ Each scene has a specific responsibility:
 class BootScene extends Phaser.Scene {
   create() {
     Environment.init();
-    Logger.init();
+
     this.scene.start('PreloaderScene');
   }
 }
@@ -381,7 +381,7 @@ class GameScene extends Phaser.Scene {
 
 ### Context
 
-In ECS architecture, there are different approaches to component design. Components can be pure data containers, or they can include methods and logic. The choice affects maintainability, testing, and system design.
+In ECS architecture, there are different approaches to component design. Components can be pure data containers, or they can include methods and logic. The choice affects maintainability, testing, and scopeName design.
 
 ### Decision
 
@@ -464,7 +464,7 @@ class CombatSystem extends BaseSystem {
 
 **Negative:**
 
-- ❌ Some operations require component + system coordination
+- ❌ Some operations require component + scopeName coordination
 - ❌ May feel verbose for simple operations
 - ❌ Requires discipline to maintain separation
 
@@ -599,7 +599,7 @@ Use direct development on the main branch with quality gates:
 **Alternatives Considered:**
 
 - **Feature Branches**: Overhead not justified for single developer
-- **GitFlow**: Too complex for project scope
+- **GitFlow**: Too complex for project scopeName
 - **Release Branches**: Not needed for continuous development
 
 ### Implementation
@@ -650,7 +650,7 @@ git commit -m "implement: feature description"
 
 ### Context
 
-The original Logger system required explicit initialization before use (`Logger.init()` must be called first), creating dependency ordering requirements and potential runtime errors if initialization was forgotten. This pattern was error-prone and created friction in development workflow.
+The original Logger system required explicit initialization before use, creating dependency ordering requirements and potential runtime errors if initialization was forgotten. This pattern was error-prone and created friction in development workflow.
 
 ### Decision
 
@@ -1061,7 +1061,7 @@ describe('BaseEntity GameObject Types', () => {
 
 - **Mobile Input Adapter**: Extend input adapter pattern for touch/mobile input
 - **Audio System Architecture**: Web Audio API integration with EventBus pattern
-- **Particle System Integration**: BaseEntity-based particle system design
+- **Particle System Integration**: BaseEntity-based particle scopeName design
 - **Save Game Versioning**: Data format evolution and migration strategies
 - **Performance Monitoring**: Real-time performance metrics and optimization
 

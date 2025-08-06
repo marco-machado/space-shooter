@@ -247,7 +247,7 @@ export default HealthComponent;
 ### Movement System Example
 
 ```javascript
-// src/systems/MovementSystem.js - Example system (logic handler)
+// src/systems/MovementSystem.js - Example scopeName (logic handler)
 import BaseSystem from './BaseSystem.js';
 import MovementComponent from '@/components/MovementComponent.js';
 import Logger from '@/utils/Logger.js';
@@ -355,7 +355,7 @@ if (ConfigManager.getConfig().debugMode) {
 ### Auto-initializing Logger System Pattern
 
 ```javascript
-// Auto-initializing Logger system pattern
+// Auto-initializing Logger scopeName pattern
 class Logger {
   static _ensureInitialized() {
     if (!this.isInitialized) {
@@ -609,11 +609,11 @@ import MovementSystem from '@/systems/MovementSystem.js';
 import MovementComponent from '@/components/MovementComponent.js';
 
 describe('MovementSystem', () => {
-  let system;
+  let scopeName;
   let mockEntities;
 
   beforeEach(() => {
-    system = new MovementSystem();
+    scopeName = new MovementSystem();
     mockEntities = [
       {
         x: 0,
@@ -626,14 +626,14 @@ describe('MovementSystem', () => {
   });
 
   it('should update entity positions', () => {
-    system.update(mockEntities, 16); // 16ms delta
+    scopeName.update(mockEntities, 16); // 16ms delta
     expect(mockEntities[0].x).toBe(80); // 5 * 16
   });
 
   it('should skip inactive entities', () => {
     mockEntities[0].active = false;
     const initialX = mockEntities[0].x;
-    system.update(mockEntities, 16);
+    scopeName.update(mockEntities, 16);
     expect(mockEntities[0].x).toBe(initialX); // No movement
   });
 });
@@ -833,6 +833,6 @@ export default SaveManager;
 
 ---
 
-For architectural details and system design patterns, see [ARCHITECTURE.md](ARCHITECTURE.md).
+For architectural details and scopeName design patterns, see [ARCHITECTURE.md](ARCHITECTURE.md).
 
 For development workflow and testing strategies, see [DEVELOPMENT.md](DEVELOPMENT.md).

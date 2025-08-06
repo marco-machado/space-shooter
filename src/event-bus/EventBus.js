@@ -159,7 +159,7 @@ export default class EventBus {
           listeners.delete(listener);
           removed = true;
           Logger.debug(`[EventBus] Removed regular listener ${listenerId} from ${eventType}`);
-          
+
           // Clean up empty event type entries
           if (listeners.size === 0) {
             this.listeners.delete(eventType);
@@ -176,7 +176,7 @@ export default class EventBus {
           listeners.delete(listener);
           removed = true;
           Logger.debug(`[EventBus] Removed one-time listener ${listenerId} from ${eventType}`);
-          
+
           // Clean up empty event type entries
           if (listeners.size === 0) {
             this.oneTimeListeners.delete(eventType);
@@ -216,13 +216,10 @@ export default class EventBus {
       throw new Error('[EventBus] Event type must be a non-empty string');
     }
 
-    Logger.debug('[EventBus] Emitting event type', eventType);
+    Logger.scope('EventBus').info(`Emitting event type: ${eventType}`);
 
-    if (priority === null) {
-      priority = getDefaultPriority(eventType);
-    }
+    const event = this.createEvent(eventType, eventData, priority || getDefaultPriority(eventType));
 
-    const event = this.createEvent(eventType, eventData, priority);
     this.processEventImmediate(event);
     return event.id;
   }
@@ -276,17 +273,17 @@ export default class EventBus {
       // Process one-time listeners
       if (this.oneTimeListeners.has(event.type)) {
         const listeners = Array.from(this.oneTimeListeners.get(event.type));
-        
+
         // Call listeners first
         const calledListeners = this.callListeners(listeners, event);
-        
+
         // Remove only the listeners that were successfully called
         if (calledListeners && calledListeners.length > 0) {
           const remainingListeners = this.oneTimeListeners.get(event.type);
           for (const calledListener of calledListeners) {
             remainingListeners.delete(calledListener);
           }
-          
+
           // Clean up empty event type entries
           if (remainingListeners.size === 0) {
             this.oneTimeListeners.delete(event.type);
@@ -301,18 +298,20 @@ export default class EventBus {
       }
 
       event.processed = true;
-      
+
       // Log processing time for performance monitoring
       const processingTime = performance.now() - startTime;
       if (processingTime > 10) {
-        Logger.warn(`[EventBus] Slow event processing: ${processingTime}ms for event ${event.type}`);
+        Logger.warn(
+          `[EventBus] Slow event processing: ${processingTime}ms for event ${event.type}`
+        );
       }
     } catch (error) {
       Logger.error('[EventBus] Error processing event:', {
         eventType: event.type,
         eventId: event.id,
         error: error.message,
-        stack: error.stack
+        stack: error.stack,
       });
       this.handleError(error, event, 'event-processing');
     }
@@ -326,7 +325,7 @@ export default class EventBus {
    */
   callListeners(listeners, event, isWildcard = false) {
     const calledListeners = [];
-    
+
     for (const listener of listeners) {
       try {
         const callStartTime = performance.now();
@@ -347,7 +346,7 @@ export default class EventBus {
 
         const callTime = performance.now() - callStartTime;
         calledListeners.push(listener);
-        
+
         // Log slow listeners for debugging
         if (callTime > 5) {
           Logger.warn(`[EventBus] Slow listener detected: ${callTime}ms for event ${event.type}`);
@@ -357,12 +356,12 @@ export default class EventBus {
           eventType: event.type,
           listenerId: listener.id,
           error: error.message,
-          stack: error.stack
+          stack: error.stack,
         });
         this.handleError(error, event, 'listener-execution', listener);
       }
     }
-    
+
     return calledListeners;
   }
 
@@ -377,17 +376,18 @@ export default class EventBus {
    */
   validateEventTypes(eventTypes) {
     if (!eventTypes) return false;
-    
+
     if (typeof eventTypes === 'string') {
       return eventTypes.trim() !== '';
     }
-    
+
     if (Array.isArray(eventTypes)) {
-      return eventTypes.length > 0 && eventTypes.every(type => 
-        typeof type === 'string' && type.trim() !== ''
+      return (
+        eventTypes.length > 0 &&
+        eventTypes.every(type => typeof type === 'string' && type.trim() !== '')
       );
     }
-    
+
     return false;
   }
 
@@ -425,14 +425,14 @@ export default class EventBus {
       error: {
         message: error.message,
         name: error.name,
-        stack: error.stack
-      }
+        stack: error.stack,
+      },
     };
 
     if (listener) {
       errorInfo.listener = {
         id: listener.id,
-        callbackName: listener.callback.name || 'anonymous'
+        callbackName: listener.callback.name || 'anonymous',
       };
     }
 
@@ -460,8 +460,8 @@ export default class EventBus {
       wildcardListeners: this.wildcardListeners.size,
       eventTypes: {
         regular: Array.from(this.listeners.keys()),
-        oneTime: Array.from(this.oneTimeListeners.keys())
-      }
+        oneTime: Array.from(this.oneTimeListeners.keys()),
+      },
     };
 
     // Count regular listeners

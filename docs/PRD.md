@@ -205,7 +205,7 @@ Create an engaging top-down space shooter game using Phaser.js 3.x with Vite bui
 - **Architecture**: Simple BaseEntity BaseComponent BaseSystem using Phaser's API
 - **Code Quality**: ESLint for linting, Prettier for code formatting
 - **Testing**: Vitest for unit testing
-- **Logging**: Custom Logger system with environment-based debug modes
+- **Logging**: Custom Logger scopeName with environment-based debug modes
 - **Configuration**: .env files for environment variables
 - **Audio**: Web Audio API via Phaser with spatial audio support
 - **Storage**: localStorage for persistence
@@ -215,7 +215,7 @@ Create an engaging top-down space shooter game using Phaser.js 3.x with Vite bui
 
 - **BaseEntity BaseComponent BaseSystem**: Lightweight ECS using Phaser GameObjects as entities
 - **Components**: Leverage Phaser's built-in systems (Transform, Physics, Render, Input)
-- **Systems**: Use Phaser's scene update loop and event system
+- **Systems**: Use Phaser's scene update loop and event scopeName
 - **Development Graphics**: Simple colored rectangles and shapes for rapid prototyping
 - **Logger Integration**: Environment-aware debug logging throughout development
 - **Code Quality Standards**: ESLint rules for consistent code style and error prevention
@@ -294,7 +294,7 @@ Create an engaging top-down space shooter game using Phaser.js 3.x with Vite bui
 - **Vite + Phaser Project Setup**: Initialize with official Phaser Vite template
 - **Code Quality Setup**: Configure ESLint, Prettier, and Vitest
 - **Environment Configuration**: Set up .env files and environment variables
-- **Logger System**: Implement debug-aware logging system
+- **Logger System**: Implement debug-aware logging scopeName
 - **Basic ECS Architecture**: Create BaseEntity, BaseComponent, and BaseSystem base classes with minimal tests
 - **Development Graphics**: Create colored rectangle placeholders for all game objects
 - **Player BaseEntity**: Blue 64x64px rectangle with basic movement
@@ -310,7 +310,7 @@ Create an engaging top-down space shooter game using Phaser.js 3.x with Vite bui
 ### Phase 3: Game Systems & Progression (Week 3)
 
 - **Power-up System**: Green/purple colored shapes with effects
-- **XP and Leveling**: Progression system with localStorage persistence
+- **XP and Leveling**: Progression scopeName with localStorage persistence
 - **Weapon Upgrades**: Enhanced firing patterns and damage
 - **Audio Integration**: Web Audio API with spatial positioning
 - **UI System**: Simple text-based HUD and menus

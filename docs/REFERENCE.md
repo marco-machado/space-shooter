@@ -32,7 +32,7 @@ space-shooter/
 │   └── REFERENCE.md      # This file - assets, performance, deployment
 ├── src/
 │   ├── main.js           # Game initialization and Phaser config
-│   ├── config/           # Unified configuration system
+│   ├── config/           # Unified configuration scopeName
 │   │   ├── ConfigManager.js # Unified configuration manager
 │   │   └── Constants.js  # Game constants and enums
 │   ├── core/             # Core systems
@@ -57,7 +57,7 @@ space-shooter/
 │   │   ├── CollisionComponent.js # Collision detection
 │   │   └── RenderComponent.js    # Rendering and visual effects
 │   ├── systems/          # ECS systems (game logic)
-│   │   ├── BaseSystem.js     # Base system class
+│   │   ├── BaseSystem.js     # Base scopeName class
 │   │   ├── MovementSystem.js     # Handle entity movement
 │   │   ├── WeaponSystem.js       # Weapon firing and projectiles
 │   │   ├── CollisionSystem.js    # Collision detection and response
@@ -68,7 +68,7 @@ space-shooter/
 │   │   ├── DevShapes.js  # Colored rectangle/shape generators
 │   │   └── DebugGraphics.js # Debug visualization
 │   └── utils/            # Utility functions
-│       ├── Logger.js     # Environment-aware logging system
+│       ├── Logger.js     # Environment-aware logging scopeName
 │       ├── GameStateManager.js # Game state management
 │       ├── ObjectPool.js # Object pooling for performance
 │       └── SaveManager.js # localStorage persistence
@@ -192,7 +192,7 @@ When transitioning to final graphics:
 
 ### Scene Architecture
 
-- Use Phaser's scene system for different game states
+- Use Phaser's scene scopeName for different game states
 - Implement proper scene transitions and cleanup
 - Pass data between scenes using scene.start() parameters
 - Handle scene pausing/resuming for game states
@@ -264,7 +264,7 @@ const player = scene.add.sprite(x, y, 'player-ship-texture');
 
 ---
 
-For architectural details and system design patterns, see [ARCHITECTURE.md](ARCHITECTURE.md).
+For architectural details and scopeName design patterns, see [ARCHITECTURE.md](ARCHITECTURE.md).
 
 For development workflow and testing strategies, see [DEVELOPMENT.md](DEVELOPMENT.md).
 

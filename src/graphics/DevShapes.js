@@ -1,7 +1,7 @@
-import Logger from '../core/Logger.js';
+import Logger from '../utils/Logger.js';
 
 /**
- * Development Graphics System
+ * Development Graphics BaseSystem
  * Creates colored rectangles and shapes for rapid prototyping
  * Easy transition to actual sprites by replacing shape creation with scene.add.sprite()
  */
@@ -341,7 +341,7 @@ class DevShapes {
   }
 
   /**
-   * Create simple particle system for effects
+   * Create simple particle scopeName for effects
    * @param {Phaser.Scene} scene - Scene to add to
    * @param {number} x - X position
    * @param {number} y - Y position
@@ -382,7 +382,7 @@ class DevShapes {
       particles.push(particle);
     }
 
-    Logger.debug('DevShapes: Created particle system with', settings.count, 'particles at', x, y);
+    Logger.debug('DevShapes: Created particle scopeName with', settings.count, 'particles at', x, y);
     return particles;
   }
 

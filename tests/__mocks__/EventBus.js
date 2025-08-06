@@ -122,6 +122,48 @@ class EventBusMock {
     return event.id;
   }
 
+  off(listenerId) {
+    if (!listenerId || typeof listenerId !== 'string') {
+      return false;
+    }
+
+    // Remove from regular listeners
+    for (const [eventType, listeners] of this.listeners) {
+      for (const listener of listeners) {
+        if (listener.id === listenerId) {
+          listeners.delete(listener);
+          if (listeners.size === 0) {
+            this.listeners.delete(eventType);
+          }
+          return true;
+        }
+      }
+    }
+
+    // Remove from one-time listeners
+    for (const [eventType, listeners] of this.oneTimeListeners) {
+      for (const listener of listeners) {
+        if (listener.id === listenerId) {
+          listeners.delete(listener);
+          if (listeners.size === 0) {
+            this.oneTimeListeners.delete(eventType);
+          }
+          return true;
+        }
+      }
+    }
+
+    // Remove from wildcard listeners
+    for (const listener of this.wildcardListeners) {
+      if (listener.id === listenerId) {
+        this.wildcardListeners.delete(listener);
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   generateListenerId() {
     return `lis_${this.nextListenerId++}_${Date.now()}`;
   }

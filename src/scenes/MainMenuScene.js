@@ -1,5 +1,5 @@
-import Logger from '../core/Logger.js';
-import Environment from '../config/Environment.js';
+import Logger from '@/utils/Logger.js';
+import ConfigManager from '@/config/ConfigManager.js';
 
 /**
  * Main Menu Scene - Game entry point and navigation
@@ -18,16 +18,19 @@ class MainMenuScene extends Phaser.Scene {
    * Initialize main menu scene
    */
   init() {
-    Logger.info('MainMenuScene: Initializing main menu');
+    Logger.debug('MainMenuScene.init() begin');
+
     this.selectedIndex = 0;
     this.menuActive = true;
+
+    Logger.debug('MainMenuScene.init() end');
   }
 
   /**
    * Create main menu elements
    */
   create() {
-    Logger.info('MainMenuScene: Creating main menu');
+    Logger.debug('MainMenuScene.create() begin');
 
     // Create background
     this.createBackground();
@@ -39,22 +42,39 @@ class MainMenuScene extends Phaser.Scene {
     this.createMenu();
 
     // Create info panels
-    this.createInfoPanels();
+    // this.createInfoPanels();
 
     // Set up input handling
-    this.setupInput();
+    this.setupInput(); // TODO: Use the EventBus
 
     // Add entrance animations
     this.animateEntrance();
 
     // Fade in from black
     this.cameras.main.fadeIn(500, 0, 0, 0);
+
+    Logger.debug('MainMenuScene.create() end');
+  }
+
+  /**
+   * Update main menu scene
+   * @param {number} time - Current time
+   * @param {number} delta - Time delta
+   */
+  update(time, delta) {
+    // Update star animation or other background effects
+    // Performance monitoring in debug mode
+    if (ConfigManager.getConfig().showDebugInfo && time % 1000 < delta) {
+      Logger.debug('MainMenuScene.update(): FPS ~', Math.round(1000 / delta));
+    }
   }
 
   /**
    * Create animated background
    */
   createBackground() {
+    Logger.debug('MainMenuScene.createBackground() begin');
+
     const centerX = this.scale.width / 2;
     const centerY = this.scale.height / 2;
 
@@ -85,19 +105,21 @@ class MainMenuScene extends Phaser.Scene {
       this.stars.push(star);
     }
 
-    Logger.debug('MainMenuScene: Background created with animated stars');
+    Logger.debug('MainMenuScene.createBackground() end');
   }
 
   /**
    * Create game title
    */
   createTitle() {
+    Logger.debug('MainMenuScene.createTitle()');
+
     const centerX = this.scale.width / 2;
 
     // Main title
     this.titleText = this.add
       .text(centerX, 120, 'SPACE SHOOTER', {
-        fontSize: '64px',
+        fontSize: '32px',
         color: '#ffffff',
         fontFamily: 'Arial, sans-serif',
         stroke: '#0099ff',
@@ -116,7 +138,7 @@ class MainMenuScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     // Version info (development)
-    if (Environment.DEBUG_MODE) {
+    if (ConfigManager.getConfig().debugMode) {
       this.add
         .text(centerX, 210, 'Development Build - Colored Rectangle Graphics', {
           fontSize: '12px',
@@ -186,8 +208,6 @@ class MainMenuScene extends Phaser.Scene {
 
     // Set initial selection
     this.updateMenuSelection();
-
-    Logger.debug('MainMenuScene: Menu created with', this.menuItems.length, 'items');
   }
 
   /**
@@ -225,13 +245,13 @@ class MainMenuScene extends Phaser.Scene {
     });
 
     // Development info
-    if (Environment.SHOW_DEBUG_INFO) {
+    if (ConfigManager.getConfig().showDebugInfo) {
       const debugInfo = [
         'DEBUG INFO:',
-        `Environment: ${Environment.IS_DEVELOPMENT ? 'Development' : 'Production'}`,
-        `Log Level: ${Environment.LOG_LEVEL}`,
-        `Physics Debug: ${Environment.PHYSICS_DEBUG}`,
-        `Audio: ${Environment.AUDIO_ENABLED}`,
+        `Environment: ${ConfigManager.getConfig().isDevelopment ? 'Development' : 'Production'}`,
+        `Log Level: ${ConfigManager.getConfig().logLevel}`,
+        `Physics Debug: ${ConfigManager.getConfig().physicsDebug}`,
+        `Audio: ${ConfigManager.getConfig().audioEnabled}`,
       ].join('\n');
 
       this.add.text(this.scale.width - 200, 50, debugInfo, {
@@ -273,13 +293,11 @@ class MainMenuScene extends Phaser.Scene {
     });
 
     // Quick start for development
-    if (Environment.DEBUG_MODE) {
+    if (ConfigManager.getConfig().debugMode) {
       this.input.keyboard.on('keydown-F1', () => {
         this.startGame();
       });
     }
-
-    Logger.debug('MainMenuScene: Input handlers configured');
   }
 
   /**
@@ -296,7 +314,6 @@ class MainMenuScene extends Phaser.Scene {
     }
 
     this.updateMenuSelection();
-    Logger.debug('MainMenuScene: Menu navigation to index', this.selectedIndex);
   }
 
   /**
@@ -338,8 +355,6 @@ class MainMenuScene extends Phaser.Scene {
 
     this.menuActive = false;
     const item = this.menuItems[index];
-
-    Logger.info('MainMenuScene: Activating menu item:', item.action);
 
     // Add activation animation
     this.tweens.add({
@@ -383,11 +398,11 @@ class MainMenuScene extends Phaser.Scene {
    * Start the game
    */
   startGame() {
-    Logger.info('MainMenuScene: Starting game');
+    Logger.debug('MainMenuScene.startGame()');
 
     this.cameras.main.fadeOut(500, 0, 0, 0);
 
-    this.cameras.main.once('camerafadeoutcomplete', () => {
+    this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
       this.scene.start('GameScene');
     });
   }
@@ -396,8 +411,6 @@ class MainMenuScene extends Phaser.Scene {
    * Show instructions (placeholder)
    */
   showInstructions() {
-    Logger.info('MainMenuScene: Showing instructions (placeholder)');
-
     // For now, just show a simple message and return to menu
     const centerX = this.scale.width / 2;
     const centerY = this.scale.height / 2;
@@ -438,8 +451,6 @@ class MainMenuScene extends Phaser.Scene {
    * Show settings (placeholder)
    */
   showSettings() {
-    Logger.info('MainMenuScene: Showing settings (placeholder)');
-
     // Simple settings display - will be expanded later
     const centerX = this.scale.width / 2;
     const centerY = this.scale.height / 2;
@@ -449,10 +460,10 @@ class MainMenuScene extends Phaser.Scene {
         centerX,
         centerY,
         'SETTINGS:\n\n' +
-          `Audio: ${Environment.AUDIO_ENABLED ? 'Enabled' : 'Disabled'}\n` +
-          `Debug Mode: ${Environment.DEBUG_MODE ? 'On' : 'Off'}\n` +
-          `Physics Debug: ${Environment.PHYSICS_DEBUG ? 'On' : 'Off'}\n` +
-          `Log Level: ${Environment.LOG_LEVEL}\n\n` +
+          `Audio: ${ConfigManager.getConfig().audioEnabled ? 'Enabled' : 'Disabled'}\n` +
+          `Debug Mode: ${ConfigManager.getConfig().debugMode ? 'On' : 'Off'}\n` +
+          `Physics Debug: ${ConfigManager.getConfig().physicsDebug ? 'On' : 'Off'}\n` +
+          `Log Level: ${ConfigManager.getConfig().logLevel}\n\n` +
           'Settings can be modified in .env file\n\n' +
           'Press any key to return to menu',
         {
@@ -522,23 +533,10 @@ class MainMenuScene extends Phaser.Scene {
   }
 
   /**
-   * Update main menu scene
-   * @param {number} time - Current time
-   * @param {number} delta - Time delta
-   */
-  update(time, delta) {
-    // Update star animation or other background effects
-    // Performance monitoring in debug mode
-    if (Environment.SHOW_DEBUG_INFO && time % 1000 < delta) {
-      Logger.debug('MainMenuScene update: FPS ~', Math.round(1000 / delta));
-    }
-  }
-
-  /**
    * Clean up main menu scene
    */
   shutdown() {
-    Logger.debug('MainMenuScene: Shutting down');
+    Logger.debug('MainMenuScene.shutdown()');
 
     // Clean up timers and tweens
     this.time.removeAllEvents();

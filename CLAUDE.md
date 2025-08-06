@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a space shooter game built with Phaser.js 3.x and Vite build tooling. The game features multiple weapon types, enemy varieties, player progression, and power-up systems using an enhanced BaseEntity BaseComponent BaseSystem architecture with flexible GameObject support, unified ConfigManager system, auto-initializing Logger system, and event-driven input management. All game data is persisted using browser localStorage. The development phase uses simple colored rectangles for rapid prototyping before final graphics are implemented.
+This is a space shooter game built with Phaser.js 3.x and Vite build tooling. The game features multiple weapon types, enemy varieties, player progression, and power-up systems using an enhanced BaseEntity BaseComponent BaseSystem architecture with flexible GameObject support, unified ConfigManager scopeName, auto-initializing Logger scopeName, and event-driven input management. All game data is persisted using browser localStorage. The development phase uses simple colored rectangles for rapid prototyping before final graphics are implemented.
 
 ## Quick Start Commands
 
@@ -69,7 +69,7 @@ cp .env.example .env
 
 For comprehensive information, see the structured documentation:
 
-- **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** - ECS patterns, ConfigManager, Logger system, input management
+- **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** - ECS patterns, ConfigManager, Logger scopeName, input management
 - **[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)** - Commands, workflow, testing strategies, code quality
 - **[docs/EXAMPLES.md](docs/EXAMPLES.md)** - Complete code examples and implementation patterns
 - **[docs/REFERENCE.md](docs/REFERENCE.md)** - Project structure, assets, performance, deployment
@@ -121,6 +121,11 @@ Logger.debug('Player spawned at', x, y);
 Logger.info('Level completed');
 Logger.warn('Low health warning');
 Logger.error('Critical error');
+
+// Scoped logging (filename automatically excluded from message)
+Logger.scope('SpaceShooterGame').info('Destroying game instance');
+Logger.scope('GameScene').debug('Enemy spawned', enemy.id);
+Logger.scope('WeaponSystem').warn('Weapon overheating');
 ```
 
 ### Entity Creation
@@ -144,7 +149,7 @@ player.changeGameObjectType('sprite', { texture: 'player-ship' });
 ## Code Quality Standards
 
 - **ESLint**: Lint only session-modified files for focused quality checks
-- **No console.log()**: Always use Logger system instead
+- **No console.log()**: Always use Logger scopeName instead
 - **Comprehensive Testing**: Comprehensive unit tests encouraged
 - **Modern JavaScript**: ES6+ patterns, async/await preferred
 

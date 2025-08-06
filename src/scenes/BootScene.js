@@ -1,5 +1,6 @@
-import Environment from '../config/Environment.js';
-import Logger from '../core/Logger.js';
+import ConfigManager from '@/config/ConfigManager.js';
+import Logger from '@/utils/Logger.js';
+import Phaser from 'phaser';
 
 /**
  * Boot Scene - Initial setup and environment loading
@@ -10,83 +11,52 @@ class BootScene extends Phaser.Scene {
     super({ key: 'BootScene' });
   }
 
-  /**
-   * Initialize the boot scene
-   */
   init() {
-    Logger.info('BootScene: Starting game initialization');
-
-    // Initialize environment configuration
-    Environment.init();
-
-    // Initialize logger with environment settings
-    Logger.init();
-
-    // Validate environment configuration
-    if (!Environment.validate()) {
-      Logger.error('BootScene: Invalid environment configuration');
-      return;
-    }
-
-    Logger.info('BootScene: Environment initialized', Environment.getConfig());
+    Logger.debug('BootScene.init() begin');
+    Logger.debug('BootScene.init() end');
   }
 
-  /**
-   * Preload critical assets for boot scene
-   */
   preload() {
+    Logger.debug('BootScene.preload() begin');
+
     // Set loading path for assets
     this.load.path = 'assets/';
 
     // Preload minimal assets needed for loading screen
     // (In development phase, we'll use colored rectangles)
 
-    Logger.debug('BootScene: Preloading boot assets');
+    Logger.debug('BootScene.preload() end');
   }
 
-  /**
-   * Create boot scene elements
-   */
   create() {
-    Logger.info('BootScene: Boot scene created');
-
-    // Set up game-level event listeners
-    this.setupGameEvents();
+    Logger.debug('BootScene.create() begin');
 
     // Create loading indicator
-    this.createLoadingIndicator();
+    // this.createLoadingIndicator();
 
     // Set up input handling
-    this.setupInput();
+    // this.setupInput();
 
     // Add small delay to show boot scene, then transition
     this.time.delayedCall(500, () => {
       this.transitionToPreloader();
     });
+
+    Logger.debug('BootScene.create() end');
   }
 
   /**
-   * Set up game-level event listeners
+   * Update boot scene
+   * @param {number} time - Current time
+   * @param {number} delta - Time delta
    */
-  setupGameEvents() {
-    // Handle window focus/blur
-    this.game.events.on('focus', () => {
-      Logger.debug('Game focused');
-    });
+  update(time, delta) {
+    // Boot scene typically doesn't need update logic
+    // but we can add performance monitoring here if needed
 
-    this.game.events.on('blur', () => {
-      Logger.debug('Game blurred');
-    });
-
-    // Handle window resize
-    this.scale.on('resize', gameSize => {
-      Logger.debug('Game resized:', gameSize);
-    });
-
-    // Handle errors
-    this.game.events.on('error', error => {
-      Logger.error('Game error:', error);
-    });
+    if (ConfigManager.getConfig().showDebugInfo && time % 1000 < delta) {
+      Logger.debug('BootScene.update(): FPS ~', Math.round(1000 / delta));
+    }
   }
 
   /**
@@ -96,18 +66,9 @@ class BootScene extends Phaser.Scene {
     const centerX = this.scale.width / 2;
     const centerY = this.scale.height / 2;
 
-    // Game title
-    this.add
-      .text(centerX, centerY - 100, 'SPACE SHOOTER', {
-        fontSize: '48px',
-        color: '#ffffff',
-        fontFamily: 'Arial, sans-serif',
-      })
-      .setOrigin(0.5);
-
     // Loading text
     this.loadingText = this.add
-      .text(centerX, centerY + 50, 'INITIALIZING...', {
+      .text(centerX, centerY + 50, 'LOADING...', {
         fontSize: '24px',
         color: '#888888',
         fontFamily: 'Arial, sans-serif',
@@ -120,7 +81,7 @@ class BootScene extends Phaser.Scene {
       callback: () => {
         const dots = this.loadingText.text.match(/\./g) || [];
         if (dots.length >= 3) {
-          this.loadingText.setText('INITIALIZING');
+          this.loadingText.setText('LOADING');
         } else {
           this.loadingText.setText(`${this.loadingText.text}.`);
         }
@@ -129,8 +90,8 @@ class BootScene extends Phaser.Scene {
     });
 
     // Development mode indicator
-    if (Environment.DEBUG_MODE) {
-      this.add.text(10, 10, `DEBUG MODE | v${Environment.IS_DEVELOPMENT ? 'DEV' : 'PROD'}`, {
+    if (ConfigManager.getConfig().debugMode) {
+      this.add.text(10, 10, `DEBUG MODE | v${ConfigManager.getConfig().isDevelopment ? 'DEV' : 'PROD'}`, {
         fontSize: '12px',
         color: '#ffff00',
         fontFamily: 'monospace',
@@ -138,8 +99,8 @@ class BootScene extends Phaser.Scene {
     }
 
     // Environment info (debug only)
-    if (Environment.SHOW_DEBUG_INFO) {
-      const config = Environment.getConfig();
+    if (ConfigManager.getConfig().showDebugInfo) {
+      const config = ConfigManager.getConfig();
       const debugInfo = [
         `Log Level: ${config.logLevel}`,
         `Physics Debug: ${config.physicsDebug}`,
@@ -160,7 +121,7 @@ class BootScene extends Phaser.Scene {
    */
   setupInput() {
     // Allow skipping boot scene with any key (debug only)
-    if (Environment.DEBUG_MODE) {
+    if (ConfigManager.getConfig().debugMode) {
       this.input.keyboard.on('keydown', () => {
         this.transitionToPreloader();
       });
@@ -175,35 +136,21 @@ class BootScene extends Phaser.Scene {
    * Transition to preloader scene
    */
   transitionToPreloader() {
-    Logger.info('BootScene: Transitioning to PreloaderScene');
+    Logger.debug('BootScene.transitionToPreloader()');
 
     // Fade out effect
     this.cameras.main.fadeOut(300, 0, 0, 0);
 
-    this.cameras.main.once('camerafadeoutcomplete', () => {
+    this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
       this.scene.start('PreloaderScene');
     });
-  }
-
-  /**
-   * Update boot scene
-   * @param {number} time - Current time
-   * @param {number} delta - Time delta
-   */
-  update(time, delta) {
-    // Boot scene typically doesn't need update logic
-    // but we can add performance monitoring here if needed
-
-    if (Environment.SHOW_DEBUG_INFO && time % 1000 < delta) {
-      Logger.debug('BootScene update: FPS ~', Math.round(1000 / delta));
-    }
   }
 
   /**
    * Clean up boot scene
    */
   shutdown() {
-    Logger.debug('BootScene: Shutting down');
+    Logger.debug('BootScene.shutdown()');
 
     // Clean up timers
     this.time.removeAllEvents();

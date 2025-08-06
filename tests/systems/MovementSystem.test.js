@@ -1,6 +1,6 @@
 /**
  * MovementSystem Tests
- * Comprehensive unit tests for the MovementSystem ECS system class
+ * Comprehensive unit tests for the MovementSystem ECS scopeName class
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
@@ -41,9 +41,15 @@ describe('MovementSystem', () => {
           setTimeout(callback, delay);
         }),
       },
+      events: {
+        once: vi.fn((event, callback) => {
+          // Simulate immediate execution for testing
+          setTimeout(callback, 0);
+        }),
+      },
     };
 
-    // Create system instance
+    // Create scopeName instance
     system = new MovementSystem(mockScene);
 
     // Create mock entities for testing
@@ -75,12 +81,13 @@ describe('MovementSystem', () => {
       components: new Map(),
       emit: vi.fn(),
       destroy: vi.fn(),
+      deactivate: vi.fn(),
       getComponent: vi.fn(),
       hasComponent: vi.fn(),
       addComponent: vi.fn(),
     };
 
-    // Set up component system
+    // Set up component scopeName
     if (movementComponent) {
       entity.components.set('MovementComponent', movementComponent);
       movementComponent.entity = entity;
@@ -121,7 +128,7 @@ describe('MovementSystem', () => {
       expect(system.eventBus).toBeDefined();
     });
 
-    it('should initialize system correctly', () => {
+    it('should initialize scopeName correctly', () => {
       const config = { priority: 15, active: true };
       system.init(config);
 
@@ -1031,38 +1038,84 @@ describe('MovementSystem', () => {
         movementComponent.boundaryBehavior = 'destroy';
       });
 
-      it('should schedule entity destruction when past left boundary', () => {
-        testEntity.x = -5;
-        testEntity.width = 32;
+      it('should schedule entity destruction when past left boundary', async () => {
+        // Create a projectile entity (known to be poolable)
+        const projectileEntity = createMockEntity('projectile', -5, 300, new MovementComponent());
+        projectileEntity.width = 32;
+        projectileEntity.height = 32;
+        const mc = projectileEntity.getComponent(MovementComponent);
+        mc.boundToScreen = true;
+        mc.boundaryBehavior = 'destroy';
+        mc.hasBeenInBounds = true; // Entity was previously in bounds
+        mc.velocityX = -10; // Moving away from screen
         
-        system.applyScreenBounds(testEntity, movementComponent);
+        system.applyScreenBounds(projectileEntity, mc);
         
-        expect(mockScene.time.delayedCall).toHaveBeenCalledWith(
-          10,
+        // For poolable entities (like 'projectile'), should use deactivation
+        expect(mockScene.events.once).toHaveBeenCalledWith(
+          'postupdate', 
           expect.any(Function)
         );
+        
+        // Wait for async callback
+        await new Promise(resolve => setTimeout(resolve, 1));
+        expect(projectileEntity.deactivate).toHaveBeenCalled();
       });
 
-      it('should schedule entity destruction when past any boundary', () => {
+      it('should schedule entity destruction when past any boundary', async () => {
         const boundaries = [
-          { x: -5, y: 300 },   // Left
-          { x: 850, y: 300 },  // Right
-          { x: 400, y: -5 },   // Top
-          { x: 400, y: 650 },  // Bottom
+          { x: -5, y: 300, vx: -10, vy: 0 },   // Left, moving away
+          { x: 850, y: 300, vx: 10, vy: 0 },  // Right, moving away
+          { x: 400, y: -5, vx: 0, vy: -10 },   // Top, moving away
+          { x: 400, y: 650, vx: 0, vy: 10 },  // Bottom, moving away
         ];
         
-        boundaries.forEach((pos, index) => {
-          const entity = createMockEntity('test', pos.x, pos.y, new MovementComponent());
+        for (let index = 0; index < boundaries.length; index++) {
+          const pos = boundaries[index];
+          const entity = createMockEntity('enemy', pos.x, pos.y, new MovementComponent());
           entity.width = 32;
           entity.height = 32;
           const mc = entity.getComponent(MovementComponent);
           mc.boundToScreen = true;
           mc.boundaryBehavior = 'destroy';
+          mc.hasBeenInBounds = true; // Entity was previously in bounds
+          mc.velocityX = pos.vx; // Set appropriate velocity for boundary
+          mc.velocityY = pos.vy;
           
           system.applyScreenBounds(entity, mc);
           
-          expect(mockScene.time.delayedCall).toHaveBeenCalledTimes(index + 1);
-        });
+          // For poolable entities (like 'enemy'), should use deactivation
+          expect(mockScene.events.once).toHaveBeenCalledTimes(index + 1);
+          
+          // Wait for async callback
+          await new Promise(resolve => setTimeout(resolve, 1));
+          expect(entity.deactivate).toHaveBeenCalled();
+        }
+      });
+
+      it('should permanently destroy non-poolable entities', async () => {
+        // Create a player entity (non-poolable)
+        const playerEntity = createMockEntity('player', -5, 300, new MovementComponent());
+        playerEntity.width = 32;
+        playerEntity.height = 32;
+        const mc = playerEntity.getComponent(MovementComponent);
+        mc.boundToScreen = true;
+        mc.boundaryBehavior = 'destroy';
+        mc.hasBeenInBounds = true; // Entity was previously in bounds
+        mc.velocityX = -10; // Moving away from screen
+        
+        system.applyScreenBounds(playerEntity, mc);
+        
+        // For non-poolable entities (like 'player'), should use permanent destruction
+        expect(mockScene.events.once).toHaveBeenCalledWith(
+          'postupdate', 
+          expect.any(Function)
+        );
+        
+        // Wait for async callback
+        await new Promise(resolve => setTimeout(resolve, 1));
+        expect(playerEntity.destroy).toHaveBeenCalled();
+        expect(playerEntity.deactivate).not.toHaveBeenCalled();
       });
     });
 

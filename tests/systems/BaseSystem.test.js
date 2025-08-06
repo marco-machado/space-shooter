@@ -81,7 +81,7 @@ describe('BaseSystem', () => {
   });
 
   describe('Constructor and ID Generation', () => {
-    it('should create system with correct initial properties', () => {
+    it('should create scopeName with correct initial properties', () => {
       const system = new BaseSystem();
 
       expect(system.name).toBe('BaseSystem');
@@ -93,7 +93,7 @@ describe('BaseSystem', () => {
       expect(system.averageUpdateTime).toBe(0);
     });
 
-    it('should generate unique system IDs', () => {
+    it('should generate unique scopeName IDs', () => {
       mockDateNow.mockReturnValueOnce(1000);
       mockMathRandom.mockReturnValueOnce(0.5);
       
@@ -109,16 +109,16 @@ describe('BaseSystem', () => {
       expect(id1).not.toBe(id2);
     });
 
-    it('should generate system ID with expected format', () => {
+    it('should generate scopeName ID with expected format', () => {
       mockDateNow.mockReturnValue(1609459200000);
       mockMathRandom.mockReturnValue(0.123456789);
 
       const id = BaseSystem.generateId();
 
-      expect(id).toBe(`sys_1609459200000_${(0.123456789).toString(36).substr(2, 9)}`);
+      expect(id).toBe(`sys_1609459200000_${(0.123456789).toString(36).slice(2, 11)}`);
     });
 
-    it('should log system creation', () => {
+    it('should log scopeName creation', () => {
       const system = new BaseSystem();
 
       expect(Logger.debug).toHaveBeenCalledWith(
@@ -210,7 +210,7 @@ describe('BaseSystem', () => {
   });
 
   describe('Process Method with Performance Tracking', () => {
-    it('should not process when system is inactive', () => {
+    it('should not process when scopeName is inactive', () => {
       const testSystem = new TestSystem();
       testSystem.setActive(false);
       
@@ -256,7 +256,7 @@ describe('BaseSystem', () => {
       testSystem.process([], 16.67);
 
       expect(Logger.warn).toHaveBeenCalledWith(
-        '[BaseSystem] Slow system update: TestSystem took 20.00ms'
+        '[BaseSystem] Slow scopeName update: TestSystem took 20.00ms'
       );
     });
 
@@ -277,7 +277,7 @@ describe('BaseSystem', () => {
       testSystem.process([], 16.67);
 
       expect(Logger.error).toHaveBeenCalledWith(
-        '[BaseSystem] Error processing system TestSystem:',
+        '[BaseSystem] Error processing scopeName TestSystem:',
         expect.any(Error)
       );
       expect(testSystem.updateCount).toBe(0); // Should not increment on error
@@ -460,7 +460,7 @@ describe('BaseSystem', () => {
 
   describe('State Management', () => {
     describe('setActive', () => {
-      it('should activate inactive system and log change', () => {
+      it('should activate inactive scopeName and log change', () => {
         const system = new BaseSystem();
         system.active = false;
 
@@ -472,7 +472,7 @@ describe('BaseSystem', () => {
         );
       });
 
-      it('should deactivate active system and log change', () => {
+      it('should deactivate active scopeName and log change', () => {
         const system = new BaseSystem();
         system.active = true;
 
@@ -554,7 +554,7 @@ describe('BaseSystem', () => {
         });
       });
 
-      it('should return initial stats for new system', () => {
+      it('should return initial stats for new scopeName', () => {
         const system = new BaseSystem();
 
         const stats = system.getPerformanceStats();
@@ -583,7 +583,7 @@ describe('BaseSystem', () => {
         expect(system.totalUpdateTime).toBe(0);
         expect(system.averageUpdateTime).toBe(0);
         expect(Logger.debug).toHaveBeenCalledWith(
-          '[BaseSystem] Performance stats reset for system: BaseSystem'
+          '[BaseSystem] Performance stats reset for scopeName: BaseSystem'
         );
       });
     });
@@ -591,7 +591,7 @@ describe('BaseSystem', () => {
 
   describe('Serialization', () => {
     describe('serialize', () => {
-      it('should serialize system state', () => {
+      it('should serialize scopeName state', () => {
         const system = new BaseSystem();
         system.active = false;
         system.priority = 5;
@@ -623,7 +623,7 @@ describe('BaseSystem', () => {
     });
 
     describe('deserialize', () => {
-      it('should deserialize system state', () => {
+      it('should deserialize scopeName state', () => {
         const system = new BaseSystem();
         const data = {
           systemId: 'custom_id_123',
@@ -683,7 +683,7 @@ describe('BaseSystem', () => {
 
   describe('Cleanup and Destruction', () => {
     describe('destroy', () => {
-      it('should deactivate system and log destruction', () => {
+      it('should deactivate scopeName and log destruction', () => {
         const system = new BaseSystem();
         system.active = true;
 
@@ -790,7 +790,7 @@ describe('BaseSystem', () => {
       expect(testSystem.totalUpdateTime).toBe(1000.0);
       expect(testSystem.averageUpdateTime).toBe(1000.0);
       expect(Logger.warn).toHaveBeenCalledWith(
-        '[BaseSystem] Slow system update: TestSystem took 1000.00ms'
+        '[BaseSystem] Slow scopeName update: TestSystem took 1000.00ms'
       );
     });
 
@@ -879,7 +879,7 @@ describe('BaseSystem', () => {
       testSystem.process([], 16.67);
 
       expect(Logger.warn).toHaveBeenCalledWith(
-        '[BaseSystem] Slow system update: TestSystem took 16.68ms'
+        '[BaseSystem] Slow scopeName update: TestSystem took 16.68ms'
       );
     });
   });

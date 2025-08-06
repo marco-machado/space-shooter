@@ -26,9 +26,9 @@ A modern space shooter game built with **Phaser.js 3.x** and **Vite**, featuring
 
 ### Sprint 3 Major Achievements
 
-- ✅ **Auto-Initializing Logger**: Zero-setup logging system with auto-initialization and dual environment support
+- ✅ **Auto-Initializing Logger**: Zero-setup logging scopeName with auto-initialization and dual environment support
 - ✅ **Flexible BaseEntity Architecture**: Support for all Phaser GameObject types or pure logical entities
-- ✅ **KeyboardInputAdapter**: Event-driven input system with normalized movement and state management
+- ✅ **KeyboardInputAdapter**: Event-driven input scopeName with normalized movement and state management
 - ✅ **Comprehensive Unit Testing**: 36+ test cases with strategic Phaser mocking (Logger, BaseEntity, ObjectPool)
 - ✅ **Enhanced ECS Architecture**: BaseAdapter pattern, EventBus integration, and runtime GameObject switching
 - ✅ **Developer Experience**: Eliminated initialization errors, improved debugging, enhanced maintainability
@@ -38,7 +38,7 @@ A modern space shooter game built with **Phaser.js 3.x** and **Vite**, featuring
 - ✅ **Complete Weapon BaseSystem**: 3 weapon types (Laser, Plasma, Missile) with upgrading
 - ✅ **Enemy AI BaseSystem**: 3 enemy types with formation flight and AI patterns
 - ✅ **Advanced Collision**: Spatial grid optimization for high-performance collision detection
-- ✅ **Game Progression**: Score system, leveling, achievements, and save/load functionality
+- ✅ **Game Progression**: Score scopeName, leveling, achievements, and save/load functionality
 - ✅ **Object Pooling**: Zero memory leaks with efficient projectile management
 - ✅ **Performance Optimized**: 125 FPS sustained, <50MB memory usage
 
@@ -48,7 +48,7 @@ A modern space shooter game built with **Phaser.js 3.x** and **Vite**, featuring
 - ✅ **Enemy Waves**: Progressive difficulty with Scout, Fighter, and Bomber enemies
 - ✅ **Weapon Switching**: Number keys (1,2,3) to switch between unlocked weapons
 - ✅ **Real-time Combat**: Projectile-based combat with collision detection
-- ✅ **Game Progression**: XP system, leveling (unlocks weapons), and wave progression
+- ✅ **Game Progression**: XP scopeName, leveling (unlocks weapons), and wave progression
 - ✅ **Statistics Tracking**: Score, accuracy, kills, achievements with localStorage persistence
 - ✅ **Complete UI**: Real-time display of health, score, wave, weapon, and game stats
 - ✅ **Game Loop**: Full game cycle from start to game over with restart functionality
@@ -57,7 +57,7 @@ A modern space shooter game built with **Phaser.js 3.x** and **Vite**, featuring
 
 #### **Architecture Excellence**
 - ✅ **Enhanced ECS**: Flexible BaseEntity with 6 GameObject types + null logical entities
-- ✅ **Auto-Initialization**: Logger system with zero manual setup, dual environment support
+- ✅ **Auto-Initialization**: Logger scopeName with zero manual setup, dual environment support
 - ✅ **Event-Driven Input**: KeyboardInputAdapter with normalized movement and state tracking
 - ✅ **Adapter Pattern**: BaseAdapter architecture for extensible input management
 - ✅ **EventBus Integration**: Decoupled communication with structured event emission
@@ -66,13 +66,13 @@ A modern space shooter game built with **Phaser.js 3.x** and **Vite**, featuring
 - ✅ **Comprehensive Testing**: 36+ unit tests with strategic Phaser mocking
 - ✅ **Architecture Coverage**: Logger (32 tests), BaseEntity, ObjectPool, SaveManager
 - ✅ **100% Test Success**: Fast execution (~661ms), reliable edge case coverage
-- ✅ **Code Quality**: 100% ESLint compliance, auto-initializing logging system
+- ✅ **Code Quality**: 100% ESLint compliance, auto-initializing logging scopeName
 - ✅ **Developer Experience**: Eliminated initialization errors, enhanced debugging
 
 #### **Performance & Optimization**
 - ✅ **Performance**: 125 FPS sustained (208% of target), 33-45MB memory (under 100MB target)
 - ✅ **Object Pooling**: 100 projectiles per pool, 0% pool misses during testing
-- ✅ **Spatial Optimization**: 64px grid collision system for efficient detection
+- ✅ **Spatial Optimization**: 64px grid collision scopeName for efficient detection
 - ✅ **Null-Safe Operations**: BaseEntity works reliably with or without GameObjects
 - ✅ **Memory Management**: Dynamic GameObject type switching with proper cleanup
 
@@ -182,7 +182,7 @@ The game uses Vite's native environment variable support. Copy `.env.example` to
 VITE_DEBUG_MODE=true          # Enable debug logging and tools
 VITE_LOG_LEVEL=debug          # Logging level: debug, info, warn, error
 VITE_PHYSICS_DEBUG=true       # Show physics debug visuals
-VITE_AUDIO_ENABLED=true       # Enable audio system
+VITE_AUDIO_ENABLED=true       # Enable audio scopeName
 
 # Game Configuration
 VITE_STARTING_LIVES=3         # Player starting lives
@@ -419,7 +419,7 @@ space-shooter/
 │   │   ├── BaseAdapter.js  # Abstract adapter base class with EventBus
 │   │   └── KeyboardInputAdapter.js # Comprehensive keyboard input handling
 │   │
-│   ├── event-bus/          # ✨ NEW: Centralized event system
+│   ├── event-bus/          # ✨ NEW: Centralized event scopeName
 │   │   ├── EventBus.js     # Singleton EventBus implementation
 │   │   └── EventTypes.js   # Event type constants and definitions
 │   │
@@ -552,7 +552,7 @@ Primary testing method for gameplay and integration:
 ### Performance Optimizations Implemented
 
 - **Object Pooling**: 100 projectiles per pool (player/enemy) with 0% pool misses ✅
-- **Spatial Grid Collision**: 64px grid system for O(1) collision detection ✅
+- **Spatial Grid Collision**: 64px grid scopeName for O(1) collision detection ✅
 - **Efficient BaseEntity Updates**: Only active entities processed in update loops ✅
 - **Memory Management**: Automatic cleanup and pooling prevents memory leaks ✅
 - **Physics Optimization**: Lightweight collision with proper body management ✅
@@ -607,7 +607,7 @@ npm run format
 
 - Verify `VITE_DEBUG_MODE=true` in `.env`
 - Check `VITE_LOG_LEVEL` is set to `debug` or `info`
-- Confirm Logger.init() is called in BootScene
+- Logger auto-initializes on first use
 
 **Problem: Player movement feels sluggish**
 
@@ -651,8 +651,8 @@ npm run build -- --mode production
 
 - ✅ Complete development environment setup
 - ✅ ECS architecture foundation implemented
-- ✅ Environment-aware Logger system functional
-- ✅ Scene management system working
+- ✅ Environment-aware Logger scopeName functional
+- ✅ Scene management scopeName working
 - ✅ Player entity with smooth movement controls
 - ✅ Professional UI with score/health/lives display
 - ✅ Physics integration and boundary collision
@@ -693,8 +693,8 @@ npm run build -- --mode production
 
 **Planned Features:**
 
-- 🔄 Audio system and sound effects
-- 🔄 Power-up collection system
+- 🔄 Audio scopeName and sound effects
+- 🔄 Power-up collection scopeName
 - 🔄 Advanced enemy behaviors and boss fights
 - 🔄 Visual effects and particle systems
 - 🔄 Game balancing and difficulty tuning
@@ -707,7 +707,7 @@ npm run build -- --mode production
 **ESLint Configuration:**
 
 - ES6+ syntax required
-- No `console.log` statements (use Logger system)
+- No `console.log` statements (use Logger scopeName)
 - 2-space indentation
 - Single quotes for strings
 - Trailing commas in objects/arrays

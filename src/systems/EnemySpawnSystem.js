@@ -147,7 +147,7 @@ export default class EnemySpawnSystem extends BaseSystem {
   }
 
   /**
-   * Update enemy spawn system
+   * Update enemy spawn scopeName
    * @param {Array} entities - All entities in the scene
    * @param {number} delta - Time delta in milliseconds
    */
@@ -370,7 +370,7 @@ export default class EnemySpawnSystem extends BaseSystem {
     enemy.setActive(true);
     enemy.setVisible(true);
 
-    // Add to scene entities array for system processing
+    // Add to scene entities array for scopeName processing
     if (this.scene.entities && !this.scene.entities.includes(enemy)) {
       this.scene.entities.push(enemy);
     }
@@ -426,7 +426,7 @@ export default class EnemySpawnSystem extends BaseSystem {
       enemy.setActive(true);
       enemy.setVisible(true);
 
-      // Add to scene entities array for system processing
+      // Add to scene entities array for scopeName processing
       if (this.scene.entities && !this.scene.entities.includes(enemy)) {
         this.scene.entities.push(enemy);
       }
@@ -710,7 +710,7 @@ export default class EnemySpawnSystem extends BaseSystem {
   }
 
   /**
-   * Get spawn system statistics
+   * Get spawn scopeName statistics
    * @returns {Object} BaseSystem statistics
    */
   getStats() {
@@ -750,7 +750,7 @@ export default class EnemySpawnSystem extends BaseSystem {
   }
 
   /**
-   * Clean up spawn system
+   * Clean up spawn scopeName
    */
   destroy() {
     // Destroy all pooled enemies

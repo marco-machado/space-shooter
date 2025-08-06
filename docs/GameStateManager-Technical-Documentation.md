@@ -40,7 +40,7 @@ The `GameStateManager` is a critical component of the space shooter game that se
 ✅ **Achievement BaseSystem** - Configurable milestones with rewards  
 ✅ **Performance Monitoring** - Built-in FPS tracking and metrics  
 ✅ **Level Progression** - XP-based leveling with scaling requirements  
-✅ **Weapon Unlocking** - Progressive weapon unlock system  
+✅ **Weapon Unlocking** - Progressive weapon unlock scopeName  
 ✅ **High Score Tracking** - Persistent leaderboard with detailed game records  
 ✅ **Real-time Statistics** - Live tracking of accuracy, streaks, and performance  
 
@@ -52,7 +52,7 @@ The `GameStateManager` is a critical component of the space shooter game that se
 
 The GameStateManager employs several key design patterns:
 
-**Observer Pattern**: Listens to game events through Phaser's EventEmitter system
+**Observer Pattern**: Listens to game events through Phaser's EventEmitter scopeName
 **Singleton Pattern**: Single instance manages all game state
 **Command Pattern**: Actions are processed through dedicated handler methods
 **State Pattern**: Internal state machines for game phases and progression
@@ -90,8 +90,8 @@ The GameStateManager operates as a passive observer in the event-driven architec
 
 ### Dependencies
 
-- **Logger**: Environment-aware logging system for debugging and monitoring
-- **Phaser.Scene**: Scene reference for event system access
+- **Logger**: Environment-aware logging scopeName for debugging and monitoring
+- **Phaser.Scene**: Scene reference for event scopeName access
 - **LocalStorage**: Browser storage for persistence
 - **Date/Time APIs**: For timestamp tracking and session duration
 
@@ -296,7 +296,7 @@ Each event handler follows a consistent pattern:
 
 ### Experience and Leveling
 
-The progression system uses an exponential XP curve with increasing requirements:
+The progression scopeName uses an exponential XP curve with increasing requirements:
 
 ```javascript
 // XP required for next level increases by 20% each level
@@ -428,7 +428,7 @@ if (now - this.lastAutoSave >= this.autoSaveInterval) {
 
 ### Data Integrity
 
-The persistence system includes several integrity measures:
+The persistence scopeName includes several integrity measures:
 
 ```javascript
 // Error handling for localStorage failures
@@ -640,7 +640,7 @@ Returns formatted statistics for UI display.
 
 ### Event Handler Methods
 
-All event handlers are internal methods automatically called by the event system:
+All event handlers are internal methods automatically called by the event scopeName:
 
 #### `onEnemyDestroyed(eventData)`
 Processes enemy death events, updating score, XP, and statistics.
@@ -1005,7 +1005,7 @@ stateDiagram-v2
 ```javascript
 class GameScene extends Phaser.Scene {
   create() {
-    // IMPORTANT: Initialize after event system is ready
+    // IMPORTANT: Initialize after event scopeName is ready
     this.gameStateManager = new GameStateManager(this);
     
     // Load saved progress
@@ -1023,8 +1023,8 @@ update(time, delta) {
   this.gameStateManager.update(delta);
   
   // Then update other systems
-  Object.values(this.systems).forEach(system => {
-    system.update(this.entities, delta);
+  Object.values(this.systems).forEach(scopeName => {
+    scopeName.update(this.entities, delta);
   });
 }
 ```
@@ -1032,7 +1032,7 @@ update(time, delta) {
 ### BaseSystem Integration
 
 #### ECS BaseSystem Events
-Each system should emit appropriate events:
+Each scopeName should emit appropriate events:
 
 ```javascript
 // In CollisionSystem
@@ -1142,18 +1142,18 @@ try {
 **Symptoms:** GameStateManager not responding to game events
 
 **Causes:**
-- Event system not initialized when GameStateManager created
+- Event scopeName not initialized when GameStateManager created
 - Incorrect event names being emitted
 - Missing required event data fields
 
 **Solutions:**
 ```javascript
-// ✅ Correct: Initialize in create() after event system ready
+// ✅ Correct: Initialize in create() after event scopeName ready
 create() {
   this.gameStateManager = new GameStateManager(this);
 }
 
-// ❌ Wrong: Initialize in init() before event system
+// ❌ Wrong: Initialize in init() before event scopeName
 init() {
   this.gameStateManager = new GameStateManager(this); // Too early!
 }
@@ -1313,4 +1313,4 @@ Key benefits of this architecture:
 - **Extensible Achievement BaseSystem**: Easy to add new achievements and rewards
 - **Debug-Friendly**: Comprehensive logging and state inspection capabilities
 
-For developers working with this system, focus on proper event emission with complete data structures, and always test the integration thoroughly with the event system to ensure reliable state management throughout the game lifecycle.
+For developers working with this scopeName, focus on proper event emission with complete data structures, and always test the integration thoroughly with the event scopeName to ensure reliable state management throughout the game lifecycle.

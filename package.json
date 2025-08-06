@@ -25,6 +25,7 @@
     "eslint-plugin-prettier": "^5.5.3",
     "jsdom": "^26.1.0",
     "prettier": "^3.6.2",
+    "terser": "^5.43.1",
     "vite": "^7.0.4",
     "vitest": "^3.2.4"
   },

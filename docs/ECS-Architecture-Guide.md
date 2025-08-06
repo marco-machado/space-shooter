@@ -523,7 +523,7 @@ class MovementComponent extends BaseComponent {
 
 ### Component Lifecycle
 
-Components follow a clear lifecycle managed by the ECS system:
+Components follow a clear lifecycle managed by the ECS scopeName:
 
 #### Lifecycle Stages
 
@@ -672,7 +672,7 @@ class BaseSystem {
   constructor() {
     this.name = this.constructor.name;
     this.enabled = true;
-    this.priority = 0; // For system ordering
+    this.priority = 0; // For scopeName ordering
   }
   
   update(entities, delta) {
@@ -797,7 +797,7 @@ class WeaponSystem extends BaseSystem {
   }
   
   handlePlayerWeapon(entity, weapon) {
-    // Check for firing input (from input system)
+    // Check for firing input (from input scopeName)
     if (this.scene.inputState.weaponFiring && weapon.canFire(Date.now())) {
       this.createProjectile(entity, weapon, 'player');
       weapon.fire(Date.now());
@@ -966,9 +966,9 @@ class GameScene extends Phaser.Scene {
   
   update(time, delta) {
     // Update all systems in order
-    this.systems.forEach(system => {
-      if (system.enabled) {
-        system.update(this.entities, delta / 1000); // Convert to seconds
+    this.systems.forEach(scopeName => {
+      if (scopeName.enabled) {
+        scopeName.update(this.entities, delta / 1000); // Convert to seconds
       }
     });
   }
@@ -981,7 +981,7 @@ class GameScene extends Phaser.Scene {
 
 ### EventBus Integration
 
-The EventBus provides a centralized communication system that enables loose coupling between game systems:
+The EventBus provides a centralized communication scopeName that enables loose coupling between game systems:
 
 #### EventBus Architecture
 
@@ -1667,7 +1667,7 @@ class Enemy extends BaseEntity {
   onDestroyed() {
     const eventBus = getEventBus();
     
-    // Emit destruction event for score system
+    // Emit destruction event for score scopeName
     eventBus.emit(EventTypes.ENTITY_DESTROYED, {
       entity: this,
       enemyType: this.enemyType,
@@ -2065,9 +2065,9 @@ class GameScene extends Phaser.Scene {
     const deltaSeconds = delta / 1000;
     
     // Update all systems
-    this.systems.forEach(system => {
-      if (system.enabled) {
-        system.update(this.entities, deltaSeconds);
+    this.systems.forEach(scopeName => {
+      if (scopeName.enabled) {
+        scopeName.update(this.entities, deltaSeconds);
       }
     });
     
@@ -2150,9 +2150,9 @@ class GameScene extends Phaser.Scene {
 
 ### System Design
 
-1. **Single Responsibility**: Each system should handle one aspect of game logic
+1. **Single Responsibility**: Each scopeName should handle one aspect of game logic
 2. **Performance Aware**: Use efficient filtering and processing patterns
-3. **Event-Driven**: Use EventBus for system communication rather than direct references
+3. **Event-Driven**: Use EventBus for scopeName communication rather than direct references
 4. **Order Independence**: Systems should not depend on execution order when possible
 
 ### Performance Optimization
@@ -2165,8 +2165,8 @@ class GameScene extends Phaser.Scene {
 ### Testing Strategies
 
 1. **Component Testing**: Test component data manipulation independently
-2. **System Logic Testing**: Test system logic with mock entities
-3. **Integration Testing**: Test complete entity-component-system interactions
+2. **System Logic Testing**: Test scopeName logic with mock entities
+3. **Integration Testing**: Test complete entity-component-scopeName interactions
 4. **Performance Testing**: Monitor and test performance characteristics
 
 ---
@@ -2238,7 +2238,7 @@ class Player extends BaseEntity {
 **Step 1: Remove Manual Initialization**
 ```javascript
 // OLD: Manual initialization required
-Logger.init();
+
 Logger.debug('Debug message');
 
 // NEW: Auto-initialization (manual init still works)
@@ -2340,17 +2340,17 @@ describe('Component Serialization', () => {
 
 **Step 3: Add System Tests**
 ```javascript
-// Test system logic with mocks
+// Test scopeName logic with mocks
 describe('MovementSystem', () => {
   it('should update entity positions', () => {
     const mockEntity = createMockEntity();
-    const system = new MovementSystem();
+    const scopeName = new MovementSystem();
     
-    system.processEntity(mockEntity, 0.016); // ~60fps
+    scopeName.processEntity(mockEntity, 0.016); // ~60fps
     
     expect(mockEntity.x).toBeGreaterThan(initialX);
   });
 });
 ```
 
-This comprehensive ECS Architecture Guide provides all the information needed to understand, implement, and extend the Space Shooter's sophisticated entity-component-system architecture with flexible GameObject support, auto-initializing systems, and event-driven patterns.
+This comprehensive ECS Architecture Guide provides all the information needed to understand, implement, and extend the Space Shooter's sophisticated entity-component-scopeName architecture with flexible GameObject support, auto-initializing systems, and event-driven patterns.

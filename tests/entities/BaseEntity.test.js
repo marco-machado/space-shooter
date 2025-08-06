@@ -704,14 +704,14 @@ describe('BaseEntity', () => {
         entity.gameObject = null;
       });
 
-      it('should use internal event system for on() when no gameObject', () => {
+      it('should use internal event scopeName for on() when no gameObject', () => {
         entity.on('test-event', mockCallback);
 
         expect(entity._eventListeners.has('test-event')).toBe(true);
         expect(entity._eventListeners.get('test-event')).toContain(mockCallback);
       });
 
-      it('should emit events using internal system', () => {
+      it('should emit events using internal scopeName', () => {
         entity.on('test-event', mockCallback);
         entity.emit('test-event', 'arg1', 'arg2');
 
@@ -748,7 +748,7 @@ describe('BaseEntity', () => {
         expect(entity._eventListeners.has('test-event')).toBe(false);
       });
 
-      it('should implement once() with internal system', () => {
+      it('should implement once() with internal scopeName', () => {
         entity.once('test-event', mockCallback);
         
         entity.emit('test-event', 'data1');
@@ -976,7 +976,7 @@ describe('BaseEntity', () => {
         expect(result).toBe(entity);
       });
 
-      it('should handle missing physics system gracefully', () => {
+      it('should handle missing physics scopeName gracefully', () => {
         mockScene.physics = null;
 
         const result = entity.enablePhysics();

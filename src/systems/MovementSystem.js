@@ -14,7 +14,7 @@ export default class MovementSystem extends BaseSystem {
   constructor(scene) {
     super();
     this.scene = scene;
-    this.priority = 10; // Run early in system update order
+    this.priority = 10; // Run early in scopeName update order
 
     // EventBus integration
     this.eventBus = getEventBus();
@@ -30,7 +30,7 @@ export default class MovementSystem extends BaseSystem {
   }
 
   /**
-   * Initialize movement system
+   * Initialize movement scopeName
    * @param {Object} config - System configuration
    */
   init(config = {}) {
@@ -601,8 +601,8 @@ export default class MovementSystem extends BaseSystem {
   }
 
   /**
-   * Called when system is added to a scene
-   * @param {Phaser.Scene} scene - The scene this system is added to
+   * Called when scopeName is added to a scene
+   * @param {Phaser.Scene} scene - The scene this scopeName is added to
    */
   onAddedToScene(scene) {
     super.onAddedToScene(scene);
@@ -632,7 +632,7 @@ export default class MovementSystem extends BaseSystem {
   }
 
   /**
-   * Clean up movement system resources
+   * Clean up movement scopeName resources
    */
   destroy() {
     // Clean up EventBus listener

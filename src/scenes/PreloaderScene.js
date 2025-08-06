@@ -1,5 +1,5 @@
-import Logger from '../core/Logger.js';
-import Environment from '../config/Environment.js';
+import Logger from '@/utils/Logger.js';
+import ConfigManager from '@/config/ConfigManager.js';
 
 /**
  * Preloader Scene - Asset loading with development graphics
@@ -18,33 +18,52 @@ class PreloaderScene extends Phaser.Scene {
    * Initialize preloader scene
    */
   init() {
-    Logger.info('PreloaderScene: Starting asset loading');
+    Logger.debug('PreloaderScene.init()');
   }
 
-  /**
-   * Preload all game assets
-   */
   preload() {
+    Logger.debug('PreloaderScene.preload() begin');
+
     // Create loading UI first
-    this.createLoadingUI();
+    // this.createLoadingUI();
 
     // Set up loading event handlers
-    this.setupLoadingEvents();
+    // this.setupLoadingEvents();
 
     // Set loading path
     this.load.path = 'assets/';
 
     // In development phase, we don't load actual graphics
-    // Instead, we'll simulate loading for development graphics system
-    this.loadDevelopmentAssets();
+    // Instead, we'll simulate loading for development graphics scopeName
+    // this.loadDevelopmentAssets();
 
     // Load audio assets if audio is enabled
-    if (Environment.AUDIO_ENABLED) {
+    if (ConfigManager.getConfig().audioEnabled) {
       this.loadAudioAssets();
     }
 
-    // Start loading
-    Logger.debug('PreloaderScene: Starting asset loading process');
+    Logger.debug('PreloaderScene.preload() end');
+  }
+
+  /**
+   * Create the scene after loading
+   */
+  create() {
+    Logger.debug('PreloaderScene.create()');
+
+    this.startGame();
+  }
+
+  /**
+   * Update preloader scene
+   * @param {number} time - Current time
+   * @param {number} delta - Time delta
+   */
+  update(time, delta) {
+    // Performance monitoring in debug mode
+    if (ConfigManager.getConfig().showDebugInfo && time % 1000 < delta) {
+      Logger.debug('PreloaderScene.update(): FPS ~', Math.round(1000 / delta));
+    }
   }
 
   /**
@@ -95,7 +114,7 @@ class PreloaderScene extends Phaser.Scene {
       .setOrigin(0, 0.5);
 
     // Development mode indicator
-    if (Environment.DEBUG_MODE) {
+    if (ConfigManager.getConfig().debugMode) {
       this.add.text(10, 10, 'DEVELOPMENT MODE - USING COLORED RECTANGLES', {
         fontSize: '12px',
         color: '#ffff00',
@@ -131,23 +150,23 @@ class PreloaderScene extends Phaser.Scene {
       this.loadingBar.width = barWidth * progress;
       this.progressText.setText(`${Math.round(progress * 100)}%`);
 
-      Logger.debug(`Loading progress: ${Math.round(progress * 100)}%`);
+      Logger.debug(`PreloaderScene: Loading progress: ${Math.round(progress * 100)}%`);
     });
 
     // Handle individual file loading
     this.load.on('fileprogress', file => {
-      Logger.debug(`Loading file: ${file.key}`);
+      Logger.debug(`PreloaderScene: Loading file: ${file.key}`);
     });
 
     // Handle loading completion
     this.load.on('complete', () => {
-      Logger.info('PreloaderScene: All assets loaded successfully');
+      Logger.debug('PreloaderScene: All assets loaded successfully');
       this.onLoadComplete();
     });
 
     // Handle loading errors
     this.load.on('loaderror', file => {
-      Logger.error(`Failed to load asset: ${file.key}`);
+      Logger.error(`PreloaderScene: Failed to load asset: ${file.key}`);
     });
   }
 
@@ -193,7 +212,7 @@ class PreloaderScene extends Phaser.Scene {
     // Audio loading will be implemented when we add actual audio files
     // For now, we'll simulate audio loading
 
-    Logger.debug('PreloaderScene: Audio loading simulated (no actual files in dev phase)');
+    Logger.debug('PreloaderScene.loadAudioAssets()');
   }
 
   /**
@@ -231,7 +250,7 @@ class PreloaderScene extends Phaser.Scene {
     });
 
     // Auto-start after delay if in debug mode
-    if (Environment.DEBUG_MODE) {
+    if (ConfigManager.getConfig().debugMode) {
       this.time.delayedCall(2000, () => {
         this.startGame();
       });
@@ -242,33 +261,14 @@ class PreloaderScene extends Phaser.Scene {
    * Start the game (transition to main menu)
    */
   startGame() {
-    Logger.info('PreloaderScene: Starting game');
+    Logger.debug('PreloaderScene.startGame()');
 
     // Fade out transition
     this.cameras.main.fadeOut(500, 0, 0, 0);
 
-    this.cameras.main.once('camerafadeoutcomplete', () => {
+    this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
       this.scene.start('MainMenuScene');
     });
-  }
-
-  /**
-   * Create the scene after loading
-   */
-  create() {
-    Logger.info('PreloaderScene: Scene created, waiting for loading completion');
-  }
-
-  /**
-   * Update preloader scene
-   * @param {number} time - Current time
-   * @param {number} delta - Time delta
-   */
-  update(time, delta) {
-    // Performance monitoring in debug mode
-    if (Environment.SHOW_DEBUG_INFO && time % 1000 < delta) {
-      Logger.debug('PreloaderScene update: FPS ~', Math.round(1000 / delta));
-    }
   }
 
   /**

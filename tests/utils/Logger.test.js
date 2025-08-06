@@ -277,24 +277,6 @@ describe('Logger', () => {
     });
   });
 
-  describe('Backward Compatibility', () => {
-    it('should support explicit init() method', () => {
-      expect(Logger.isInitialized).toBe(false);
-      
-      Logger.init();
-      
-      expect(Logger.isInitialized).toBe(true);
-    });
-
-    it('should handle multiple init() calls safely', () => {
-      Logger.init();
-      const firstState = Logger.isInitialized;
-      
-      Logger.init(); // Should not cause issues
-      
-      expect(Logger.isInitialized).toBe(firstState);
-    });
-  });
 
   describe('Message Formatting', () => {
     it('should format messages with timestamps', () => {

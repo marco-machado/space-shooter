@@ -1,14 +1,14 @@
 /**
- * Environment-aware logging system
- * Replaces console.log usage throughout the application
- * Respects environment configuration for log levels and debug mode
- * Auto-initializes on first use - no manual init() required
+ * Utility class for logging messages with different levels, categories, and scopes.
+ * Supports dynamic configuration via environment variables and URL parameters.
+ * Automatically formats log output with a timestamp, category, and context.
  */
 class Logger {
   static isInitialized = false;
   static debugMode = false;
   static logLevel = 'info';
   static levels = { debug: 0, info: 1, warn: 2, error: 3 };
+  static scopeName = null;
 
   /**
    * Private method to ensure Logger is initialized
@@ -26,6 +26,7 @@ class Logger {
       try {
         env = import.meta.env || {};
       } catch {
+        // eslint-disable-next-line no-undef
         env = typeof process !== 'undefined' && process.env ? process.env : {};
       }
 
@@ -42,7 +43,7 @@ class Logger {
 
       // Log initialization in development (avoid recursive call during initialization)
       if (this.debugMode && this.levels['debug'] >= this.levels[this.logLevel]) {
-        const timestamp = new Date().toISOString().substr(11, 8);
+        const timestamp = new Date().toISOString().slice(11, 19);
         const isDev = env.DEV || env.NODE_ENV === 'development';
 
         // eslint-disable-next-line no-console
@@ -61,13 +62,71 @@ class Logger {
     }
   }
 
+
+
   /**
-   * Initialize the logger with environment configuration
-   * Optional - Logger auto-initializes on first use
-   * Kept for backward compatibility
+   * Sets the logging scope for the Logger.
+   * This allows for categorizing log messages under a specific scope.
+   *
+   * @param {string} scope - The name of the scope to set for the logger.
+   * @returns {Logger} The Logger instance, allowing for method chaining.
    */
-  static init() {
-    this._ensureInitialized();
+
+  static scope(scope) {
+    this.scopeName = scope;
+    return this;
+  }
+
+  /**
+   * Debug level logging - only shows in development with debug mode enabled
+   * @param {string} message - Debug message
+   * @param {...any} args - Additional arguments
+   */
+  static debug(message, ...args) {
+    if (this.debugMode && this.shouldLog('debug')) {
+      const formatted = this.formatMessage('debug', message, ...args);
+      // eslint-disable-next-line no-console
+      console.log('🔍', ...formatted);
+    }
+  }
+
+  /**
+   * Info level logging - general information
+   * @param {string} message - Info message
+   * @param {...any} args - Additional arguments
+   */
+  static info(message, ...args) {
+    if (this.shouldLog('info')) {
+      const formatted = this.formatMessage('info', message, ...args);
+      // eslint-disable-next-line no-console
+      console.info('ℹ️', ...formatted);
+    }
+  }
+
+  /**
+   * Warning level logging - potential issues
+   * @param {string} message - Warning message
+   * @param {...any} args - Additional arguments
+   */
+  static warn(message, ...args) {
+    if (this.shouldLog('warn')) {
+      const formatted = this.formatMessage('warn', message, ...args);
+      // eslint-disable-next-line no-console
+      console.warn('⚠️', ...formatted);
+    }
+  }
+
+  /**
+   * Error level logging - serious problems
+   * @param {string} message - Error message
+   * @param {...any} args - Additional arguments
+   */
+  static error(message, ...args) {
+    if (this.shouldLog('error')) {
+      const formatted = this.formatMessage('error', message, ...args);
+      // eslint-disable-next-line no-console
+      console.error('❌', ...formatted);
+    }
   }
 
   /**
@@ -81,64 +140,17 @@ class Logger {
   }
 
   /**
-   * Format log message with timestamp and context
+   * Format log message with timestamp and optional scope
    * @param {string} level - Log level
    * @param {string} message - Log message
    * @param {...any} args - Additional arguments
    * @returns {Array} Formatted message and arguments
    */
   static formatMessage(level, message, ...args) {
-    const timestamp = new Date().toISOString().substr(11, 8); // HH:MM:SS format
-    const prefix = `${timestamp} [${level.toUpperCase()}]`;
+    const timestamp = new Date().toISOString().slice(11, 19); // HH:MM:SS format
+    const scopeLabel = this.scopeName ? `[${this.scopeName.toUpperCase()}]` : '';
+    const prefix = `${timestamp} [${level.toUpperCase()}]${scopeLabel}`;
     return [prefix, message, ...args];
-  }
-
-  /**
-   * Debug level logging - only shows in development with debug mode enabled
-   * @param {string} message - Debug message
-   * @param {...any} args - Additional arguments
-   */
-  static debug(message, ...args) {
-    if (this.debugMode && this.shouldLog('debug')) {
-      const formatted = this.formatMessage('debug', message, ...args);
-      console.log('🔍', ...formatted);
-    }
-  }
-
-  /**
-   * Info level logging - general information
-   * @param {string} message - Info message
-   * @param {...any} args - Additional arguments
-   */
-  static info(message, ...args) {
-    if (this.shouldLog('info')) {
-      const formatted = this.formatMessage('info', message, ...args);
-      console.info('ℹ️', ...formatted);
-    }
-  }
-
-  /**
-   * Warning level logging - potential issues
-   * @param {string} message - Warning message
-   * @param {...any} args - Additional arguments
-   */
-  static warn(message, ...args) {
-    if (this.shouldLog('warn')) {
-      const formatted = this.formatMessage('warn', message, ...args);
-      console.warn('⚠️', ...formatted);
-    }
-  }
-
-  /**
-   * Error level logging - serious problems
-   * @param {string} message - Error message
-   * @param {...any} args - Additional arguments
-   */
-  static error(message, ...args) {
-    if (this.shouldLog('error')) {
-      const formatted = this.formatMessage('error', message, ...args);
-      console.error('❌', ...formatted);
-    }
   }
 
   /**
@@ -148,6 +160,7 @@ class Logger {
   static time(label) {
     this._ensureInitialized();
     if (this.debugMode && this.shouldLog('debug')) {
+      // eslint-disable-next-line no-console
       console.time(`⏱️ ${label}`);
     }
   }
@@ -159,6 +172,7 @@ class Logger {
   static timeEnd(label) {
     this._ensureInitialized();
     if (this.debugMode && this.shouldLog('debug')) {
+      // eslint-disable-next-line no-console
       console.timeEnd(`⏱️ ${label}`);
     }
   }
@@ -170,6 +184,7 @@ class Logger {
   static group(label) {
     this._ensureInitialized();
     if (this.debugMode && this.shouldLog('debug')) {
+      // eslint-disable-next-line no-console
       console.group(`📁 ${label}`);
     }
   }
@@ -180,6 +195,7 @@ class Logger {
   static groupEnd() {
     this._ensureInitialized();
     if (this.debugMode && this.shouldLog('debug')) {
+      // eslint-disable-next-line no-console
       console.groupEnd();
     }
   }
@@ -191,9 +207,12 @@ class Logger {
   static table(data) {
     this._ensureInitialized();
     if (this.debugMode && this.shouldLog('debug')) {
+      // eslint-disable-next-line no-console
       console.table(data);
     }
   }
+
 }
+
 
 export default Logger;

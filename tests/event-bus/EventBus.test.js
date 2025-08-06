@@ -795,7 +795,7 @@ describe('EventBus', () => {
       });
     });
 
-    it('should integrate with Logger system', () => {
+    it('should integrate with Logger scopeName', () => {
       const callback = vi.fn();
       eventBus.on('test-event', callback);
       eventBus.emit('test-event');

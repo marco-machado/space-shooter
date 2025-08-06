@@ -1,6 +1,6 @@
 # Space Shooter Troubleshooting Guide
 
-This guide provides solutions for common issues encountered during development and deployment of the Space Shooter game, including architectural enhancements like auto-initializing Logger, flexible BaseEntity system, and comprehensive testing setup.
+This guide provides solutions for common issues encountered during development and deployment of the Space Shooter game, including architectural enhancements like auto-initializing Logger, flexible BaseEntity scopeName, and comprehensive testing setup.
 
 ## Table of Contents
 
@@ -379,7 +379,7 @@ console.log('Scene input enabled:', scene.input.enabled);
 
 1. **Adapter Not Activated**: Forgot to call `adapter.activate()`
 2. **EventBus Not Connected**: Missing event listeners
-3. **Scene Input Disabled**: Phaser input system not working
+3. **Scene Input Disabled**: Phaser input scopeName not working
 4. **Key Event Conflicts**: Other systems consuming key events
 
 ### Problem: Movement not normalized properly
@@ -710,7 +710,7 @@ cat .env | grep DEBUG
 # Should show: VITE_DEBUG_MODE=true
 
 # Solution 3: Check Logger initialization
-# Ensure Logger.init() is called before any logging
+# Logger auto-initializes on first use
 
 # Solution 4: Test Logger directly in console
 # In DevTools console:
@@ -919,7 +919,7 @@ VITE_PHYSICS_DEBUG=false
 **Performance Optimization Checklist (Sprint 2 Status):**
 
 - [x] Object pooling for bullets/particles (100 projectiles per pool, 0% misses)
-- [x] Efficient collision detection (64px spatial grid system)
+- [x] Efficient collision detection (64px spatial grid scopeName)
 - [x] Minimal DOM manipulation (Canvas-based rendering)
 - [x] Proper entity cleanup (ECS component management)
 - [x] Optimized render calls (Phaser rendering optimization)
@@ -1027,7 +1027,7 @@ player.body.setSize(60, 60); // Collision box
 VITE_PHYSICS_DEBUG=true
 ```
 
-### Problem: Health system not working
+### Problem: Health scopeName not working
 
 **Symptoms:**
 
@@ -1151,7 +1151,7 @@ scene.switchWeapon(2); // Should switch to Missile if unlocked
 ```javascript
 // Solution 1: Check EnemySpawnSystem
 const enemySystem = scene.systems.find(s => s.name === 'EnemySpawnSystem');
-console.log('Enemy spawn system active:', !!enemySystem);
+console.log('Enemy spawn scopeName active:', !!enemySystem);
 
 // Solution 2: Verify wave configuration
 console.log('Current wave:', scene.gameStateManager.currentWave);
@@ -1187,7 +1187,7 @@ console.log('AI pattern:', movement.aiPattern);
 ```javascript
 // Solution 1: Check CollisionSystem setup
 const collisionSystem = scene.systems.find(s => s.name === 'CollisionSystem');
-console.log('Collision system grid size:', collisionSystem.gridSize);
+console.log('Collision scopeName grid size:', collisionSystem.gridSize);
 // Should be 64px for optimal performance
 
 // Solution 2: Verify collision layers
@@ -1424,7 +1424,7 @@ VITE_PHYSICS_DEBUG=true
 | **Physics Debug**      | Visual overlay            | Collision boundaries and bodies    |
 | **Spatial Grid Debug** | Visual overlay            | Collision grid cells visualization |
 | **Pool Monitoring**    | Console logs              | Object pool usage statistics       |
-| **BaseSystem Performance** | Console logs              | Individual system performance      |
+| **BaseSystem Performance** | Console logs              | Individual scopeName performance      |
 | **Global Access**      | `window.spaceShooterGame` | Direct game instance access        |
 | **Debug Controls**     | F2/F3 keys                | Add score/take damage              |
 
@@ -1458,12 +1458,12 @@ Logger.debug('Current game state:', {
   enemiesActive: scene.entities.filter(e => e.constructor.name === 'Enemy').length,
 });
 
-// Weapon system debugging
+// Weapon scopeName debugging
 const weapon = player.getComponent(WeaponComponent);
 Logger.debug('Weapon stats:', weapon.getStats());
 Logger.debug('Unlocked weapons:', scene.gameStateManager.getUnlockedWeapons());
 
-// Collision system debugging
+// Collision scopeName debugging
 const collisionSystem = scene.systems.find(s => s.name === 'CollisionSystem');
 Logger.debug('Collision grid performance:', collisionSystem.getPerformanceStats());
 

@@ -1,6 +1,5 @@
 import BaseEntity from './BaseEntity.js';
 import MovementComponent from '@/components/MovementComponent.js';
-import CollisionComponent from '@/components/CollisionComponent.js';
 import Logger from '@/utils/Logger.js';
 
 /**
@@ -26,6 +25,9 @@ export default class Projectile extends BaseEntity {
     this.maxLifetime = config.maxLifetime || 5000; // 5 seconds max lifetime
     this.creationTime = Date.now();
 
+    // Set entity type for pooling identification
+    this.entityType = 'projectile';
+
     // Visual effects (for future enhancement)
     this.trailEnabled = config.trailEnabled || false;
     this.glowEnabled = config.glowEnabled || false;
@@ -33,13 +35,12 @@ export default class Projectile extends BaseEntity {
     // Initialize components
     this.initializeComponents();
 
-    // Enable physics
+    // Enable physics with collision group
     this.enablePhysics('dynamic');
 
-    // Configure physics body
+    // Apply physics configuration
     if (this.body) {
-      this.body.setSize(size.width * 0.8, size.height * 0.8); // Slightly smaller hitbox
-      this.body.setOffset(size.width * 0.1, size.height * 0.1);
+      this._fallbackProjectilePhysicsConfiguration();
     }
 
     Logger.debug(
@@ -138,7 +139,7 @@ export default class Projectile extends BaseEntity {
   static getFromPool(pool, x, y, config) {
     // Validate pool
     if (!Array.isArray(pool) || pool.length === 0) {
-      Logger.error('[Projectile] Invalid or empty projectile pool');
+      Logger.scope('Projectile').error('Invalid or empty projectile pool');
       return null;
     }
 
@@ -149,7 +150,7 @@ export default class Projectile extends BaseEntity {
 
       // Validate projectile object
       if (!candidate) {
-        Logger.warn(`[Projectile] Pool contains null projectile at index ${i}, removing`);
+        Logger.scope('Projectile').warn(`Pool contains null projectile at index ${i}, removing`);
         pool.splice(i, 1);
         i--; // Adjust index after removal
         continue;
@@ -157,8 +158,8 @@ export default class Projectile extends BaseEntity {
 
       // Check if projectile is in valid state
       if (!candidate.scene || candidate.scene.sys.isDestroyed) {
-        Logger.warn(
-          `[Projectile] Pool contains projectile with destroyed scene at index ${i}, removing`
+        Logger.scope('Projectile').warn(
+          `Pool contains projectile with destroyed scene at index ${i}, removing`
         );
         pool.splice(i, 1);
         i--; // Adjust index after removal
@@ -239,13 +240,9 @@ export default class Projectile extends BaseEntity {
           });
         }
 
-        const collision = projectile.getComponent(CollisionComponent);
-        if (collision) {
-          const collisionConfig = CollisionComponent.createProjectileConfig(
-            projectile.isPlayerProjectile
-          );
-          collisionConfig.damageAmount = projectile.damage;
-          collision.init(collisionConfig);
+        // Update physics configuration for pooled projectile
+        if (projectile.body) {
+          projectile._fallbackProjectilePhysicsConfiguration();
         }
 
         Logger.debug(`[Projectile] Projectile retrieved from pool: ${config.weaponType}`, {
@@ -318,29 +315,10 @@ export default class Projectile extends BaseEntity {
         return;
       }
 
-      // Reset projectile to inactive state
-      projectile.active = false;
-      projectile.visible = false;
-      projectile.setPosition(-100, -100);
+      // Use the BaseEntity deactivate method for proper pooling
+      projectile.deactivate();
 
-      // Reset physics velocity if body exists
-      if (projectile.body && projectile.body.setVelocity) {
-        projectile.body.setVelocity(0, 0);
-      }
-
-      // Stop movement
-      const movement = projectile.getComponent(MovementComponent);
-      if (movement) {
-        movement.stop();
-      }
-
-      // Reset collision state
-      const collision = projectile.getComponent(CollisionComponent);
-      if (collision && collision.reset) {
-        collision.reset();
-      }
-
-      // Reset visual properties
+      // Reset projectile-specific properties
       projectile.setAlpha(1);
       projectile.setRotation(0);
 
@@ -364,6 +342,24 @@ export default class Projectile extends BaseEntity {
   }
 
   /**
+   * Fallback projectile physics configuration when PhysicsHelper is unavailable
+   * @private
+   */
+  _fallbackProjectilePhysicsConfiguration() {
+    if (!this.body) return;
+
+    // Manual physics configuration for projectile
+    this.body.setSize(this.width * 0.8, this.height * 0.8);
+    this.body.setOffset(this.width * 0.1, this.height * 0.1);
+    this.body.setImmovable(false);
+    this.body.setBounce(0);
+    this.body.setDrag(0);
+    this.body.setMaxVelocity(600, 600);
+
+    Logger.debug(`[Projectile] Fallback physics configuration applied for ${this.entityId}`);
+  }
+
+  /**
    * Initialize projectile components
    */
   initializeComponents() {
@@ -377,21 +373,7 @@ export default class Projectile extends BaseEntity {
     });
     this.addComponent(movementComponent);
 
-    // Collision component
-    const collisionConfig = CollisionComponent.createProjectileConfig(this.isPlayerProjectile);
-    collisionConfig.damageAmount = this.damage;
-    collisionConfig.width = this.width * 0.8;
-    collisionConfig.height = this.height * 0.8;
-
-    // Configure collision response based on piercing
-    if (this.piercing) {
-      collisionConfig.collisionResponse.destroy = false;
-      collisionConfig.collisionCooldown = 100; // Brief cooldown between hits
-    }
-
-    const collisionComponent = new CollisionComponent();
-    collisionComponent.init(collisionConfig);
-    this.addComponent(collisionComponent);
+    // Note: Collision handling now uses Phaser physics in GameScene
   }
 
   /**
@@ -448,11 +430,7 @@ export default class Projectile extends BaseEntity {
       return;
     }
 
-    // Update collision component (if it has an update method)
-    const collision = this.getComponent(CollisionComponent);
-    if (collision && collision.update) {
-      collision.update(delta);
-    }
+    // Note: Collision detection now handled by Phaser physics in GameScene
 
     // Handle visual effects (placeholder for future enhancement)
     this.updateVisualEffects(delta);
@@ -489,26 +467,34 @@ export default class Projectile extends BaseEntity {
 
   /**
    * Handle collision with another entity
-   * Called by CollisionSystem
+   * Called by Phaser physics collision handlers in GameScene
    * @param {BaseEntity} otherEntity - BaseEntity that was hit
-   * @param {Object} collisionResult - Result from collision component
    */
-  onCollision(otherEntity, collisionResult) {
+  onCollision(otherEntity) {
     Logger.debug(`Projectile hit: ${otherEntity.constructor.name}`, {
-      damage: collisionResult.damageDealt,
+      damage: this.damage,
       piercing: this.piercing,
+      weaponType: this.weaponType,
     });
+
+    // Apply damage to the hit entity if it has a health component
+    if (otherEntity.getComponent && typeof otherEntity.getComponent === 'function') {
+      const healthComponent = otherEntity.getComponent('HealthComponent');
+      if (healthComponent && healthComponent.takeDamage) {
+        healthComponent.takeDamage(this.damage);
+      }
+    }
 
     // Emit hit event for sound/visual effects
     this.emit('projectileHit', {
       target: otherEntity,
-      damage: collisionResult.damageDealt,
+      damage: this.damage,
       weaponType: this.weaponType,
       position: { x: this.x, y: this.y },
     });
 
     // Destroy projectile unless it's piercing
-    if (!this.piercing && collisionResult.handled) {
+    if (!this.piercing) {
       // Small delay to ensure collision is fully processed
       this.scene.time.delayedCall(10, () => {
         if (this.active) {

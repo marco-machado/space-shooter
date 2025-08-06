@@ -6,7 +6,7 @@ import Logger from '@/utils/Logger.js';
  * 
  * Features:
  * - Auto-initialization with comprehensive validation
- * - Logger system integration for consistent error reporting
+ * - Logger scopeName integration for consistent error reporting
  * - Production safety with secure defaults
  * - Type-safe parsing with bounds checking
  * - Comprehensive schema validation for all parameters
@@ -29,7 +29,7 @@ export default class ConfigManager {
       default: false,
       description: 'Show physics debug visualization',
     },
-    AUDIO_ENABLED: { type: 'boolean', default: true, description: 'Enable audio system' },
+    AUDIO_ENABLED: { type: 'boolean', default: true, description: 'Enable audio scopeName' },
 
     // Game configuration
     STARTING_LIVES: {
@@ -78,7 +78,7 @@ export default class ConfigManager {
   static registeredScenes = [];
 
   /**
-   * Initialize complete configuration system with comprehensive validation
+   * Initialize complete configuration scopeName with comprehensive validation
    * Auto-initializes on first access if not already initialized
    */
   static init() {
@@ -86,7 +86,7 @@ export default class ConfigManager {
       return;
     }
 
-    Logger.debug('[ConfigManager] Initializing unified configuration system...');
+    Logger.debug('[ConfigManager] Initializing unified configuration scopeName...');
 
     try {
       this.validationErrors = [];
@@ -206,7 +206,87 @@ export default class ConfigManager {
       BACKGROUND: 0x000011, // Dark space blue
     };
 
-    // Physics groups
+    // Collision groups (enhanced for Phaser Arcade Physics migration)
+    this.COLLISION_GROUPS = {
+      PLAYER: 'player',
+      ENEMY: 'enemy',
+      PLAYER_PROJECTILE: 'playerProjectile',
+      ENEMY_PROJECTILE: 'enemyProjectile',
+      POWERUP: 'powerup',
+      OBSTACLE: 'obstacle',
+    };
+
+    // Collision categories (bitmasks for Phaser physics)
+    this.COLLISION_CATEGORIES = {
+      PLAYER: 0x0001,        // 1
+      ENEMY: 0x0002,         // 2
+      PLAYER_PROJECTILE: 0x0004, // 4
+      ENEMY_PROJECTILE: 0x0008,  // 8
+      POWERUP: 0x0010,       // 16
+      OBSTACLE: 0x0020,      // 32
+    };
+
+    // Collision matrix - defines what collides with what
+    this.COLLISION_MATRIX = {
+      [this.COLLISION_GROUPS.PLAYER]: [
+        this.COLLISION_CATEGORIES.ENEMY,
+        this.COLLISION_CATEGORIES.ENEMY_PROJECTILE,
+        this.COLLISION_CATEGORIES.POWERUP,
+        this.COLLISION_CATEGORIES.OBSTACLE
+      ],
+      [this.COLLISION_GROUPS.ENEMY]: [
+        this.COLLISION_CATEGORIES.PLAYER,
+        this.COLLISION_CATEGORIES.PLAYER_PROJECTILE,
+        this.COLLISION_CATEGORIES.OBSTACLE
+      ],
+      [this.COLLISION_GROUPS.PLAYER_PROJECTILE]: [
+        this.COLLISION_CATEGORIES.ENEMY,
+        this.COLLISION_CATEGORIES.OBSTACLE
+      ],
+      [this.COLLISION_GROUPS.ENEMY_PROJECTILE]: [
+        this.COLLISION_CATEGORIES.PLAYER,
+        this.COLLISION_CATEGORIES.OBSTACLE
+      ],
+      [this.COLLISION_GROUPS.POWERUP]: [
+        this.COLLISION_CATEGORIES.PLAYER
+      ],
+      [this.COLLISION_GROUPS.OBSTACLE]: [
+        this.COLLISION_CATEGORIES.PLAYER,
+        this.COLLISION_CATEGORIES.ENEMY,
+        this.COLLISION_CATEGORIES.PLAYER_PROJECTILE,
+        this.COLLISION_CATEGORIES.ENEMY_PROJECTILE
+      ]
+    };
+
+    // Collision cooldown settings (in milliseconds)
+    this.COLLISION_COOLDOWNS = {
+      PLAYER_ENEMY: 1000,        // 1 second invulnerability after enemy contact
+      PLAYER_PROJECTILE: 500,    // 0.5 second invulnerability after projectile hit
+      ENEMY_PROJECTILE: 100,     // 0.1 second for enemy projectile hits (brief)
+      PLAYER_OBSTACLE: 500,      // 0.5 second after obstacle collision
+      ENEMY_OBSTACLE: 200,       // 0.2 second for enemies hitting obstacles
+    };
+
+    // Collision effect settings
+    this.COLLISION_EFFECTS = {
+      SCREEN_SHAKE: {
+        PLAYER_HIT: { duration: 300, intensity: 8 },
+        ENEMY_DESTROYED: { duration: 150, intensity: 4 },
+        OBSTACLE_HIT: { duration: 100, intensity: 3 }
+      },
+      FLASH_EFFECT: {
+        PLAYER_HIT: { color: 0xff0000, duration: 200 },  // Red flash
+        ENEMY_HIT: { color: 0xffffff, duration: 100 },   // White flash
+        POWERUP_COLLECTED: { color: 0x00ff00, duration: 150 } // Green flash
+      },
+      PARTICLES: {
+        EXPLOSION_SMALL: { count: 15, speed: 100, life: 500 },
+        EXPLOSION_LARGE: { count: 30, speed: 150, life: 800 },
+        SPARK_EFFECT: { count: 8, speed: 80, life: 300 }
+      }
+    };
+
+    // Legacy physics groups (for backward compatibility during migration)
     this.PHYSICS_GROUPS = {
       PLAYER: 'player',
       ENEMIES: 'enemies',
@@ -233,6 +313,7 @@ export default class ConfigManager {
       PRELOADER: 'PreloaderScene',
       MAIN_MENU: 'MainMenuScene',
       GAME: 'GameScene',
+      UI_SCENE: 'UIScene',
       GAME_OVER: 'GameOverScene',
       PAUSE: 'PauseScene',
     };
@@ -433,7 +514,12 @@ export default class ConfigManager {
       GAME_WIDTH: this.GAME_WIDTH,
       GAME_HEIGHT: this.GAME_HEIGHT,
       COLORS: { ...this.COLORS },
-      PHYSICS_GROUPS: { ...this.PHYSICS_GROUPS },
+      COLLISION_GROUPS: { ...this.COLLISION_GROUPS },
+      COLLISION_CATEGORIES: { ...this.COLLISION_CATEGORIES },
+      COLLISION_MATRIX: { ...this.COLLISION_MATRIX },
+      COLLISION_COOLDOWNS: { ...this.COLLISION_COOLDOWNS },
+      COLLISION_EFFECTS: { ...this.COLLISION_EFFECTS },
+      PHYSICS_GROUPS: { ...this.PHYSICS_GROUPS }, // Legacy support
       DEPTHS: { ...this.DEPTHS },
       SCENES: { ...this.SCENES },
     };

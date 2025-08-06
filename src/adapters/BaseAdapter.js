@@ -14,4 +14,9 @@ export default class BaseAdapter {
 
     this.eventBus = getEventBus();
   }
+
+  destroy() {
+    this.scene = null;
+    this.eventBus = null;
+  }
 }
