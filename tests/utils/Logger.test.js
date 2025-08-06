@@ -1,438 +1,513 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import Logger from '../../src/utils/Logger.js';
 
-// Mock console methods to test logging output
-const originalConsole = {
-  log: console.log,
-  info: console.info,
-  warn: console.warn,
-  error: console.error,
-  time: console.time,
-  timeEnd: console.timeEnd,
-  group: console.group,
-  groupEnd: console.groupEnd,
-  table: console.table,
-};
-
-const mockConsole = {
-  log: vi.fn(),
-  info: vi.fn(),
-  warn: vi.fn(),
-  error: vi.fn(),
-  time: vi.fn(),
-  timeEnd: vi.fn(),
-  group: vi.fn(),
-  groupEnd: vi.fn(),
-  table: vi.fn(),
-};
-
 describe('Logger', () => {
-  beforeEach(() => {
-    // Reset console mocks
-    Object.keys(mockConsole).forEach(method => mockConsole[method].mockClear());
-    
-    // Replace console methods with mocks
-    Object.keys(mockConsole).forEach(method => {
-      console[method] = mockConsole[method];
-    });
+  let mockConsole;
 
-    // Reset Logger state for fresh testing
-    Logger.isInitialized = false;
-    Logger.debugMode = false;
-    Logger.logLevel = 'info';
+  beforeEach(() => {
+    // Create fresh mock console for each test
+    mockConsole = {
+      log: vi.fn(),
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+      time: vi.fn(),
+      timeEnd: vi.fn(),
+      group: vi.fn(),
+      groupEnd: vi.fn(),
+      table: vi.fn()
+    };
+
+    // Reset environment and cache
+    vi.unstubAllEnvs();
+    Logger._resetForTesting();
   });
 
   afterEach(() => {
-    // Restore original console methods
-    Object.keys(originalConsole).forEach(method => {
-      console[method] = originalConsole[method];
-    });
+    vi.clearAllMocks();
+    vi.unstubAllEnvs();
   });
 
-  describe('Auto-Initialization', () => {
-    it('should auto-initialize on first logging call', () => {
-      expect(Logger.isInitialized).toBe(false);
-      
-      Logger.error('test error'); // Use error as it should always log
-      
+  describe('Initialization', () => {
+    it('should auto-initialize when first accessed', () => {
+      const debugMode = Logger.debugMode;
+      expect(typeof debugMode).toBe('boolean');
       expect(Logger.isInitialized).toBe(true);
     });
 
-    it('should not re-initialize on subsequent calls', () => {
-      Logger.error('first call');
-      const firstInit = Logger.isInitialized;
-      
-      Logger.error('second call');
-      
-      expect(Logger.isInitialized).toBe(firstInit);
+    it('should handle missing environment variables', () => {
+      Logger._resetForTesting();
+      // Test with no environment variable set (override the test setup)
+      vi.stubEnv('VITE_LOG_LEVEL', undefined);
+      const logLevel = Logger.logLevel;
+      expect(logLevel).toBe('info'); // default
     });
 
-    it('should initialize when shouldLog is called', () => {
-      expect(Logger.isInitialized).toBe(false);
+    it('should validate invalid log level', () => {
+      Logger._resetForTesting();
+      vi.stubEnv('VITE_LOG_LEVEL', 'invalid');
       
-      Logger.shouldLog('info');
-      
-      expect(Logger.isInitialized).toBe(true);
+      const logLevel = Logger.logLevel;
+      expect(logLevel).toBe('info'); // fallback to default
+    });
+
+    it('should use environment configuration', () => {
+      // Reset and set environment before accessing Logger
+      Logger._resetForTesting();
+      vi.stubEnv('VITE_DEBUG_MODE', 'true');
+      vi.stubEnv('VITE_LOG_LEVEL', 'debug');
+
+      // Force re-initialization by accessing properties
+      const debugMode = Logger.debugMode;
+      const logLevel = Logger.logLevel;
+
+      expect(debugMode).toBe(true);
+      expect(logLevel).toBe('debug');
     });
   });
 
-  describe('Logging Methods Structure', () => {
+  describe('Scope isolation', () => {
+    it('should return isolated scoped logger instances', () => {
+      const logger1 = Logger.scope('Test1');
+      const logger2 = Logger.scope('Test2');
+      const logger1Again = Logger.scope('Test1');
+
+      expect(logger1).not.toBe(logger2);
+      expect(logger1).toBe(logger1Again); // cached
+      expect(logger1.scope).toBe('Test1');
+      expect(logger2.scope).toBe('Test2');
+    });
+
+    it('should maintain scope isolation across concurrent calls', () => {
+      const results = [];
+      
+      // Simulate concurrent scope creation
+      for (let i = 0; i < 10; i++) {
+        const logger = Logger.scope(`Concurrent${i}`);
+        results.push(logger.scope);
+      }
+
+      // Verify no race conditions
+      results.forEach((scope, index) => {
+        expect(scope).toBe(`Concurrent${index}`);
+      });
+    });
+  });
+
+  describe('Logging levels', () => {
     beforeEach(() => {
-      // Force initialization with known state
-      Logger.isInitialized = true;
-      Logger.debugMode = true;
-      Logger.logLevel = 'debug';
+      vi.stubEnv('VITE_DEBUG_MODE', 'true');
+      vi.stubEnv('VITE_LOG_LEVEL', 'debug');
     });
 
-    it('should call console.log for debug messages when enabled', () => {
-      Logger.debug('debug message', 'extra', 'args');
+    it('should respect log level filtering', () => {
+      Logger._resetForTesting();
+      vi.stubEnv('VITE_DEBUG_MODE', 'true');
+      vi.stubEnv('VITE_LOG_LEVEL', 'warn');
       
-      expect(mockConsole.log).toHaveBeenCalledWith(
-        '🔍',
-        expect.stringMatching(/^\d{2}:\d{2}:\d{2} \[DEBUG\]$/),
-        'debug message',
-        'extra',
-        'args'
-      );
+      // Create logger with mock console
+      const testLogger = new Logger._factory.constructor({ console: mockConsole });
+      const scopedLogger = testLogger.scope('Test');
+
+      scopedLogger.debug('debug message');
+      scopedLogger.info('info message');
+      scopedLogger.warn('warn message');
+      scopedLogger.error('error message');
+
+      expect(mockConsole.log).not.toHaveBeenCalled(); // debug filtered
+      expect(mockConsole.info).not.toHaveBeenCalled(); // info filtered
+      expect(mockConsole.warn).toHaveBeenCalledWith('⚠️', expect.any(String), 'warn message');
+      expect(mockConsole.error).toHaveBeenCalledWith('❌', expect.any(String), 'error message');
     });
 
-    it('should call console.info for info messages', () => {
-      Logger.info('info message', 'extra', 'args');
+    it('should handle debug mode filtering', () => {
+      Logger._resetForTesting();
+      vi.stubEnv('VITE_DEBUG_MODE', 'false');
+      vi.stubEnv('VITE_LOG_LEVEL', 'debug');
       
+      const testLogger = new Logger._factory.constructor({ console: mockConsole });
+      const scopedLogger = testLogger.scope('Test');
+
+      scopedLogger.debug('debug message');
+      
+      expect(mockConsole.log).not.toHaveBeenCalled(); // debug mode disabled
+    });
+  });
+
+  describe('Message formatting', () => {
+    beforeEach(() => {
+      Logger._resetForTesting();
+      vi.stubEnv('VITE_DEBUG_MODE', 'true');
+      vi.stubEnv('VITE_LOG_LEVEL', 'debug');
+    });
+
+    it('should format messages with timestamp and scope', () => {
+      const testLogger = new Logger._factory.constructor({ console: mockConsole });
+      const scopedLogger = testLogger.scope('TestScope');
+
+      scopedLogger.info('test message', 'extra arg');
+
       expect(mockConsole.info).toHaveBeenCalledWith(
         'ℹ️',
-        expect.stringMatching(/^\d{2}:\d{2}:\d{2} \[INFO\]$/),
-        'info message',
-        'extra',
-        'args'
+        expect.stringMatching(/\d{2}:\d{2}:\d{2} \[INFO\]\[TESTSCOPE\]/),
+        'test message',
+        'extra arg'
       );
     });
 
-    it('should call console.warn for warning messages', () => {
-      Logger.warn('warning message', 'extra', 'args');
-      
-      expect(mockConsole.warn).toHaveBeenCalledWith(
-        '⚠️',
-        expect.stringMatching(/^\d{2}:\d{2}:\d{2} \[WARN\]$/),
-        'warning message',
-        'extra',
-        'args'
-      );
-    });
+    it('should handle null scope', () => {
+      const testLogger = new Logger._factory.constructor({ console: mockConsole });
+      const scopedLogger = testLogger.scope(null);
 
-    it('should call console.error for error messages', () => {
-      Logger.error('error message', 'extra', 'args');
-      
-      expect(mockConsole.error).toHaveBeenCalledWith(
-        '❌',
-        expect.stringMatching(/^\d{2}:\d{2}:\d{2} \[ERROR\]$/),
-        'error message',
-        'extra',
-        'args'
+      scopedLogger.info('test message');
+
+      expect(mockConsole.info).toHaveBeenCalledWith(
+        'ℹ️',
+        expect.stringMatching(/\d{2}:\d{2}:\d{2} \[INFO\]/),
+        'test message'
       );
     });
   });
 
-  describe('Log Level Filtering', () => {
-    it('should respect error log level (only error messages)', () => {
-      // Force specific log level
-      Logger.isInitialized = true;
-      Logger.debugMode = true;
-      Logger.logLevel = 'error';
-      
-      Logger.debug('debug message'); // should not log
-      Logger.info('info message');   // should not log
-      Logger.warn('warn message');   // should not log
-      Logger.error('error message'); // should log
-      
-      expect(mockConsole.log).not.toHaveBeenCalled();  // debug
-      expect(mockConsole.info).not.toHaveBeenCalled(); // info
-      expect(mockConsole.warn).not.toHaveBeenCalled(); // warn
-      expect(mockConsole.error).toHaveBeenCalled();    // error
+  describe('Performance optimizations', () => {
+    beforeEach(() => {
+      Logger._resetForTesting();
     });
 
-    it('should respect warn log level (warn and error)', () => {
-      // Force specific log level
-      Logger.isInitialized = true;
-      Logger.debugMode = true;
-      Logger.logLevel = 'warn';
+    it('should cache timestamp for performance', () => {
+      vi.stubEnv('VITE_DEBUG_MODE', 'true');
+      vi.stubEnv('VITE_LOG_LEVEL', 'debug');
+
+      const testLogger = new Logger._factory.constructor({ console: mockConsole });
+      const scopedLogger = testLogger.scope('Test');
+
+      // Log multiple messages quickly
+      scopedLogger.debug('message 1');
+      scopedLogger.debug('message 2');
+
+      const calls = mockConsole.log.mock.calls;
+      const timestamp1 = calls[0][1].split(' ')[0];
+      const timestamp2 = calls[1][1].split(' ')[0];
       
-      Logger.debug('debug message'); // should not log
-      Logger.info('info message');   // should not log
-      Logger.warn('warn message');   // should log
-      Logger.error('error message'); // should log
-      
-      expect(mockConsole.log).not.toHaveBeenCalled();  // debug
-      expect(mockConsole.info).not.toHaveBeenCalled(); // info
-      expect(mockConsole.warn).toHaveBeenCalled();     // warn
-      expect(mockConsole.error).toHaveBeenCalled();    // error
+      // Should use cached timestamp
+      expect(timestamp1).toBe(timestamp2);
     });
 
-    it('should respect info log level (info, warn, error)', () => {
-      // Force specific log level
-      Logger.isInitialized = true;
-      Logger.debugMode = true;
-      Logger.logLevel = 'info';
-      
-      Logger.debug('debug message'); // should not log
-      Logger.info('info message');   // should log
-      Logger.warn('warn message');   // should log
-      Logger.error('error message'); // should log
-      
-      expect(mockConsole.log).not.toHaveBeenCalled(); // debug
-      expect(mockConsole.info).toHaveBeenCalled();    // info
-      expect(mockConsole.warn).toHaveBeenCalled();    // warn
-      expect(mockConsole.error).toHaveBeenCalled();   // error
+    it('should cache scope labels', () => {
+      vi.stubEnv('VITE_DEBUG_MODE', 'true');
+      vi.stubEnv('VITE_LOG_LEVEL', 'debug');
+
+      const testLogger = new Logger._factory.constructor({ console: mockConsole });
+
+      // Create multiple loggers with same scope
+      const logger1 = testLogger.scope('CachedScope');
+      const logger2 = testLogger.scope('CachedScope');
+
+      logger1.debug('message 1');
+      logger2.debug('message 2');
+
+      // Both should use same cached scope label
+      expect(mockConsole.log).toHaveBeenCalledTimes(2);
+      expect(mockConsole.log.mock.calls[0][1]).toContain('[CACHEDSCOPE]');
+      expect(mockConsole.log.mock.calls[1][1]).toContain('[CACHEDSCOPE]');
     });
 
-    it('should not log debug when debugMode is false', () => {
-      // Force specific state
-      Logger.isInitialized = true;
-      Logger.debugMode = false;
-      Logger.logLevel = 'debug';
+    it('should early return when logging disabled', () => {
+      vi.stubEnv('VITE_LOG_LEVEL', 'error');
       
-      Logger.debug('debug message');
-      
+      const mockSanitizer = { sanitize: vi.fn() };
+      const testLogger = new Logger._factory.constructor({ 
+        console: mockConsole,
+        sanitizer: mockSanitizer
+      });
+      const scopedLogger = testLogger.scope('Test');
+
+      scopedLogger.debug('filtered message');
+
+      // Should not call expensive operations
+      expect(mockSanitizer.sanitize).not.toHaveBeenCalled();
       expect(mockConsole.log).not.toHaveBeenCalled();
     });
   });
 
-  describe('Performance Methods', () => {
+  describe('Security features', () => {
     beforeEach(() => {
-      // Force debug mode enabled
-      Logger.isInitialized = true;
-      Logger.debugMode = true;
-      Logger.logLevel = 'debug';
+      Logger._resetForTesting();
+      vi.stubEnv('VITE_DEBUG_MODE', 'true');
+      vi.stubEnv('VITE_LOG_LEVEL', 'debug');
     });
 
-    it('should call console.time and timeEnd when debug enabled', () => {
-      Logger.time('test-timer');
-      Logger.timeEnd('test-timer');
-      
-      expect(mockConsole.time).toHaveBeenCalledWith('⏱️ test-timer');
-      expect(mockConsole.timeEnd).toHaveBeenCalledWith('⏱️ test-timer');
+    it('should sanitize sensitive strings', () => {
+      const testLogger = new Logger._factory.constructor({ console: mockConsole });
+      const scopedLogger = testLogger.scope('Test');
+
+      scopedLogger.info('api_key: secret123');
+
+      expect(mockConsole.info).toHaveBeenCalledWith(
+        'ℹ️',
+        expect.any(String),
+        '[SENSITIVE DATA REDACTED]'
+      );
     });
 
-    it('should not call time methods when debug disabled', () => {
-      Logger.debugMode = false;
-      
-      Logger.time('test-timer');
-      Logger.timeEnd('test-timer');
-      
-      expect(mockConsole.time).not.toHaveBeenCalled();
-      expect(mockConsole.timeEnd).not.toHaveBeenCalled();
+    it('should sanitize sensitive object properties', () => {
+      const testLogger = new Logger._factory.constructor({ console: mockConsole });
+      const scopedLogger = testLogger.scope('Test');
+
+      const sensitiveData = {
+        username: 'user',
+        password: 'secret123',
+        data: 'safe'
+      };
+
+      scopedLogger.info('User data:', sensitiveData);
+
+      // Arguments: icon, timestamp+level+scope, message, sanitized object
+      expect(mockConsole.info.mock.calls[0]).toHaveLength(4);
+      const sanitizedObject = mockConsole.info.mock.calls[0][3];
+      expect(sanitizedObject.username).toBe('user');
+      expect(sanitizedObject.password).toBe('[REDACTED]');
+      expect(sanitizedObject.data).toBe('safe');
     });
 
-    it('should call console.group and groupEnd when debug enabled', () => {
-      Logger.group('test-group');
-      Logger.groupEnd();
-      
-      expect(mockConsole.group).toHaveBeenCalledWith('📁 test-group');
+    it('should handle arrays in sanitization', () => {
+      const testLogger = new Logger._factory.constructor({ console: mockConsole });
+      const scopedLogger = testLogger.scope('Test');
+
+      scopedLogger.info('Array data:', ['safe', 'api_key: secret']);
+
+      // Arguments: icon, timestamp+level+scope, message, sanitized array
+      expect(mockConsole.info.mock.calls[0]).toHaveLength(4);
+      const sanitizedArray = mockConsole.info.mock.calls[0][3];
+      expect(sanitizedArray[0]).toBe('safe');
+      expect(sanitizedArray[1]).toBe('[SENSITIVE DATA REDACTED]');
+    });
+  });
+
+  describe('Rate limiting', () => {
+    beforeEach(() => {
+      Logger._resetForTesting();
+      vi.stubEnv('VITE_DEBUG_MODE', 'true');
+      vi.stubEnv('VITE_LOG_LEVEL', 'debug');
+    });
+
+    it('should allow logging within rate limits', () => {
+      const mockRateLimiter = {
+        allow: vi.fn().mockReturnValue(true)
+      };
+
+      const testLogger = new Logger._factory.constructor({ 
+        console: mockConsole,
+        rateLimiter: mockRateLimiter
+      });
+      const scopedLogger = testLogger.scope('Test');
+
+      scopedLogger.info('test message');
+
+      expect(mockRateLimiter.allow).toHaveBeenCalledWith('info', 'Test');
+      expect(mockConsole.info).toHaveBeenCalled();
+    });
+
+    it('should block logging when rate limited', () => {
+      const mockRateLimiter = {
+        allow: vi.fn().mockReturnValue(false)
+      };
+
+      const testLogger = new Logger._factory.constructor({ 
+        console: mockConsole,
+        rateLimiter: mockRateLimiter
+      });
+      const scopedLogger = testLogger.scope('Test');
+
+      scopedLogger.info('test message');
+
+      expect(mockRateLimiter.allow).toHaveBeenCalledWith('info', 'Test');
+      expect(mockConsole.info).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Utility methods', () => {
+    beforeEach(() => {
+      Logger._resetForTesting();
+      vi.stubEnv('VITE_DEBUG_MODE', 'true');
+      vi.stubEnv('VITE_LOG_LEVEL', 'debug');
+    });
+
+    it('should support time/timeEnd methods', () => {
+      const testLogger = new Logger._factory.constructor({ console: mockConsole });
+      const scopedLogger = testLogger.scope('Test');
+
+      scopedLogger.time('operation');
+      scopedLogger.timeEnd('operation');
+
+      expect(mockConsole.time).toHaveBeenCalledWith('⏱️ operation');
+      expect(mockConsole.timeEnd).toHaveBeenCalledWith('⏱️ operation');
+    });
+
+    it('should support group/groupEnd methods', () => {
+      const testLogger = new Logger._factory.constructor({ console: mockConsole });
+      const scopedLogger = testLogger.scope('Test');
+
+      scopedLogger.group('test group');
+      scopedLogger.groupEnd();
+
+      expect(mockConsole.group).toHaveBeenCalledWith('📁 test group');
       expect(mockConsole.groupEnd).toHaveBeenCalled();
     });
 
-    it('should not call group methods when debug disabled', () => {
-      Logger.debugMode = false;
-      
-      Logger.group('test-group');
-      Logger.groupEnd();
-      
-      expect(mockConsole.group).not.toHaveBeenCalled();
-      expect(mockConsole.groupEnd).not.toHaveBeenCalled();
-    });
+    it('should support table method', () => {
+      const testLogger = new Logger._factory.constructor({ console: mockConsole });
+      const scopedLogger = testLogger.scope('Test');
 
-    it('should call console.table when debug enabled', () => {
-      const testData = [{ name: 'test', value: 123 }];
-      
-      Logger.table(testData);
-      
-      expect(mockConsole.table).toHaveBeenCalledWith(testData);
-    });
+      const data = [{ name: 'test', value: 123 }];
+      scopedLogger.table(data);
 
-    it('should not call table when debug disabled', () => {
-      Logger.debugMode = false;
-      
-      const testData = [{ name: 'test', value: 123 }];
-      Logger.table(testData);
-      
-      expect(mockConsole.table).not.toHaveBeenCalled();
+      expect(mockConsole.table).toHaveBeenCalledWith(data);
     });
   });
 
-  describe('shouldLog Method', () => {
+  describe('Backward compatibility', () => {
+    it('should maintain static property access', () => {
+      expect(typeof Logger.isInitialized).toBe('boolean');
+      expect(typeof Logger.debugMode).toBe('boolean');
+      expect(typeof Logger.logLevel).toBe('string');
+      expect(typeof Logger.levels).toBe('object');
+    });
+
+    it('should support legacy methods', () => {
+      expect(typeof Logger.shouldLog).toBe('function');
+      expect(typeof Logger.formatMessage).toBe('function');
+      expect(typeof Logger._ensureInitialized).toBe('function');
+    });
+
+    it('should support global logging methods', () => {
+      expect(typeof Logger.debug).toBe('function');
+      expect(typeof Logger.info).toBe('function');
+      expect(typeof Logger.warn).toBe('function');
+      expect(typeof Logger.error).toBe('function');
+    });
+
+    it('should maintain Logger.scope().method() API', () => {
+      const scopedLogger = Logger.scope('TestScope');
+      expect(typeof scopedLogger.debug).toBe('function');
+      expect(typeof scopedLogger.info).toBe('function');
+      expect(typeof scopedLogger.warn).toBe('function');
+      expect(typeof scopedLogger.error).toBe('function');
+    });
+  });
+
+  describe('Dependency injection', () => {
     beforeEach(() => {
-      Logger.isInitialized = true;
-      Logger.logLevel = 'warn';
+      Logger._resetForTesting();
     });
 
-    it('should return correct boolean for different log levels', () => {
-      expect(Logger.shouldLog('debug')).toBe(false);
-      expect(Logger.shouldLog('info')).toBe(false);
-      expect(Logger.shouldLog('warn')).toBe(true);
-      expect(Logger.shouldLog('error')).toBe(true);
+    it('should allow custom console injection', () => {
+      vi.stubEnv('VITE_DEBUG_MODE', 'true');
+      vi.stubEnv('VITE_LOG_LEVEL', 'debug');
+
+      const customConsole = { log: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() };
+      const testLogger = new Logger._factory.constructor({ console: customConsole });
+
+      testLogger.debug('test');
+      expect(customConsole.log).toHaveBeenCalled();
     });
 
-    it('should handle invalid log levels gracefully', () => {
-      expect(Logger.shouldLog('invalid')).toBe(false);
-    });
-  });
+    it('should allow custom sanitizer injection', () => {
+      vi.stubEnv('VITE_DEBUG_MODE', 'true');
+      vi.stubEnv('VITE_LOG_LEVEL', 'debug');
 
+      const customSanitizer = {
+        sanitize: vi.fn(val => `CUSTOM_${val}`)
+      };
+      const testLogger = new Logger._factory.constructor({ 
+        console: mockConsole,
+        sanitizer: customSanitizer
+      });
 
-  describe('Message Formatting', () => {
-    it('should format messages with timestamps', () => {
-      const result = Logger.formatMessage('info', 'test message', 'arg1', 'arg2');
-      
-      expect(result).toHaveLength(4);
-      expect(result[0]).toMatch(/^\d{2}:\d{2}:\d{2} \[INFO\]$/);
-      expect(result[1]).toBe('test message');
-      expect(result[2]).toBe('arg1');
-      expect(result[3]).toBe('arg2');
-    });
-
-    it('should handle different log levels in formatting', () => {
-      const debugResult = Logger.formatMessage('debug', 'debug msg');
-      const warnResult = Logger.formatMessage('warn', 'warn msg');
-      const errorResult = Logger.formatMessage('error', 'error msg');
-      
-      expect(debugResult[0]).toMatch(/\[DEBUG\]$/);
-      expect(warnResult[0]).toMatch(/\[WARN\]$/);
-      expect(errorResult[0]).toMatch(/\[ERROR\]$/);
-    });
-
-    it('should format messages without additional arguments', () => {
-      const result = Logger.formatMessage('warn', 'simple message');
-      
-      expect(result).toHaveLength(2);
-      expect(result[0]).toMatch(/^\d{2}:\d{2}:\d{2} \[WARN\]$/);
-      expect(result[1]).toBe('simple message');
-    });
-  });
-
-  describe('Edge Cases', () => {
-    beforeEach(() => {
-      Logger.isInitialized = true;
-      Logger.debugMode = true;
-      Logger.logLevel = 'debug';
-    });
-
-    it('should handle empty messages', () => {
-      Logger.debug('');
-      Logger.info('');
-      Logger.warn('');
-      Logger.error('');
-      
+      testLogger.debug('test');
+      expect(customSanitizer.sanitize).toHaveBeenCalledWith('test');
       expect(mockConsole.log).toHaveBeenCalledWith(
         '🔍',
-        expect.stringMatching(/^\d{2}:\d{2}:\d{2} \[DEBUG\]$/),
-        ''
+        expect.any(String),
+        'CUSTOM_test'
       );
     });
 
-    it('should handle objects and arrays as arguments', () => {
-      const testObject = { key: 'value' };
-      const testArray = [1, 2, 3];
-      
-      Logger.info('test', testObject, testArray);
-      
-      expect(mockConsole.info).toHaveBeenCalledWith(
-        'ℹ️',
-        expect.stringMatching(/^\d{2}:\d{2}:\d{2} \[INFO\]$/),
-        'test',
-        testObject,
-        testArray
-      );
+    it('should allow custom rate limiter injection', () => {
+      vi.stubEnv('VITE_DEBUG_MODE', 'true');
+      vi.stubEnv('VITE_LOG_LEVEL', 'debug');
+
+      const customRateLimiter = {
+        allow: vi.fn().mockReturnValue(true)
+      };
+      const testLogger = new Logger._factory.constructor({ 
+        console: mockConsole,
+        rateLimiter: customRateLimiter
+      });
+
+      testLogger.scope('Test').debug('test');
+      expect(customRateLimiter.allow).toHaveBeenCalledWith('debug', 'Test');
     });
 
-    it('should handle null and undefined arguments', () => {
-      Logger.warn('test', null, undefined);
-      
-      expect(mockConsole.warn).toHaveBeenCalledWith(
-        '⚠️',
-        expect.stringMatching(/^\d{2}:\d{2}:\d{2} \[WARN\]$/),
-        'test',
-        null,
-        undefined
-      );
-    });
+    it('should allow custom formatter injection', () => {
+      vi.stubEnv('VITE_DEBUG_MODE', 'true');
+      vi.stubEnv('VITE_LOG_LEVEL', 'debug');
 
-    it('should handle very long messages', () => {
-      const longMessage = 'a'.repeat(1000);
-      
-      Logger.error(longMessage);
-      
-      expect(mockConsole.error).toHaveBeenCalledWith(
-        '❌',
-        expect.stringMatching(/^\d{2}:\d{2}:\d{2} \[ERROR\]$/),
-        longMessage
-      );
+      const customFormatter = {
+        format: vi.fn((level, scope, message, ...args) => [`CUSTOM_${level}`, message, ...args])
+      };
+      const testLogger = new Logger._factory.constructor({ 
+        console: mockConsole,
+        formatter: customFormatter
+      });
+
+      testLogger.debug('test');
+      expect(customFormatter.format).toHaveBeenCalledWith('debug', null, 'test');
+      expect(mockConsole.log).toHaveBeenCalledWith('🔍', 'CUSTOM_debug', 'test');
     });
   });
 
-  describe('Environment Initialization (Integration)', () => {
-    it('should initialize with default values', () => {
-      // Allow natural initialization
-      Logger.isInitialized = false;
+  describe('Rate limiter implementation', () => {
+    it('should implement per-minute rate limits correctly', () => {
+      const rateLimiter = Logger._factory.deps.rateLimiter;
       
-      Logger.error('test'); // Force initialization
-      
-      expect(Logger.isInitialized).toBe(true);
-      expect(Logger.logLevel).toBeTruthy(); // Should have some value
-      expect(typeof Logger.debugMode).toBe('boolean');
-    });
-
-    it('should handle initialization errors gracefully', () => {
-      // Reset state
-      Logger.isInitialized = false;
-      
-      // Mock import.meta to throw (test error handling)
-      const originalImportMeta = globalThis.import?.meta;
-      if (globalThis.import) {
-        Object.defineProperty(globalThis.import, 'meta', {
-          get() { throw new Error('Mock import.meta error'); },
-          configurable: true
-        });
+      // Test within limits
+      for (let i = 0; i < 50; i++) {
+        expect(rateLimiter.allow('error', 'test')).toBe(true);
       }
       
-      try {
-        Logger.error('test'); // Should still work due to error handling
-        
-        expect(Logger.isInitialized).toBe(true);
-        expect(mockConsole.error).toHaveBeenCalled(); // Should log the test message
-      } finally {
-        // Restore original import.meta if it existed
-        if (originalImportMeta && globalThis.import) {
-          Object.defineProperty(globalThis.import, 'meta', {
-            value: originalImportMeta,
-            configurable: true
-          });
-        }
+      // Test exceeding limits
+      expect(rateLimiter.allow('error', 'test')).toBe(false);
+    });
+
+    it('should reset limits after time window', () => {
+      const rateLimiter = Logger._factory.deps.rateLimiter;
+      
+      // Fill up the limit
+      for (let i = 0; i < 50; i++) {
+        rateLimiter.allow('error', 'test');
       }
-    });
-  });
+      expect(rateLimiter.allow('error', 'test')).toBe(false);
 
-  describe('Logger State Management', () => {
-    it('should maintain consistent state across calls', () => {
-      Logger.isInitialized = true;
-      Logger.debugMode = true;
-      Logger.logLevel = 'debug';
+      // Mock time advancement
+      const originalLimits = rateLimiter.limits;
+      const testEntry = originalLimits.get('error:test');
+      testEntry.resetTime = Date.now() - 1; // Force reset
       
-      const initialDebugMode = Logger.debugMode;
-      const initialLogLevel = Logger.logLevel;
-      
-      // Multiple calls shouldn't change state
-      Logger.debug('test1');
-      Logger.info('test2');
-      Logger.warn('test3');
-      
-      expect(Logger.debugMode).toBe(initialDebugMode);
-      expect(Logger.logLevel).toBe(initialLogLevel);
+      expect(rateLimiter.allow('error', 'test')).toBe(true);
     });
 
-    it('should have correct level hierarchy values', () => {
-      expect(Logger.levels.debug).toBe(0);
-      expect(Logger.levels.info).toBe(1);
-      expect(Logger.levels.warn).toBe(2);
-      expect(Logger.levels.error).toBe(3);
+    it('should handle different scopes independently', () => {
+      const rateLimiter = Logger._factory.deps.rateLimiter;
+      
+      // Fill up one scope
+      for (let i = 0; i < 50; i++) {
+        rateLimiter.allow('error', 'scope1');
+      }
+      expect(rateLimiter.allow('error', 'scope1')).toBe(false);
+      
+      // Other scope should still work
+      expect(rateLimiter.allow('error', 'scope2')).toBe(true);
     });
   });
 });
