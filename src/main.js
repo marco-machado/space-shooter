@@ -8,12 +8,12 @@ const spaceShooterGame = new SpaceShooterGame();
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
     spaceShooterGame.init().catch(error => {
-      console.error('Failed to start Space Shooter game:', error);
+      Logger.scope('Main').error('Failed to start Space Shooter game:', error);
     });
   });
 } else {
   spaceShooterGame.init().catch(error => {
-    console.error('Failed to start Space Shooter game:', error);
+    Logger.scope('Main').error('Failed to start Space Shooter game:', error);
   });
 }
 
@@ -21,5 +21,5 @@ if (document.readyState === 'loading') {
 if (ConfigManager.getConfig().debugMode) {
   window.spaceShooterGame = spaceShooterGame;
   window.phaser = Phaser;
-  Logger.debug('main: Debug mode - Game instance available as window.spaceShooterGame');
+  Logger.scope('Main').debug('Game instance available as window.spaceShooterGame');
 }
