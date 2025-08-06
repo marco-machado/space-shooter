@@ -56,9 +56,9 @@ export default [
     },
   },
   {
-    files: ['src/core/Logger.js'],
+    files: ['src/utils/Logger.js'],
     rules: {
-      'no-console': 'off', // Logger scopeName is allowed to use console methods
+      'no-console': 'off', // Logger is allowed to use console methods
     },
   },
   {

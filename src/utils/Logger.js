@@ -46,7 +46,6 @@ class Logger {
         const timestamp = new Date().toISOString().slice(11, 19);
         const isDev = env.DEV || env.NODE_ENV === 'development';
 
-        // eslint-disable-next-line no-console
         console.log('🔍', `${timestamp} [DEBUG]`, 'Logger: auto-initialized', {
           debugMode: this.debugMode,
           logLevel: this.logLevel,
@@ -85,7 +84,6 @@ class Logger {
   static debug(message, ...args) {
     if (this.debugMode && this.shouldLog('debug')) {
       const formatted = this.formatMessage('debug', message, ...args);
-      // eslint-disable-next-line no-console
       console.log('🔍', ...formatted);
     }
   }
@@ -98,7 +96,6 @@ class Logger {
   static info(message, ...args) {
     if (this.shouldLog('info')) {
       const formatted = this.formatMessage('info', message, ...args);
-      // eslint-disable-next-line no-console
       console.info('ℹ️', ...formatted);
     }
   }
@@ -111,7 +108,6 @@ class Logger {
   static warn(message, ...args) {
     if (this.shouldLog('warn')) {
       const formatted = this.formatMessage('warn', message, ...args);
-      // eslint-disable-next-line no-console
       console.warn('⚠️', ...formatted);
     }
   }
@@ -124,7 +120,6 @@ class Logger {
   static error(message, ...args) {
     if (this.shouldLog('error')) {
       const formatted = this.formatMessage('error', message, ...args);
-      // eslint-disable-next-line no-console
       console.error('❌', ...formatted);
     }
   }
@@ -160,7 +155,6 @@ class Logger {
   static time(label) {
     this._ensureInitialized();
     if (this.debugMode && this.shouldLog('debug')) {
-      // eslint-disable-next-line no-console
       console.time(`⏱️ ${label}`);
     }
   }
@@ -172,7 +166,6 @@ class Logger {
   static timeEnd(label) {
     this._ensureInitialized();
     if (this.debugMode && this.shouldLog('debug')) {
-      // eslint-disable-next-line no-console
       console.timeEnd(`⏱️ ${label}`);
     }
   }
@@ -184,7 +177,6 @@ class Logger {
   static group(label) {
     this._ensureInitialized();
     if (this.debugMode && this.shouldLog('debug')) {
-      // eslint-disable-next-line no-console
       console.group(`📁 ${label}`);
     }
   }
@@ -195,7 +187,6 @@ class Logger {
   static groupEnd() {
     this._ensureInitialized();
     if (this.debugMode && this.shouldLog('debug')) {
-      // eslint-disable-next-line no-console
       console.groupEnd();
     }
   }
@@ -207,7 +198,6 @@ class Logger {
   static table(data) {
     this._ensureInitialized();
     if (this.debugMode && this.shouldLog('debug')) {
-      // eslint-disable-next-line no-console
       console.table(data);
     }
   }
