@@ -49,6 +49,9 @@ export default class GameScene extends Phaser.Scene {
     // Set up physics groups
     this.setupPhysicsGroups();
 
+    // Set up collision detection
+    this.setupCollisionDetection();
+
     // Create player
     this.createPlayer();
 
@@ -126,6 +129,46 @@ export default class GameScene extends Phaser.Scene {
     this.playerProjectileGroup = this.physics.add.group();
     this.enemyProjectileGroup = this.physics.add.group();
     this.powerupGroup = this.physics.add.group();
+  }
+
+  setupCollisionDetection() {
+    // Player projectiles vs enemies
+    this.physics.add.overlap(
+      this.playerProjectileGroup,
+      this.enemyGroup,
+      this.handleProjectileEnemyCollision,
+      null,
+      this
+    );
+
+    // Enemy projectiles vs player
+    this.physics.add.overlap(
+      this.enemyProjectileGroup,
+      this.playerGroup,
+      this.handleEnemyProjectilePlayerCollision,
+      null,
+      this
+    );
+
+    // Player vs enemies (collision damage)
+    this.physics.add.overlap(
+      this.playerGroup,
+      this.enemyGroup,
+      this.handlePlayerEnemyCollision,
+      null,
+      this
+    );
+
+    // Player vs powerups (collection)
+    this.physics.add.overlap(
+      this.playerGroup,
+      this.powerupGroup,
+      this.handlePlayerPowerupCollision,
+      null,
+      this
+    );
+
+    Logger.scope('GameScene').info('Collision detection configured');
   }
 
   createPlayer() {
@@ -279,5 +322,34 @@ export default class GameScene extends Phaser.Scene {
     this.events.off(EventTypes.GAME_PAUSE_TOGGLE, this.handlePauseToggle, this);
     this.events.off('gamePause', this.onGamePaused, this);
     this.events.off('gameResume', this.onGameResumed, this);
+  }
+
+  // Collision callback functions (placeholders)
+  handleProjectileEnemyCollision(projectile, enemy) {
+    Logger.scope('GameScene').error('Projectile-Enemy collision detected', {
+      projectileId: projectile.entityId || 'unknown',
+      enemyId: enemy.entityId || 'unknown'
+    });
+  }
+
+  handleEnemyProjectilePlayerCollision(projectile, player) {
+    Logger.scope('GameScene').debug('Enemy Projectile-Player collision detected', {
+      projectileId: projectile.entityId || 'unknown',
+      playerId: player.entityId || 'unknown'
+    });
+  }
+
+  handlePlayerEnemyCollision(player, enemy) {
+    Logger.scope('GameScene').debug('Player-Enemy collision detected', {
+      playerId: player.entityId || 'unknown',
+      enemyId: enemy.entityId || 'unknown'
+    });
+  }
+
+  handlePlayerPowerupCollision(player, powerup) {
+    Logger.scope('GameScene').debug('Player-Powerup collision detected', {
+      playerId: player.entityId || 'unknown',
+      powerupId: powerup.entityId || 'unknown'
+    });
   }
 }

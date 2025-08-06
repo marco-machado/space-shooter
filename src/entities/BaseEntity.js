@@ -33,11 +33,11 @@ export default class BaseEntity {
     // Entity metadata
     this.entityId = BaseEntity.generateId();
 
-    // Internal event scopeName for when gameObject is null
-    this._eventListeners = new Map();
+    // Internal event listeners
+    this.eventListeners = new Map();
 
     // Create the GameObject based on configuration
-    this.gameObject = this._createGameObject();
+    this.gameObject = this.createGameObject();
 
     // Register with scene's entity scopeName
     this._registerWithScene(scene);
@@ -56,6 +56,12 @@ export default class BaseEntity {
   get x() {
     return this.gameObject ? this.gameObject.x : this.config.x;
   }
+
+  /**
+   *
+   * GameObject proxies
+   *
+   */
 
   set x(value) {
     this.config.x = value;
@@ -136,9 +142,6 @@ export default class BaseEntity {
     }
   }
 
-  // Property delegation getters and setters for commonly accessed properties
-  // Handle cases where gameObject might be null
-
   /**
    * Get/Set visible state (null-safe)
    */
@@ -160,7 +163,8 @@ export default class BaseEntity {
   }
 
   /**
-   * Generate unique entity ID
+   * Generate unique entity ID.
+   *
    * @returns {string} Unique identifier
    */
   static generateId() {
@@ -202,11 +206,12 @@ export default class BaseEntity {
   }
 
   /**
-   * Create GameObject based on configuration
+   * Creates a game object based on the specified type in the configuration.
+   *
    * @private
-   * @returns {Phaser.GameObjects.GameObject|null} Created GameObject or null
+   * @return {Object|null} The created game object of the specified type, or null if the type is not set or invalid.
    */
-  _createGameObject() {
+  createGameObject() {
     if (this.config.type === null || this.config.type === 'null') {
       return null;
     }
@@ -226,14 +231,13 @@ export default class BaseEntity {
         case 'text':
           return this._createText();
         default:
-          Logger.warn(
-            `[BaseEntity] Unknown GameObject type: ${this.config.type}, falling back to rectangle`
+          Logger.scope('BaseEntity').warn(
+            `Unknown GameObject type: ${this.config.type}, falling back to rectangle`
           );
           return this._createRectangle();
       }
     } catch (error) {
       Logger.error(`[BaseEntity] Failed to create GameObject of type ${this.config.type}:`, error);
-      Logger.info('[BaseEntity] Falling back to rectangle GameObject');
       return this._createRectangle();
     }
   }
@@ -342,21 +346,27 @@ export default class BaseEntity {
    * @returns {BaseEntity} This entity for chaining
    */
   recreateGameObject() {
+    throw new Error('NO GAMEOBJECT RECREATION');
+
     // Check if recreation is needed
     if (this.gameObject) {
-      Logger.debug(`[BaseEntity] Entity ${this.entityId}: GameObject already exists, skipping recreation`);
+      Logger.debug(
+        `[BaseEntity] Entity ${this.entityId}: GameObject already exists, skipping recreation`
+      );
       return this;
     }
 
     // Validate scene state before recreation
     if (!this.scene || this.scene.sys.isDestroyed) {
-      Logger.error(`[BaseEntity] Entity ${this.entityId}: Cannot recreate GameObject - scene is destroyed`);
+      Logger.error(
+        `[BaseEntity] Entity ${this.entityId}: Cannot recreate GameObject - scene is destroyed`
+      );
       return this;
     }
 
     try {
       // Recreate GameObject using existing configuration
-      this.gameObject = this._createGameObject();
+      this.gameObject = this.createGameObject();
 
       if (this.gameObject) {
         // Re-enable physics if scene has physics and original entity had physics
@@ -431,9 +441,11 @@ export default class BaseEntity {
     };
 
     // Create new GameObject
-    this.gameObject = this._createGameObject();
+    this.gameObject = this.createGameObject();
 
-    Logger.debug(`[BaseEntity] Entity ${this.entityId} changed GameObject type to: ${newType}`);
+    Logger.scope('BaseEntity').debug(
+      `Entity ${this.entityId} changed GameObject type to: ${newType}`
+    );
     return this;
   }
 
@@ -449,7 +461,6 @@ export default class BaseEntity {
     // Set reference back to entity
     component.entity = this;
 
-    Logger.debug(`[BaseEntity] Component added: ${componentName} to ${this.entityId}-${this.name}`);
     return this;
   }
 
@@ -466,7 +477,6 @@ export default class BaseEntity {
       // Clear entity reference
       component.entity = null;
       this.components.delete(componentName);
-      Logger.debug(`[BaseEntity] Component removed: ${componentName} from ${this.entityId}`);
     }
 
     return this;
@@ -515,7 +525,7 @@ export default class BaseEntity {
   deactivate() {
     this.active = false;
     this.visible = false;
-    
+
     // Move out of view but don't destroy GameObject
     if (this.gameObject) {
       this.gameObject.setPosition(-1000, -1000);
@@ -557,8 +567,8 @@ export default class BaseEntity {
     this.components.clear();
 
     // Clean up internal event listeners
-    if (this._eventListeners) {
-      this._eventListeners.clear();
+    if (this.eventListeners) {
+      this.eventListeners.clear();
     }
 
     // Remove from scene's entity registry
@@ -614,7 +624,7 @@ export default class BaseEntity {
         bodyType,
         collisionGroup,
         bodySize: { width: this.body.width, height: this.body.height },
-        position: { x: this.body.x, y: this.body.y }
+        position: { x: this.body.x, y: this.body.y },
       });
     }
 
@@ -664,10 +674,10 @@ export default class BaseEntity {
 
     const bodyScale = options.bodyScale || 0.8;
     const offsetScale = options.offsetScale || 0.1;
-    
+
     const visualWidth = this.width;
     const visualHeight = this.height;
-    
+
     const physicsWidth = visualWidth * bodyScale;
     const physicsHeight = visualHeight * bodyScale;
     const offsetX = visualWidth * offsetScale;
@@ -679,7 +689,7 @@ export default class BaseEntity {
     Logger.debug(`[BaseEntity] Physics body sized for ${this.entityId}`, {
       visual: { width: visualWidth, height: visualHeight },
       physics: { width: physicsWidth, height: physicsHeight },
-      offset: { x: offsetX, y: offsetY }
+      offset: { x: offsetX, y: offsetY },
     });
   }
 
@@ -690,12 +700,14 @@ export default class BaseEntity {
    */
   setCollisionGroup(groupName) {
     if (!this.body) {
-      Logger.warn(`[BaseEntity] Entity ${this.entityId}: Cannot set collision group - no physics body`);
+      Logger.warn(
+        `[BaseEntity] Entity ${this.entityId}: Cannot set collision group - no physics body`
+      );
       return this;
     }
 
     const constants = ConfigManager.getConstants();
-    
+
     if (!constants.COLLISION_GROUPS[groupName.toUpperCase()]) {
       Logger.warn(`[BaseEntity] Entity ${this.entityId}: Unknown collision group: ${groupName}`);
       return this;
@@ -722,7 +734,9 @@ export default class BaseEntity {
    */
   onCollision(callback) {
     if (!this.body) {
-      Logger.warn(`[BaseEntity] Entity ${this.entityId}: Cannot add collision callback - no physics body`);
+      Logger.warn(
+        `[BaseEntity] Entity ${this.entityId}: Cannot add collision callback - no physics body`
+      );
       return this;
     }
 
@@ -743,7 +757,9 @@ export default class BaseEntity {
    */
   onOverlap(callback) {
     if (!this.body) {
-      Logger.warn(`[BaseEntity] Entity ${this.entityId}: Cannot add overlap callback - no physics body`);
+      Logger.warn(
+        `[BaseEntity] Entity ${this.entityId}: Cannot add overlap callback - no physics body`
+      );
       return this;
     }
 
@@ -835,7 +851,6 @@ export default class BaseEntity {
 
       // Update GameObject if it exists and supports setSize
       if (this.gameObject && typeof this.gameObject.setSize === 'function') {
-
         // Validate entity state before calling setSize
         if (!this.scene || this.scene.sys.isDestroyed) {
           Logger.error(`[BaseEntity] Entity ${this.entityId}: Cannot setSize - scene is destroyed`);
@@ -895,10 +910,10 @@ export default class BaseEntity {
       this.gameObject.on(event, callback);
     } else {
       // Fallback internal event scopeName
-      if (!this._eventListeners.has(event)) {
-        this._eventListeners.set(event, []);
+      if (!this.eventListeners.has(event)) {
+        this.eventListeners.set(event, []);
       }
-      this._eventListeners.get(event).push(callback);
+      this.eventListeners.get(event).push(callback);
     }
     return this;
   }
@@ -914,14 +929,14 @@ export default class BaseEntity {
       this.gameObject.off(event, callback);
     } else {
       // Fallback internal event scopeName
-      if (this._eventListeners.has(event)) {
-        const listeners = this._eventListeners.get(event);
+      if (this.eventListeners.has(event)) {
+        const listeners = this.eventListeners.get(event);
         const index = listeners.indexOf(callback);
         if (index > -1) {
           listeners.splice(index, 1);
         }
         if (listeners.length === 0) {
-          this._eventListeners.delete(event);
+          this.eventListeners.delete(event);
         }
       }
     }
@@ -959,8 +974,8 @@ export default class BaseEntity {
       this.gameObject.emit(event, ...args);
     } else {
       // Fallback internal event scopeName
-      if (this._eventListeners.has(event)) {
-        const listeners = this._eventListeners.get(event).slice(); // Copy to avoid modification during iteration
+      if (this.eventListeners.has(event)) {
+        const listeners = this.eventListeners.get(event).slice(); // Copy to avoid modification during iteration
         listeners.forEach(callback => {
           try {
             callback(...args);
@@ -984,9 +999,9 @@ export default class BaseEntity {
     } else {
       // Fallback internal event scopeName
       if (event) {
-        this._eventListeners.delete(event);
+        this.eventListeners.delete(event);
       } else {
-        this._eventListeners.clear();
+        this.eventListeners.clear();
       }
     }
     return this;
