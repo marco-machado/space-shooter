@@ -1,15 +1,6 @@
-import Logger from '@/utils/Logger.js';
 import ConfigManager from '@/config/ConfigManager.js';
-import BaseEntity from '@/entities/BaseEntity.js';
-import HealthComponent from '@/components/HealthComponent.js';
-import MovementComponent from '@/components/MovementComponent.js';
-import WeaponComponent from '@/components/WeaponComponent.js';
-import MovementSystem from '@/systems/MovementSystem.js';
-import KeyboardInputAdapter from '@/adapters/KeyboardInputAdapter.js';
-import GameStateManager from '@/utils/GameStateManager.js';
-import WeaponSystem from '@/systems/WeaponSystem.js';
-import EnemySpawnSystem from '@/systems/EnemySpawnSystem.js';
-import { EventTypes } from '@/event-bus/EventTypes.js';
+import Player from '@/entities/Player.js';
+import Logger from '@/utils/Logger.js';
 
 export default class GameScene extends Phaser.Scene {
   constructor() {
@@ -20,6 +11,8 @@ export default class GameScene extends Phaser.Scene {
     this.systems = {};
 
     this.adapters = new Map();
+
+    this.logger = Logger.scope('GameScene');
   }
 
   /**
@@ -28,7 +21,7 @@ export default class GameScene extends Phaser.Scene {
    * @return {void} No return value.
    */
   init() {
-    Logger.scope('GameScene').info('Initializing game scene');
+    this.logger.debug('Initializing game scene');
   }
 
   /**
@@ -37,41 +30,29 @@ export default class GameScene extends Phaser.Scene {
    * @return {void} Does not return a value.
    */
   create() {
-    Logger.scope('GameScene').info('Creating game scene');
+    this.logger.debug('Creating game scene');
 
     // Initialize game state manager (now that event scopeName is ready)
-    this.gameStateManager = new GameStateManager(this);
+    // this.gameStateManager = new GameStateManager(this);
     // this.gameStateManager.loadGame(); // Load saved progress
 
-    // Create background
     this.createBackground();
-
-    // Set up physics groups
-    this.setupPhysicsGroups();
-
-    // Set up collision detection
+    this.createCollisionGroups();
     this.setupCollisionDetection();
 
-    // Create player
-    this.createPlayer();
+    this.player = new Player(this);
 
-    // Initialize all systems
-    this.initializeSystems();
-
-    // Launch UI scene to handle all UI elements
     this.scene.launch('UIScene');
 
-    // Initialize all adapters
-    this.initializeAdapters();
+    this.cursors = this.input.keyboard.createCursorKeys();
+    this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 
-    // Start background music (when implemented)
     this.startBackgroundMusic();
 
-    // Fade in from black
     this.cameras.main.fadeIn(500, 0, 0, 0);
 
     // Start the game
-    this.gameStateManager.startGame();
+    // this.gameStateManager.startGame();
   }
 
   /**
@@ -81,23 +62,22 @@ export default class GameScene extends Phaser.Scene {
    * @param {number} delta - Time delta in milliseconds
    */
   update(time, delta) {
-    const gameState = this.gameStateManager.getGameState();
-
-    if (!gameState.isPlaying || gameState.isPaused) {
-      return;
-    }
+    // const gameState = this.gameStateManager.getGameState();
+    //
+    // if (!gameState.isPlaying || gameState.isPaused) {
+    //   return;
+    // }
 
     // Update game state manager
-    this.gameStateManager.update(delta);
+    // this.gameStateManager.update(delta);
 
     // Update background stars
     this.updateBackground(delta);
-
-    // Update all systems
-    this.updateSystems(delta);
   }
 
   createBackground() {
+    this.logger.debug('Creating background');
+
     const centerX = this.scale.width / 2;
     const centerY = this.scale.height / 2;
 
@@ -113,7 +93,7 @@ export default class GameScene extends Phaser.Scene {
         Math.random() * this.scale.height,
         Math.random() * 1.5 + 0.5,
         0xffffff,
-        Math.random() * 0.8 + 0.2
+        Math.random() * 0.8 + 0.2,
       );
 
       star.setData('speed', Math.random() * 50 + 25);
@@ -121,7 +101,9 @@ export default class GameScene extends Phaser.Scene {
     }
   }
 
-  setupPhysicsGroups() {
+  createCollisionGroups() {
+    this.logger.debug('Creating collision groups');
+
     this.physics.world.setBounds(0, 0, this.scale.width, this.scale.height);
 
     this.playerGroup = this.physics.add.group();
@@ -132,13 +114,15 @@ export default class GameScene extends Phaser.Scene {
   }
 
   setupCollisionDetection() {
+    this.logger.debug('Creating collision Detection');
+
     // Player projectiles vs enemies
     this.physics.add.overlap(
       this.playerProjectileGroup,
       this.enemyGroup,
       this.handleProjectileEnemyCollision,
       null,
-      this
+      this,
     );
 
     // Enemy projectiles vs player
@@ -147,7 +131,7 @@ export default class GameScene extends Phaser.Scene {
       this.playerGroup,
       this.handleEnemyProjectilePlayerCollision,
       null,
-      this
+      this,
     );
 
     // Player vs enemies (collision damage)
@@ -156,7 +140,7 @@ export default class GameScene extends Phaser.Scene {
       this.enemyGroup,
       this.handlePlayerEnemyCollision,
       null,
-      this
+      this,
     );
 
     // Player vs powerups (collection)
@@ -165,99 +149,16 @@ export default class GameScene extends Phaser.Scene {
       this.powerupGroup,
       this.handlePlayerPowerupCollision,
       null,
-      this
+      this,
     );
-
-    Logger.scope('GameScene').info('Collision detection configured');
-  }
-
-  createPlayer() {
-    // TODO: Create a player entity
-    const startX = this.scale.width / 2;
-    const startY = this.scale.height - 100;
-
-    // Create player entity (blue rectangle in development)
-    this.player = new BaseEntity(this, startX, startY, 64, 64, 0x0099ff, 'player');
-
-    // Mark as player for identification by MovementSystem
-    this.player.entityType = 'player';
-
-    // Add components
-    this.player.addComponent(new HealthComponent(100));
-
-    const movementComponent = new MovementComponent(300); // 300 pixels/second max speed
-    movementComponent.init({
-      boundToScreen: true,
-      screenPadding: 32,
-      boundaryBehavior: 'clamp',
-      aiPattern: 'none', // Player uses input, not AI
-    });
-    this.player.addComponent(movementComponent);
-
-    // Add weapon component with starting weapon
-    const weaponComponent = new WeaponComponent('laser');
-    weaponComponent.init({
-      availableWeapons: Array.from(this.gameStateManager.weaponsUnlocked),
-      currentWeapon: 'laser',
-    });
-    this.player.addComponent(weaponComponent);
-
-    // Enable physics with collision configuration
-    this.player.enablePhysics('dynamic');
-
-    this.player.body.setSize(this.player.width * 0.8, this.player.height * 0.8);
-    this.player.body.setOffset(this.player.width * 0.1, this.player.height * 0.1);
-    this.player.body.setCollideWorldBounds(true);
-    this.player.body.setImmovable(false);
-    this.player.body.setBounce(0);
-    this.player.body.setDrag(0);
-    this.player.body.setMaxVelocity(300, 300);
-
-    // Manually add to player group if PhysicsHelper failed
-    this.playerGroup.add(this.player.gameObject);
-
-    // Set depth for layering
-    this.player.setDepth(30);
-
-    // Add to entities array for scopeName processing
-    this.entities.push(this.player);
-  }
-
-  initializeSystems() {
-    // Movement System - handles all entity movement and AI patterns
-    this.systems.movement = new MovementSystem(this);
-    this.systems.movement.init({ priority: 10 });
-
-    // Weapon BaseSystem - handles player and enemy firing
-    this.systems.weapon = new WeaponSystem(this);
-
-    // Enemy Spawn BaseSystem - handles enemy waves and spawning
-    this.systems.enemySpawn = new EnemySpawnSystem(this);
-
-    Logger.scope('GameScene').debug('All systems initialized', {
-      systemCount: Object.keys(this.systems).length,
-    });
-  }
-
-  initializeAdapters() {
-    // Initialize keyboard input adapter
-    const keyboardInputAdapter = new KeyboardInputAdapter(this);
-    keyboardInputAdapter.activate();
-
-    this.adapters.set('input', keyboardInputAdapter);
   }
 
   startBackgroundMusic() {
     if (ConfigManager.getConfig().audioEnabled) {
-      Logger.scope('GameScene').debug('Background music would start here (not implemented)');
+      this.logger.debug('Starting background music');
     }
   }
 
-  /**
-   * Update scrolling background.
-   *
-   * @param {number} delta - Time delta
-   */
   updateBackground(delta) {
     this.stars.children.entries.forEach(star => {
       const speed = star.getData('speed');
@@ -271,85 +172,32 @@ export default class GameScene extends Phaser.Scene {
     });
   }
 
-  /**
-   * Update all game systems
-   * @param {number} delta - Time delta
-   */
-  updateSystems(delta) {
-    // TODO: I feel like there's a better way to do this
-    // Sort systems by priority (lower numbers run first)
-    const sortedSystems = Object.values(this.systems).sort((a, b) => a.priority - b.priority);
-
-    sortedSystems.forEach(system => {
-      if (system.active) {
-        system.process(this.entities, delta);
-      }
-    });
-  }
-
-  shutdown() {
-    // Clean up game state manager
-    if (this.gameStateManager) {
-      this.gameStateManager.destroy();
-      this.gameStateManager = null;
-    }
-
-    // Clean up entities
-    this.entities.forEach(entity => {
-      if (entity.destroy) {
-        entity.destroy();
-      }
-    });
-    this.entities = [];
-
-    // Clean up systems
-    Object.values(this.systems).forEach(system => {
-      if (system.destroy) {
-        system.destroy();
-      }
-    });
-    this.systems = {};
-
-    // Clean up timers and tweens
-    this.time.removeAllEvents();
-    this.tweens.killAll();
-
-    // Remove event listeners
-    this.input.keyboard.removeAllListeners();
-    this.input.removeAllListeners();
-
-    // Clean up pause event listeners
-    this.events.off(EventTypes.GAME_PAUSE_TOGGLE, this.handlePauseToggle, this);
-    this.events.off('gamePause', this.onGamePaused, this);
-    this.events.off('gameResume', this.onGameResumed, this);
-  }
-
   // Collision callback functions (placeholders)
   handleProjectileEnemyCollision(projectile, enemy) {
-    Logger.scope('GameScene').error('Projectile-Enemy collision detected', {
+    this.logger.debug('Projectile-Enemy collision detected', {
       projectileId: projectile.entityId || 'unknown',
-      enemyId: enemy.entityId || 'unknown'
+      enemyId: enemy.entityId || 'unknown',
     });
   }
 
   handleEnemyProjectilePlayerCollision(projectile, player) {
-    Logger.scope('GameScene').debug('Enemy Projectile-Player collision detected', {
+    this.logger.debug('Enemy Projectile-Player collision detected', {
       projectileId: projectile.entityId || 'unknown',
-      playerId: player.entityId || 'unknown'
+      playerId: player.entityId || 'unknown',
     });
   }
 
   handlePlayerEnemyCollision(player, enemy) {
-    Logger.scope('GameScene').debug('Player-Enemy collision detected', {
+    this.logger.debug('Player-Enemy collision detected', {
       playerId: player.entityId || 'unknown',
-      enemyId: enemy.entityId || 'unknown'
+      enemyId: enemy.entityId || 'unknown',
     });
   }
 
   handlePlayerPowerupCollision(player, powerup) {
-    Logger.scope('GameScene').debug('Player-Powerup collision detected', {
+    this.logger.debug('Player-Powerup collision detected', {
       playerId: player.entityId || 'unknown',
-      powerupId: powerup.entityId || 'unknown'
+      powerupId: powerup.entityId || 'unknown',
     });
   }
 }
