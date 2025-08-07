@@ -51,7 +51,7 @@
 - **Sprint 1 Achievement**: <1 second initial load
 - **Sprint 2 Target**: <2 seconds with game entities
 - **Asset Strategy**: Development graphics (no texture loading)
-- **Optimization**: Vite build system with HMR
+- **Optimization**: Vite build scopeName with HMR
 
 ## Code Quality Metrics
 
@@ -93,7 +93,7 @@
 - **Standards**: Automated quality gates established
 - **Documentation**: Comprehensive template created
 - **Testing**: Appropriate strategy for game development
-- **Code Review**: Logger system prevents debug code issues
+- **Code Review**: Logger scopeName prevents debug code issues
 
 #### New Risks Identified
 1. **Feature Scope Creep**: 🟡 MEDIUM

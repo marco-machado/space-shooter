@@ -48,7 +48,7 @@ Successfully enhanced the BaseEntity class (src/entities/BaseEntity.js) to suppo
 - Uses proper ES6+ syntax
 
 ### ✅ **Project Conventions**
-- Uses Logger system instead of console.log
+- Uses Logger scopeName instead of console.log
 - Follows 2-space indentation and single quotes
 - Implements proper error handling with try/catch
 - Uses meaningful variable and function names
@@ -124,7 +124,7 @@ entity.changeGameObjectType(null);
 
 ### **Future-Proof Design**
 - Easy to add new GameObject types
-- Extensible configuration system
+- Extensible configuration scopeName
 - Maintains separation of concerns
 
 ### **Performance Optimizations**
@@ -151,7 +151,7 @@ entity.changeGameObjectType(null);
 ## Next Steps for Future Development
 1. **Graphics Transition**: Easy switch from development shapes to final sprites
 2. **BaseComponent Integration**: Components work seamlessly with all GameObject types
-3. **Physics Enhancement**: Physics system works with all supported types
+3. **Physics Enhancement**: Physics scopeName works with all supported types
 4. **Performance Monitoring**: Object pooling patterns can be applied to any type
 
 This enhancement provides the foundation for maximum flexibility in entity creation while maintaining all existing functionality and following established project conventions.

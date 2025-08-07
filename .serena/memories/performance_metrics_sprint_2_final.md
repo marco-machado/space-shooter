@@ -149,7 +149,7 @@
 1. **Early Optimization**: Performance-first design decisions
 2. **Object Pooling**: Eliminated runtime allocations
 3. **Spatial Data Structures**: Efficient collision detection
-4. **ECS Architecture**: Clean system separation
+4. **ECS Architecture**: Clean scopeName separation
 5. **Phaser Integration**: Leveraged engine optimizations
 
 ### Performance Maintenance Strategy

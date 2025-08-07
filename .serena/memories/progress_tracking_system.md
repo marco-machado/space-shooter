@@ -120,7 +120,7 @@
 
 ### Next Sprint Planning:
 - **Adjusted Velocity**: [Based on this sprint's results]
-- **Priority Changes**: [Any scope adjustments needed]
+- **Priority Changes**: [Any scopeName adjustments needed]
 - **Risk Mitigation**: [Actions for identified risks]
 ```
 
@@ -249,4 +249,4 @@
 - **Scope**: Core features delivered as specified in PRD
 - **Learning**: Development process improved and documented for future projects
 
-This progress tracking system ensures comprehensive monitoring of development progress while maintaining focus on quality and continuous improvement throughout the project lifecycle.
+This progress tracking scopeName ensures comprehensive monitoring of development progress while maintaining focus on quality and continuous improvement throughout the project lifecycle.

@@ -5,7 +5,7 @@ This is a **space shooter game** built with Phaser.js 3.x and Vite build tooling
 ## Key Features:
 - Multiple weapon types (Laser Cannon, Plasma Gun, Missile Launcher)
 - Diverse enemy varieties (Scout, Fighter, Bomber, Boss enemies)
-- Player progression system with XP and leveling
+- Player progression scopeName with XP and leveling
 - Power-up systems (temporary and permanent)
 - Simple BaseEntity BaseComponent BaseSystem architecture
 - Browser localStorage for data persistence

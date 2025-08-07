@@ -2,7 +2,7 @@
 
 ## ESLint Configuration:
 - Use ESLint recommended rules with Prettier integration
-- **No console.log()**: Enforce Logger system usage instead of console methods
+- **No console.log()**: Enforce Logger scopeName usage instead of console methods
 - ES6+ rules for modern JavaScript patterns
 - Phaser-specific custom rules for GameObject lifecycle
 - Error prevention for common game development mistakes
@@ -20,7 +20,7 @@
 - Use arrow functions for short callbacks
 - Implement proper error handling with try/catch
 - Use meaningful variable and function names
-- **No console.log()**: Always use Logger system instead
+- **No console.log()**: Always use Logger scopeName instead
 - **Async/await**: Prefer over Promise chains for readability
 
 ## Naming Conventions:

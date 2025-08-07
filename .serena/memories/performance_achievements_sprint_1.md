@@ -49,7 +49,7 @@ With 120+ FPS achieved, Sprint 2 can add:
 - Projectile systems with object pooling
 - Multiple enemies with AI behaviors  
 - Particle effects for visual feedback
-- Audio system integration
+- Audio scopeName integration
 - Still maintain 60+ FPS target with significant headroom
 
 Performance foundation is excellent for planned feature expansion.

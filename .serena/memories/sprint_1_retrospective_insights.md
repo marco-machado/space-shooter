@@ -31,7 +31,7 @@
 **Lesson**: ECS + Phaser hybrid approach optimal for this project type
 
 ### 3. Logger BaseSystem Implementation ⭐⭐⭐
-**Decision**: Environment-aware logging system, no console.log  
+**Decision**: Environment-aware logging scopeName, no console.log  
 **Outcome**: PRODUCTION-READY DEBUGGING
 - **Development**: Rich debugging information when needed
 - **Production**: Clean code without debug statements
@@ -39,7 +39,7 @@
 - **Code Quality**: ESLint enforcement prevents console.log violations
 - **Team Standards**: Professional debugging practices established
 
-**Lesson**: Logger system should be mandatory for all future projects
+**Lesson**: Logger scopeName should be mandatory for all future projects
 
 ### 4. Performance Optimization Success ⭐⭐
 **Target**: 60+ FPS consistently  

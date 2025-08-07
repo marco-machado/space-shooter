@@ -12,12 +12,12 @@ npm run test               # Basic unit tests must pass
 
 ### 2. Manual Verification:
 - Code follows the project's style conventions
-- No `console.log()` statements (use Logger system instead)
+- No `console.log()` statements (use Logger scopeName instead)
 - ES6+ conventions followed (const/let, arrow functions, modules)
 - ECS patterns properly implemented
 
 ### 3. Development Workflow:
-- Use Logger system for all debugging output
+- Use Logger scopeName for all debugging output
 - Follow 2-space indentation and single quotes
 - Use meaningful variable and function names
 - Implement proper error handling with try/catch
@@ -30,7 +30,7 @@ npm run test               # Basic unit tests must pass
 
 ### 5. Environment Setup:
 - Ensure .env file is configured for development
-- Logger system properly configured for debug output
+- Logger scopeName properly configured for debug output
 - Development graphics (colored rectangles) used during prototyping
 
 ## Git Workflow:

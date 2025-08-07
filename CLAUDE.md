@@ -65,37 +65,6 @@ cp .env.example .env
 - **Unified Configuration**: Single source for all settings and constants
 - **Comprehensive Testing**: Unit tests with proper mocking and comprehensive coverage
 
-## Detailed Documentation
-
-For comprehensive information, see the structured documentation:
-
-- **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** - ECS patterns, ConfigManager, Logger scopeName, input management
-- **[docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)** - Commands, workflow, testing strategies, code quality
-- **[docs/EXAMPLES.md](docs/EXAMPLES.md)** - Complete code examples and implementation patterns
-- **[docs/REFERENCE.md](docs/REFERENCE.md)** - Project structure, assets, performance, deployment
-
-## Project Structure (Overview)
-
-```
-space-shooter/
-├── docs/                 # Structured documentation
-├── src/
-│   ├── main.js           # Game initialization
-│   ├── config/           # ConfigManager + Constants
-│   ├── core/             # SpaceShooterGame
-│   ├── scenes/           # Phaser scenes (Boot, Game, Menu, etc.)
-│   ├── entities/         # BaseEntity + game entities
-│   ├── components/       # ECS components (data)
-│   ├── systems/          # ECS systems (logic)
-│   ├── graphics/         # DevShapes for development
-│   └── utils/            # Logger, SaveManager, ObjectPool
-├── tests/                # Comprehensive unit test coverage
-│   ├── components/       # Component unit tests
-│   ├── utils/            # Utility unit tests
-│   └── __mocks__/        # Mock implementations
-└── public/assets/        # Static assets
-```
-
 ## Usage Examples
 
 ### Configuration Access
@@ -116,40 +85,30 @@ const playerColor = constants.COLORS.PLAYER; // 0x0099ff
 ```javascript
 import Logger from '@/utils/Logger.js';
 
-// Auto-initializes on first call
+// Global logging methods
 Logger.debug('Player spawned at', x, y);
 Logger.info('Level completed');
 Logger.warn('Low health warning');
 Logger.error('Critical error');
 
-// Scoped logging (filename automatically excluded from message)
+// Scoped logging (recommended pattern)
 Logger.scope('SpaceShooterGame').info('Destroying game instance');
 Logger.scope('GameScene').debug('Enemy spawned', enemy.id);
 Logger.scope('WeaponSystem').warn('Weapon overheating');
-```
 
-### Entity Creation
-
-```javascript
-import BaseEntity from '@/entities/BaseEntity.js';
-
-// Flexible configuration approach
-const player = new BaseEntity(scene, {
-  type: 'rectangle',
-  x: 400, y: 300,
-  width: 64, height: 64,
-  color: 0x0099ff,
-  name: 'player'
-});
-
-// Runtime type switching
-player.changeGameObjectType('sprite', { texture: 'player-ship' });
+// Performance methods (debug mode only)
+Logger.scope('Performance').time('operation');
+Logger.scope('Performance').timeEnd('operation');
+Logger.scope('Debug').group('Entity Updates');
+Logger.scope('Debug').groupEnd();
+Logger.scope('Debug').table(entityData);
 ```
 
 ## Code Quality Standards
 
 - **ESLint**: Lint only session-modified files for focused quality checks
-- **No console.log()**: Always use Logger scopeName instead
+- **No console.log()**: Always use Logger system instead
+- **Logger Pattern**: Use `Logger.scope('ModuleName')` for all debugging output
 - **Comprehensive Testing**: Comprehensive unit tests encouraged
 - **Modern JavaScript**: ES6+ patterns, async/await preferred
 
@@ -167,10 +126,71 @@ player.changeGameObjectType('sprite', { texture: 'player-ship' });
 - **<3 seconds** initial load time
 - **Object pooling** for bullets, enemies, effects
 
+## Code Style Guidelines
+
+### **Private Members & Naming**
+- **Private Fields**: Use `#` private fields for true encapsulation
+- **JSDoc Standards**: All private members must include `@private` tag
+- **camelCase**: Use camelCase for variables, functions, and methods
+- **PascalCase**: Use PascalCase for classes and constructors
+- **No Underscores**: Avoid leading/trailing underscores (creates false privacy assumptions)
+
+## JSDoc Documentation Standards
+
+### **Required Tags**
+- `@param {type} paramName - Description` for all parameters
+- `@returns {type} Description` for all return values  
+- `@private` for all private/internal members
+- `@class` for constructor functions
+- `@extends ParentClass` for inheritance
+
+### **Example Pattern**
+```javascript
+/**
+ * Base entity class for all game objects.
+ * @class
+ * @classdesc Provides common functionality for players, enemies, bullets, etc.
+ */
+class BaseEntity {
+  #internalState = {};  // Truly private
+  
+  /**
+   * Create a new entity.
+   * @param {Phaser.Scene} scene - The Phaser scene
+   * @param {Object} config - Entity configuration
+   * @param {number} config.x - X position
+   * @param {number} config.y - Y position
+   */
+  constructor(scene, config) {
+    this.scene = scene;
+    this.#internalState = { ...config };
+  }
+  
+  /**
+   * Update entity state.
+   * @param {number} deltaTime - Time since last update
+   * @returns {void}
+   */
+  update(deltaTime) {
+    this.#updateInternals(deltaTime);
+  }
+  
+  /**
+   * Internal update logic.
+   * @private
+   * @param {number} deltaTime - Time since last update
+   * @returns {void}
+   */
+  #updateInternals(deltaTime) {
+    // Private implementation
+  }
+}
+```
+
 ## Important Notes
 
 - All systems **auto-initialize** - no manual setup required
-- Use **Logger** instead of console.log (production-safe)
+- Use **Logger.scope('ModuleName')** instead of console.log (production-safe)
 - **ConfigManager** validates all environment variables
 - Development uses **colored shapes** for rapid prototyping
 - Easy transition to production graphics via sprite replacement

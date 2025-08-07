@@ -9,7 +9,7 @@
 ## Sprint 2 Success Criteria
 1. **Playable Game Loop**: Player can shoot, enemies appear, collisions work
 2. **Performance Target**: Maintain 60+ FPS with multiple entities
-3. **Code Quality**: All new code passes ESLint, uses Logger system
+3. **Code Quality**: All new code passes ESLint, uses Logger scopeName
 4. **Architecture**: ECS patterns maintained and expanded
 5. **Testing**: Core utility functions covered with unit tests
 
@@ -23,7 +23,7 @@
 - **Dependencies**: Sprint 1 BaseComponent architecture
 - **Deliverables**:
   - WeaponComponent class with fireRate, damage, projectileSpeed
-  - Weapon configuration system (pistol, machinegun, shotgun)
+  - Weapon configuration scopeName (pistol, machinegun, shotgun)
   - Ammunition tracking and reload mechanics
 - **Success Criteria**: BaseComponent can be attached to Player entity
 - **Testing**: Unit tests for weapon stat calculations
@@ -33,7 +33,7 @@
 - **Dependencies**: Sprint 1 BaseComponent architecture
 - **Deliverables**:
   - CollisionComponent with bounds, collision groups
-  - Integration with Phaser physics system
+  - Integration with Phaser physics scopeName
   - Collision event handling structure
 - **Success Criteria**: BaseComponent enables physics collision detection
 - **Testing**: Unit tests for collision bounds calculations
@@ -77,7 +77,7 @@
 - **Effort**: 3 hours
 - **Dependencies**: A1 WeaponComponent, existing Player
 - **Deliverables**:
-  - Weapon system integration with Player
+  - Weapon scopeName integration with Player
   - Firing controls (Spacebar, Mouse click)
   - Weapon switching capability
   - Visual feedback for shooting
@@ -127,10 +127,10 @@
 - **Effort**: 4 hours
 - **Dependencies**: C2 CollisionSystem
 - **Deliverables**:
-  - Lives system with player respawn
+  - Lives scopeName with player respawn
   - Game over condition detection
   - Score calculation for enemy kills
-  - Level progression system
+  - Level progression scopeName
 - **Success Criteria**: Complete game loop from start to game over
 - **UI Integration**: Updates existing UI components
 
@@ -164,7 +164,7 @@
 - **Dependencies**: All implementation complete
 - **Deliverables**:
   - ESLint cleanup and validation
-  - Logger system integration verification
+  - Logger scopeName integration verification
   - Unit test coverage for new utilities
   - Code documentation updates
 - **Success Criteria**: All quality gates pass
@@ -197,13 +197,13 @@
 ## Sprint 2 Dependencies & Prerequisites
 - ✅ **Sprint 1 Complete**: ECS foundation, Player entity, Scene management
 - ✅ **Performance Baseline**: 120+ FPS with current simple entities
-- ✅ **Code Quality Tools**: ESLint, Prettier, Logger system operational
+- ✅ **Code Quality Tools**: ESLint, Prettier, Logger scopeName operational
 - ✅ **Development Graphics**: Color scheme and shape patterns established
 
 ## Sprint 2 Success Metrics
 - **Functionality**: Complete playable game loop
 - **Performance**: 60+ FPS with 20+ enemies, 50+ projectiles
-- **Code Quality**: 100% ESLint pass, Logger system usage
+- **Code Quality**: 100% ESLint pass, Logger scopeName usage
 - **Memory Usage**: <50MB total (50% of target)
 - **Architecture**: ECS patterns maintained and enhanced
 

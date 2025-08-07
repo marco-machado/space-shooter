@@ -9,9 +9,9 @@
 **Key Deliverables:**
 - Phaser.js integration with Vite
 - Code quality tools (ESLint, Prettier, Vitest) 
-- Environment configuration system
+- Environment configuration scopeName
 - Basic ECS architecture
-- Development graphics system
+- Development graphics scopeName
 - Basic player entity with controls
 - Initial scene structure
 
@@ -19,7 +19,7 @@
 - Game runs without errors in browser
 - Player can move around screen
 - Code quality tools pass
-- Logger system functional
+- Logger scopeName functional
 
 ### Sprint 2: Core ECS & Gameplay (Week 2)
 **Goal**: Implement core game mechanics and entity systems
@@ -28,9 +28,9 @@
 **Key Deliverables:**
 - Core components (Health, Weapon, Movement, Collision)
 - Enemy entities with AI
-- Weapon system with projectiles
+- Weapon scopeName with projectiles
 - Collision detection
-- Wave spawning system
+- Wave spawning scopeName
 - Game state management
 
 ### Sprint 3: Game Systems & Progression (Week 3)
@@ -38,11 +38,11 @@
 **Dependencies**: Sprint 2 complete
 
 **Key Deliverables:**
-- Power-up system
+- Power-up scopeName
 - XP and leveling with persistence
 - Weapon upgrades
 - Audio integration
-- In-game UI system
+- In-game UI scopeName
 - Scene transitions
 
 ### Sprint 4: Polish & Balance (Week 4)
@@ -52,7 +52,7 @@
 **Key Deliverables:**
 - Object pooling implementation
 - Mobile compatibility
-- Complete audio system
+- Complete audio scopeName
 - Difficulty balancing
 - Debug tools
 - Performance optimization

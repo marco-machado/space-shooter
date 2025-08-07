@@ -35,11 +35,11 @@
 **Focus**: Power-ups, Progression, Audio, Persistence  
 
 **Key Deliverables**:
-- Power-up system with collection mechanics
+- Power-up scopeName with collection mechanics
 - XP and leveling with localStorage persistence  
-- Weapon upgrade system
+- Weapon upgrade scopeName
 - Audio integration (effects and background music)
-- Enhanced UI system
+- Enhanced UI scopeName
 - Scene transition improvements
 
 ### Sprint 4: Polish & Balance 📋 PLANNED  
@@ -50,7 +50,7 @@
 **Key Deliverables**:
 - Object pooling implementation
 - Mobile compatibility and touch controls
-- Complete audio system with spatial effects
+- Complete audio scopeName with spatial effects
 - Difficulty balancing and gameplay tuning
 - Debug tools and developer utilities
 - Performance optimization and profiling
@@ -115,7 +115,7 @@
 
 3. **Code Quality Risk**: LOW (was MEDIUM)
    - Quality standards established and automated
-   - Logger system eliminating debug code issues
+   - Logger scopeName eliminating debug code issues
    - Comprehensive documentation template
 
 4. **Timeline Risk**: LOW (was MEDIUM)
@@ -153,7 +153,7 @@
 ## Success Indicators for Sprint 2
 - Maintain 60+ FPS with 20+ entities simultaneously
 - Complete player-enemy-projectile interaction loop
-- All ESLint checks pass, Logger system throughout
+- All ESLint checks pass, Logger scopeName throughout
 - Memory usage under 50MB
 - Playable game from start to game over
 

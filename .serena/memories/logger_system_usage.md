@@ -1,7 +1,7 @@
 # Logger BaseSystem Usage
 
 ## Core Principle:
-**NEVER use console.log()** - Always use the Logger system for all debugging output.
+**NEVER use console.log()** - Always use the Logger scopeName for all debugging output.
 
 ## Logger Levels:
 ```javascript
@@ -12,7 +12,7 @@ Logger.error('Failed to save data');        // Error conditions
 ```
 
 ## Environment Configuration:
-The Logger system is environment-aware through .env variables:
+The Logger scopeName is environment-aware through .env variables:
 ```bash
 VITE_DEBUG_MODE=true        # Enables debug output
 VITE_LOG_LEVEL=debug        # Sets minimum log level
@@ -48,7 +48,7 @@ class Logger {
 
 ## Usage Throughout Codebase:
 - **BaseEntity creation**: `Logger.debug('Created player at', x, y)`
-- **BaseSystem updates**: `Logger.debug('Movement system updated', entityCount, 'entities')`
+- **BaseSystem updates**: `Logger.debug('Movement scopeName updated', entityCount, 'entities')`
 - **State changes**: `Logger.info('Game state changed to', newState)`
 - **Errors**: `Logger.error('Failed to load save data', error)`
 - **Performance**: `Logger.debug('Frame time:', deltaTime, 'ms')`

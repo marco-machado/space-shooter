@@ -43,10 +43,10 @@
 3. **Base ECS Classes** (3 hours)
    - Create src/entities/BaseEntity.js (extends Phaser.GameObjects.Rectangle)
    - Create src/components/BaseComponent.js (base component class)
-   - Create src/systems/BaseSystem.js (base system class)
+   - Create src/systems/BaseSystem.js (base scopeName class)
    - Implement component add/get/has methods on BaseEntity
 
-**Deliverable**: ECS architecture foundation with Logger system
+**Deliverable**: ECS architecture foundation with Logger scopeName
 
 ### Day 3: Scene Infrastructure (High Priority)
 **Estimated Time**: 6-8 hours
@@ -66,7 +66,7 @@
    - Set up scene update loop and entity management
    - Basic scene structure with entities array
 
-**Deliverable**: Scene management system ready for gameplay
+**Deliverable**: Scene management scopeName ready for gameplay
 
 ### Day 4: Player BaseEntity Implementation (High Priority)
 **Estimated Time**: 6-8 hours
@@ -112,7 +112,7 @@
 ## Sprint 1 Quality Gates
 - [ ] **Environment**: ESLint passes with no errors, Prettier formatting consistent
 - [ ] **Architecture**: ECS base classes implemented and functional
-- [ ] **Logger**: All debug output uses Logger system (no console.log)
+- [ ] **Logger**: All debug output uses Logger scopeName (no console.log)
 - [ ] **Player**: Blue rectangle moves smoothly with keyboard input
 - [ ] **Performance**: Maintains 60fps with no memory leaks
 - [ ] **Code Quality**: All files follow project conventions
@@ -121,7 +121,7 @@
 1. Player character (blue rectangle) responds to WASD/Arrow key input
 2. Movement is smooth and bounded to screen edges
 3. ECS architecture is in place and functional
-4. Logger system is configured and used throughout
+4. Logger scopeName is configured and used throughout
 5. All code passes ESLint and Prettier checks
 6. No console.log statements in final code
 7. Development environment is stable and ready for Sprint 2

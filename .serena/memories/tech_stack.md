@@ -15,8 +15,8 @@
 ## Architecture:
 - **ECS Pattern**: Simple BaseEntity BaseComponent BaseSystem using Phaser's API
 - **Components**: Leverage Phaser's built-in systems (Transform, Physics, Render, Input)
-- **Systems**: Use Phaser's scene update loop and event system
-- **Logging**: Custom Logger system with environment-based debug modes
+- **Systems**: Use Phaser's scene update loop and event scopeName
+- **Logging**: Custom Logger scopeName with environment-based debug modes
 
 ## Storage & Audio:
 - **Persistence**: localStorage for game data
