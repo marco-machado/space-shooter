@@ -13,9 +13,9 @@
 import { vi } from 'vitest';
 
 /**
- * Scoped logger mock that mimics ScopedLogger behavior
+ * Scoped logger mock that mimics Logger behavior
  */
-class MockScopedLogger {
+class MockLogger {
   constructor(scope) {
     this.scope = scope;
     this.debug = vi.fn();
@@ -57,7 +57,7 @@ class MockLoggerFactory {
 
   scope(scopeName) {
     if (!this._scopeCache.has(scopeName)) {
-      this._scopeCache.set(scopeName, new MockScopedLogger(scopeName));
+      this._scopeCache.set(scopeName, new MockLogger(scopeName));
     }
     return this._scopeCache.get(scopeName);
   }
