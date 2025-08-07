@@ -516,7 +516,7 @@ function getCachedScopeLabel(scope) {
   if (!scope) return '';
 
   if (!_cache.scopeLabels.has(scope)) {
-    _cache.scopeLabels.set(scope, `[${scope.toUpperCase()}]`);
+    _cache.scopeLabels.set(scope, `[${scope}]`);
   }
   return _cache.scopeLabels.get(scope);
 }
