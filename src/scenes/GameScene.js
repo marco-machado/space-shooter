@@ -1,6 +1,10 @@
 import ConfigManager from '@/config/ConfigManager.js';
 import Player from '@/entities/Player.js';
+import { getEventBus } from '@/event-bus/EventBus.js';
+import { EventTypes } from '@/event-bus/EventTypes.js';
+import GameStateManager from '@/utils/GameStateManager.js';
 import Logger from '@/utils/Logger.js';
+import { initializeWorld, updateWorldTime } from '@/ecs/index.js';
 
 export default class GameScene extends Phaser.Scene {
   constructor() {
@@ -10,8 +14,7 @@ export default class GameScene extends Phaser.Scene {
     this.entities = [];
     this.systems = {};
 
-    this.adapters = new Map();
-
+    this.eventBus = getEventBus();
     this.logger = Logger.scope('GameScene');
   }
 
@@ -32,46 +35,74 @@ export default class GameScene extends Phaser.Scene {
   create() {
     this.logger.debug('Creating game scene');
 
+    // Initialize bitECS world
+    this.world = initializeWorld();
+
     // Initialize game state manager (now that event scopeName is ready)
-    // this.gameStateManager = new GameStateManager(this);
-    // this.gameStateManager.loadGame(); // Load saved progress
+    this.gameStateManager = new GameStateManager(this);
+    // this.gameStateManager.loadGame();
 
     this.createBackground();
     this.createCollisionGroups();
     this.setupCollisionDetection();
 
+    this.eventBus.on(EventTypes.GAME_PAUSE_TOGGLE, this.onPauseToggle, this);
+
     this.player = new Player(this);
 
     this.scene.launch('UIScene');
 
-    this.cursors = this.input.keyboard.createCursorKeys();
-    this.spaceKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+    this.fireKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+    this.pauseKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
 
     this.startBackgroundMusic();
 
     this.cameras.main.fadeIn(500, 0, 0, 0);
 
     // Start the game
-    // this.gameStateManager.startGame();
+    this.gameStateManager.startGame();
+  }
+
+  onPauseToggle(data) {
+    if (data && data.paused) {
+      // Pause physics and time
+      this.physics.pause();
+      this.time.paused = true;
+    } else {
+      // Resume physics and time
+      this.physics.resume();
+      this.time.paused = false;
+    }
   }
 
   /**
    * Main game update loop.
    *
    * @param {number} _time - Current time (unused)
-   * @param {number} _delta - Time delta in milliseconds (unused)
+   * @param {number} delta - Time delta in milliseconds (unused)
    */
-  update(_time, _delta) {
-    // const gameState = this.gameStateManager.getGameState();
-    //
-    // if (!gameState.isPlaying || gameState.isPaused) {
-    //   return;
-    // }
+  update(_time, delta) {
+    if (Phaser.Input.Keyboard.JustDown(this.pauseKey)) {
+      this.gameStateManager.togglePause();
+      return;
+    }
+
+    const gameState = this.gameStateManager.getGameState();
+
+    if (!gameState.isPlaying || gameState.isPaused) {
+      return;
+    }
+
+    // Update bitECS world time
+    updateWorldTime(this.world, delta);
 
     // Update game state manager
-    // this.gameStateManager.update(delta);
+    this.gameStateManager.update(delta);
 
     this.updateBackground();
+
+    // Future: ECS systems pipeline will run here
+    // this.runSystemsPipeline(this.world);
   }
 
   createBackground() {
