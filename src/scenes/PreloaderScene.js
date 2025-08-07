@@ -1,74 +1,40 @@
-import Logger from '@/utils/Logger.js';
 import ConfigManager from '@/config/ConfigManager.js';
+import Logger from '@/utils/Logger.js';
 
 /**
  * Preloader Scene - Asset loading with development graphics
  * Handles loading of all game assets and displays progress
  */
-class PreloaderScene extends Phaser.Scene {
+export default class PreloaderScene extends Phaser.Scene {
   constructor() {
     super({ key: 'PreloaderScene' });
 
     this.loadingBar = null;
     this.loadingText = null;
     this.progressText = null;
-  }
 
-  /**
-   * Initialize preloader scene
-   */
-  init() {
-    Logger.debug('PreloaderScene.init()');
+    this.logger = Logger.scope('PreloaderScene');
   }
 
   preload() {
-    Logger.debug('PreloaderScene.preload() begin');
+    this.logger.debug('Preload PreloaderScene');
 
-    // Create loading UI first
-    // this.createLoadingUI();
-
-    // Set up loading event handlers
-    // this.setupLoadingEvents();
+    this.createLoadingUI();
+    this.setupLoadingEvents();
 
     // Set loading path
     this.load.path = 'assets/';
 
     // In development phase, we don't load actual graphics
     // Instead, we'll simulate loading for development graphics scopeName
-    // this.loadDevelopmentAssets();
+    this.loadDevelopmentAssets();
 
     // Load audio assets if audio is enabled
     if (ConfigManager.getConfig().audioEnabled) {
       this.loadAudioAssets();
     }
-
-    Logger.debug('PreloaderScene.preload() end');
   }
 
-  /**
-   * Create the scene after loading
-   */
-  create() {
-    Logger.debug('PreloaderScene.create()');
-
-    this.startGame();
-  }
-
-  /**
-   * Update preloader scene
-   * @param {number} time - Current time
-   * @param {number} delta - Time delta
-   */
-  update(time, delta) {
-    // Performance monitoring in debug mode
-    if (ConfigManager.getConfig().showDebugInfo && time % 1000 < delta) {
-      Logger.debug('PreloaderScene.update(): FPS ~', Math.round(1000 / delta));
-    }
-  }
-
-  /**
-   * Create loading UI elements
-   */
   createLoadingUI() {
     const centerX = this.scale.width / 2;
     const centerY = this.scale.height / 2;
@@ -140,9 +106,6 @@ class PreloaderScene extends Phaser.Scene {
       .setOrigin(0.5);
   }
 
-  /**
-   * Set up loading progress event handlers
-   */
   setupLoadingEvents() {
     // Update progress bar
     this.load.on('progress', progress => {
@@ -150,33 +113,29 @@ class PreloaderScene extends Phaser.Scene {
       this.loadingBar.width = barWidth * progress;
       this.progressText.setText(`${Math.round(progress * 100)}%`);
 
-      Logger.debug(`PreloaderScene: Loading progress: ${Math.round(progress * 100)}%`);
+      Logger.scope('PreloaderScene').debug(
+        `PreloaderScene: Loading progress: ${Math.round(progress * 100)}%`,
+      );
     });
 
     // Handle individual file loading
     this.load.on('fileprogress', file => {
-      Logger.debug(`PreloaderScene: Loading file: ${file.key}`);
+      Logger.scope('PreloaderScene').debug(`PreloaderScene: Loading file: ${file.key}`);
     });
 
     // Handle loading completion
     this.load.on('complete', () => {
-      Logger.debug('PreloaderScene: All assets loaded successfully');
+      Logger.scope('PreloaderScene').debug('PreloaderScene: All assets loaded successfully');
       this.onLoadComplete();
     });
 
     // Handle loading errors
     this.load.on('loaderror', file => {
-      Logger.error(`PreloaderScene: Failed to load asset: ${file.key}`);
+      Logger.scope('PreloaderScene').error(`PreloaderScene: Failed to load asset: ${file.key}`);
     });
   }
 
-  /**
-   * Load development phase assets (simulated)
-   */
   loadDevelopmentAssets() {
-    // In development phase, we simulate loading to show the loading screen
-    // This helps test the loading UI and timing
-
     // Simulate loading various asset types
     const simulatedAssets = [
       { key: 'dev-player', type: 'rectangle', color: 0x0099ff },
@@ -201,23 +160,13 @@ class PreloaderScene extends Phaser.Scene {
         }
       });
     });
-
-    Logger.debug('PreloaderScene: Development assets simulation started');
   }
 
-  /**
-   * Load audio assets
-   */
   loadAudioAssets() {
     // Audio loading will be implemented when we add actual audio files
     // For now, we'll simulate audio loading
-
-    Logger.debug('PreloaderScene.loadAudioAssets()');
   }
 
-  /**
-   * Handle loading completion
-   */
   onLoadComplete() {
     this.loadingText.setText('LOADING COMPLETE!');
     this.progressText.setText('100%');
@@ -252,17 +201,12 @@ class PreloaderScene extends Phaser.Scene {
     // Auto-start after delay if in debug mode
     if (ConfigManager.getConfig().debugMode) {
       this.time.delayedCall(2000, () => {
-        this.startGame();
+        // this.startGame();
       });
     }
   }
 
-  /**
-   * Start the game (transition to main menu)
-   */
   startGame() {
-    Logger.debug('PreloaderScene.startGame()');
-
     // Fade out transition
     this.cameras.main.fadeOut(500, 0, 0, 0);
 
@@ -270,22 +214,4 @@ class PreloaderScene extends Phaser.Scene {
       this.scene.start('MainMenuScene');
     });
   }
-
-  /**
-   * Clean up preloader scene
-   */
-  shutdown() {
-    Logger.debug('PreloaderScene: Shutting down');
-
-    // Clean up timers and tweens
-    this.time.removeAllEvents();
-    this.tweens.killAll();
-
-    // Remove event listeners
-    this.load.removeAllListeners();
-    this.input.keyboard.removeAllListeners();
-    this.input.removeAllListeners();
-  }
 }
-
-export default PreloaderScene;

@@ -6,62 +6,35 @@ import Phaser from 'phaser';
  * Boot Scene - Initial setup and environment loading
  * Handles environment initialization and transitions to preloader
  */
-class BootScene extends Phaser.Scene {
+export default class BootScene extends Phaser.Scene {
   constructor() {
     super({ key: 'BootScene' });
-  }
 
-  init() {
-    Logger.debug('BootScene.init() begin');
-    Logger.debug('BootScene.init() end');
+    this.logger = Logger.scope('BootScene');
   }
 
   preload() {
-    Logger.debug('BootScene.preload() begin');
+    this.logger.debug('Preload BootScene');
 
     // Set loading path for assets
     this.load.path = 'assets/';
 
     // Preload minimal assets needed for loading screen
     // (In development phase, we'll use colored rectangles)
-
-    Logger.debug('BootScene.preload() end');
   }
 
   create() {
-    Logger.debug('BootScene.create() begin');
+    this.logger.debug('Create BootScene');
 
     // Create loading indicator
-    // this.createLoadingIndicator();
-
-    // Set up input handling
-    // this.setupInput();
+    this.createLoadingIndicator();
 
     // Add small delay to show boot scene, then transition
-    this.time.delayedCall(500, () => {
+    this.time.delayedCall(5000, () => {
       this.transitionToPreloader();
     });
-
-    Logger.debug('BootScene.create() end');
   }
 
-  /**
-   * Update boot scene
-   * @param {number} time - Current time
-   * @param {number} delta - Time delta
-   */
-  update(time, delta) {
-    // Boot scene typically doesn't need update logic
-    // but we can add performance monitoring here if needed
-
-    if (ConfigManager.getConfig().showDebugInfo && time % 1000 < delta) {
-      Logger.debug('BootScene.update(): FPS ~', Math.round(1000 / delta));
-    }
-  }
-
-  /**
-   * Create simple loading indicator
-   */
   createLoadingIndicator() {
     const centerX = this.scale.width / 2;
     const centerY = this.scale.height / 2;
@@ -91,11 +64,16 @@ class BootScene extends Phaser.Scene {
 
     // Development mode indicator
     if (ConfigManager.getConfig().debugMode) {
-      this.add.text(10, 10, `DEBUG MODE | v${ConfigManager.getConfig().isDevelopment ? 'DEV' : 'PROD'}`, {
-        fontSize: '12px',
-        color: '#ffff00',
-        fontFamily: 'monospace',
-      });
+      this.add.text(
+        10,
+        10,
+        `DEBUG MODE | v${ConfigManager.getConfig().isDevelopment ? 'DEV' : 'PROD'}`,
+        {
+          fontSize: '12px',
+          color: '#ffff00',
+          fontFamily: 'monospace',
+        },
+      );
     }
 
     // Environment info (debug only)
@@ -116,28 +94,7 @@ class BootScene extends Phaser.Scene {
     }
   }
 
-  /**
-   * Set up basic input handling
-   */
-  setupInput() {
-    // Allow skipping boot scene with any key (debug only)
-    if (ConfigManager.getConfig().debugMode) {
-      this.input.keyboard.on('keydown', () => {
-        this.transitionToPreloader();
-      });
-
-      this.input.on('pointerdown', () => {
-        this.transitionToPreloader();
-      });
-    }
-  }
-
-  /**
-   * Transition to preloader scene
-   */
   transitionToPreloader() {
-    Logger.debug('BootScene.transitionToPreloader()');
-
     // Fade out effect
     this.cameras.main.fadeOut(300, 0, 0, 0);
 
@@ -145,20 +102,4 @@ class BootScene extends Phaser.Scene {
       this.scene.start('PreloaderScene');
     });
   }
-
-  /**
-   * Clean up boot scene
-   */
-  shutdown() {
-    Logger.debug('BootScene.shutdown()');
-
-    // Clean up timers
-    this.time.removeAllEvents();
-
-    // Remove event listeners
-    this.input.keyboard.removeAllListeners();
-    this.input.removeAllListeners();
-  }
 }
-
-export default BootScene;

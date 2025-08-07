@@ -1,59 +1,42 @@
-import Logger from '@/utils/Logger.js';
 import ConfigManager from '@/config/ConfigManager.js';
+import Logger from '@/utils/Logger.js';
 
 /**
  * Main Menu Scene - Game entry point and navigation
  * Displays game title, menu options, and handles navigation
  */
-class MainMenuScene extends Phaser.Scene {
+export default class MainMenuScene extends Phaser.Scene {
   constructor() {
     super({ key: 'MainMenuScene' });
 
     this.menuItems = [];
     this.selectedIndex = 0;
     this.menuActive = true;
+
+    this.logger = Logger.scope('MainMenuScene');
   }
 
-  /**
-   * Initialize main menu scene
-   */
   init() {
-    Logger.debug('MainMenuScene.init() begin');
+    this.logger.debug('Init MainMenuScene');
 
     this.selectedIndex = 0;
     this.menuActive = true;
-
-    Logger.debug('MainMenuScene.init() end');
   }
 
-  /**
-   * Create main menu elements
-   */
   create() {
-    Logger.debug('MainMenuScene.create() begin');
+    this.logger.debug('Create MainMenuScene');
 
-    // Create background
     this.createBackground();
-
-    // Create title
     this.createTitle();
-
-    // Create menu
     this.createMenu();
+    this.createInfoPanels();
 
-    // Create info panels
-    // this.createInfoPanels();
+    this.setupInput();
 
-    // Set up input handling
-    this.setupInput(); // TODO: Use the EventBus
-
-    // Add entrance animations
     this.animateEntrance();
 
     // Fade in from black
     this.cameras.main.fadeIn(500, 0, 0, 0);
-
-    Logger.debug('MainMenuScene.create() end');
   }
 
   /**
@@ -63,17 +46,10 @@ class MainMenuScene extends Phaser.Scene {
    */
   update(time, delta) {
     // Update star animation or other background effects
-    // Performance monitoring in debug mode
-    if (ConfigManager.getConfig().showDebugInfo && time % 1000 < delta) {
-      Logger.debug('MainMenuScene.update(): FPS ~', Math.round(1000 / delta));
-    }
   }
 
-  /**
-   * Create animated background
-   */
   createBackground() {
-    Logger.debug('MainMenuScene.createBackground() begin');
+    this.logger.debug('Create Background');
 
     const centerX = this.scale.width / 2;
     const centerY = this.scale.height / 2;
@@ -89,7 +65,7 @@ class MainMenuScene extends Phaser.Scene {
         Math.random() * this.scale.height,
         Math.random() * 2 + 1,
         0xffffff,
-        Math.random() * 0.8 + 0.2
+        Math.random() * 0.8 + 0.2,
       );
 
       // Animate star twinkling
@@ -104,16 +80,9 @@ class MainMenuScene extends Phaser.Scene {
 
       this.stars.push(star);
     }
-
-    Logger.debug('MainMenuScene.createBackground() end');
   }
 
-  /**
-   * Create game title
-   */
   createTitle() {
-    Logger.debug('MainMenuScene.createTitle()');
-
     const centerX = this.scale.width / 2;
 
     // Main title
@@ -149,9 +118,6 @@ class MainMenuScene extends Phaser.Scene {
     }
   }
 
-  /**
-   * Create menu items
-   */
   createMenu() {
     const centerX = this.scale.width / 2;
     const startY = 280;
@@ -210,9 +176,6 @@ class MainMenuScene extends Phaser.Scene {
     this.updateMenuSelection();
   }
 
-  /**
-   * Create info panels
-   */
   createInfoPanels() {
     // Controls info
     const controlsText = [
@@ -263,9 +226,6 @@ class MainMenuScene extends Phaser.Scene {
     }
   }
 
-  /**
-   * Set up input handling
-   */
   setupInput() {
     // Keyboard navigation
     this.input.keyboard.on('keydown-UP', () => {
@@ -300,10 +260,6 @@ class MainMenuScene extends Phaser.Scene {
     }
   }
 
-  /**
-   * Navigate menu selection
-   * @param {number} direction - Direction to navigate (-1 up, 1 down)
-   */
   navigateMenu(direction) {
     this.selectedIndex += direction;
 
@@ -316,10 +272,6 @@ class MainMenuScene extends Phaser.Scene {
     this.updateMenuSelection();
   }
 
-  /**
-   * Select menu item by index
-   * @param {number} index - Item index to select
-   */
   selectMenuItem(index) {
     if (index >= 0 && index < this.menuItems.length) {
       this.selectedIndex = index;
@@ -327,9 +279,6 @@ class MainMenuScene extends Phaser.Scene {
     }
   }
 
-  /**
-   * Update visual menu selection
-   */
   updateMenuSelection() {
     this.menuItems.forEach((item, index) => {
       const isSelected = index === this.selectedIndex;
@@ -344,10 +293,6 @@ class MainMenuScene extends Phaser.Scene {
     });
   }
 
-  /**
-   * Activate selected menu item
-   * @param {number} index - Item index to activate
-   */
   activateMenuItem(index) {
     if (!this.menuActive || index < 0 || index >= this.menuItems.length) {
       return;
@@ -369,10 +314,6 @@ class MainMenuScene extends Phaser.Scene {
     });
   }
 
-  /**
-   * Execute menu action
-   * @param {string} action - Action to execute
-   */
   executeMenuAction(action) {
     switch (action) {
       case 'startGame':
@@ -388,18 +329,12 @@ class MainMenuScene extends Phaser.Scene {
         break;
 
       default:
-        Logger.warn('MainMenuScene: Unknown menu action:', action);
         this.menuActive = true;
         break;
     }
   }
 
-  /**
-   * Start the game
-   */
   startGame() {
-    Logger.debug('MainMenuScene.startGame()');
-
     this.cameras.main.fadeOut(500, 0, 0, 0);
 
     this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
@@ -407,9 +342,6 @@ class MainMenuScene extends Phaser.Scene {
     });
   }
 
-  /**
-   * Show instructions (placeholder)
-   */
   showInstructions() {
     // For now, just show a simple message and return to menu
     const centerX = this.scale.width / 2;
@@ -432,7 +364,7 @@ class MainMenuScene extends Phaser.Scene {
           fontFamily: 'Arial, sans-serif',
           align: 'center',
           lineSpacing: 8,
-        }
+        },
       )
       .setOrigin(0.5);
 
@@ -447,9 +379,6 @@ class MainMenuScene extends Phaser.Scene {
     });
   }
 
-  /**
-   * Show settings (placeholder)
-   */
   showSettings() {
     // Simple settings display - will be expanded later
     const centerX = this.scale.width / 2;
@@ -472,7 +401,7 @@ class MainMenuScene extends Phaser.Scene {
           fontFamily: 'Arial, sans-serif',
           align: 'center',
           lineSpacing: 8,
-        }
+        },
       )
       .setOrigin(0.5);
 
@@ -487,9 +416,6 @@ class MainMenuScene extends Phaser.Scene {
     });
   }
 
-  /**
-   * Animate entrance effects
-   */
   animateEntrance() {
     // Title entrance
     this.titleText.setAlpha(0).setScale(0.5);
@@ -531,24 +457,4 @@ class MainMenuScene extends Phaser.Scene {
       });
     });
   }
-
-  /**
-   * Clean up main menu scene
-   */
-  shutdown() {
-    Logger.debug('MainMenuScene.shutdown()');
-
-    // Clean up timers and tweens
-    this.time.removeAllEvents();
-    this.tweens.killAll();
-
-    // Remove event listeners
-    this.input.keyboard.removeAllListeners();
-    this.input.removeAllListeners();
-
-    // Clean up menu items
-    this.menuItems = [];
-  }
 }
-
-export default MainMenuScene;
