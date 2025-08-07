@@ -1,5 +1,5 @@
-import Logger from '@/utils/Logger.js';
 import { getDefaultPriority } from '@/event-bus/EventTypes.js';
+import Logger from '@/utils/Logger.js';
 
 export default class EventBus {
   constructor() {
@@ -9,6 +9,8 @@ export default class EventBus {
 
     this.nextEventId = 1;
     this.nextListenerId = 1;
+
+    this.logger = Logger.scope('EventBus');
   }
 
   /**
@@ -59,12 +61,6 @@ export default class EventBus {
       this.sortListeners(eventType);
     }
 
-    // Log listener addition for debugging
-
-    Logger.debug(
-      `[EventBus] Listener ${listener.id} added for ${Array.from(eventTypes).join(', ')}`
-    );
-
     return listener.id;
   }
 
@@ -106,10 +102,6 @@ export default class EventBus {
       this.oneTimeListeners.get(eventType).add(listener);
     }
 
-    Logger.debug(
-      `[EventBus] One time listener ${listener.id} added for ${Array.from(eventTypes).join(', ')}`
-    );
-
     return listener.id;
   }
 
@@ -146,7 +138,6 @@ export default class EventBus {
    */
   off(listenerId) {
     if (!listenerId || typeof listenerId !== 'string') {
-      Logger.warn('[EventBus] Invalid listener ID provided to off():', listenerId);
       return false;
     }
 
@@ -158,7 +149,6 @@ export default class EventBus {
         if (listener.id === listenerId) {
           listeners.delete(listener);
           removed = true;
-          Logger.debug(`[EventBus] Removed regular listener ${listenerId} from ${eventType}`);
 
           // Clean up empty event type entries
           if (listeners.size === 0) {
@@ -175,7 +165,6 @@ export default class EventBus {
         if (listener.id === listenerId) {
           listeners.delete(listener);
           removed = true;
-          Logger.debug(`[EventBus] Removed one-time listener ${listenerId} from ${eventType}`);
 
           // Clean up empty event type entries
           if (listeners.size === 0) {
@@ -191,13 +180,8 @@ export default class EventBus {
       if (listener.id === listenerId) {
         this.wildcardListeners.delete(listener);
         removed = true;
-        Logger.debug(`[EventBus] Removed wildcard listener ${listenerId}`);
         break;
       }
-    }
-
-    if (!removed) {
-      Logger.warn(`[EventBus] Listener ${listenerId} not found for removal`);
     }
 
     return removed;
@@ -215,8 +199,6 @@ export default class EventBus {
     if (!eventType || typeof eventType !== 'string' || eventType.trim() === '') {
       throw new Error('[EventBus] Event type must be a non-empty string');
     }
-
-    Logger.scope('EventBus').info(`Emitting event type: ${eventType}`);
 
     const event = this.createEvent(eventType, eventData, priority || getDefaultPriority(eventType));
 
@@ -302,12 +284,10 @@ export default class EventBus {
       // Log processing time for performance monitoring
       const processingTime = performance.now() - startTime;
       if (processingTime > 10) {
-        Logger.warn(
-          `[EventBus] Slow event processing: ${processingTime}ms for event ${event.type}`
-        );
+        this.logger.warn(`Slow event processing: ${processingTime}ms for event ${event.type}`);
       }
     } catch (error) {
-      Logger.error('[EventBus] Error processing event:', {
+      this.logger.error(' Error processing event:', {
         eventType: event.type,
         eventId: event.id,
         error: error.message,
@@ -349,10 +329,10 @@ export default class EventBus {
 
         // Log slow listeners for debugging
         if (callTime > 5) {
-          Logger.warn(`[EventBus] Slow listener detected: ${callTime}ms for event ${event.type}`);
+          this.logger.warn(`Slow listener detected: ${callTime}ms for event ${event.type}`);
         }
       } catch (error) {
-        Logger.error('[EventBus] Error executing listener:', {
+        this.logger.error(' Error executing listener:', {
           eventType: event.type,
           listenerId: listener.id,
           error: error.message,
@@ -437,14 +417,14 @@ export default class EventBus {
     }
 
     // Log detailed error information
-    Logger.error(`[EventBus] ${phase} error:`, errorInfo);
+    this.logger.error(`${phase} error:`, errorInfo);
 
     // Emit error event (but prevent infinite loops)
     if (event?.type !== 'event-bus-error') {
       try {
         this.emit('event-bus-error', errorInfo);
       } catch (nestedError) {
-        Logger.error('[EventBus] Failed to emit error event:', nestedError.message);
+        this.logger.error(' Failed to emit error event:', nestedError.message);
       }
     }
   }
@@ -484,7 +464,6 @@ export default class EventBus {
     this.listeners.clear();
     this.oneTimeListeners.clear();
     this.wildcardListeners.clear();
-    Logger.debug('[EventBus] All listeners cleared');
   }
 }
 
