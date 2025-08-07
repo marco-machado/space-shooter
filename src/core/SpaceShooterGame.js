@@ -1,35 +1,22 @@
 import ConfigManager from '@/config/ConfigManager.js';
-import Logger from '@/utils/Logger.js';
-import Phaser from 'phaser';
 import { getEventBus } from '@/event-bus/EventBus.js';
 import { EventTypes } from '@/event-bus/EventTypes.js';
-
-// Import scenes for registration
-import BootScene from '@/scenes/BootScene.js';
-import PreloaderScene from '@/scenes/PreloaderScene.js';
-import MainMenuScene from '@/scenes/MainMenuScene.js';
-import GameScene from '@/scenes/GameScene.js';
-import UIScene from '@/scenes/UIScene.js';
+import { BootScene, GameScene, MainMenuScene, PreloaderScene, UIScene } from '@/scenes';
+import Logger from '@/utils/Logger.js';
+import Phaser from 'phaser';
 
 export default class SpaceShooterGame {
   constructor() {
     this.game = null;
     this.isInitialized = false;
+
     this.eventBus = getEventBus();
+    this.logger = Logger.scope('GameScene');
   }
 
-  /**
-   * Initializes the SpaceShooterGame by setting up necessary configurations,
-   * validating setup, registering game scenes, creating the Phaser game instance,
-   * and adding error handling and global event listeners.
-   *
-   * @return {Promise<void>} Promise that resolves when the game is successfully initialized, or rejects with an error if initialization fails.
-   */
   async init() {
     try {
       ConfigManager.init();
-
-      Logger.scope('SpaceShooterGame').info('SpaceShooterGame initialising');
 
       // Validate configuration
       if (!ConfigManager.validate()) {
@@ -52,8 +39,10 @@ export default class SpaceShooterGame {
       this.setupGameEvents();
 
       this.isInitialized = true;
+
+      this.logger.debug('Game initialized successfully', config);
     } catch (error) {
-      Logger.scope('SpaceShooterGame').error('Game failed to initialize:', error.message);
+      this.logger.error('Game failed to initialize:', error.message);
       this.showErrorMessage(error.message);
       throw error;
     }
@@ -69,13 +58,13 @@ export default class SpaceShooterGame {
   setupErrorHandling() {
     // Handle uncaught errors
     window.addEventListener('error', event => {
-      Logger.scope('SpaceShooterGame').error('Uncaught error', event.error);
+      this.logger.error('Uncaught error', event.error);
       this.handleGameError(event.error);
     });
 
     // Handle unhandled promise rejections
     window.addEventListener('unhandledrejection', event => {
-      Logger.scope('SpaceShooterGame').error('Unhandled promise rejection', event.reason);
+      this.logger.error('Unhandled promise rejection', event.reason);
       this.handleGameError(event.reason);
     });
   }
@@ -189,7 +178,7 @@ export default class SpaceShooterGame {
    */
   destroy() {
     if (this.game) {
-      Logger.scope('SpaceShooterGame').info('Destroying game instance');
+      this.logger.info('Destroying game instance');
 
       this.game.destroy(true);
       this.game = null;
