@@ -85,13 +85,29 @@ const playerColor = constants.COLORS.PLAYER; // 0x0099ff
 ```javascript
 import Logger from '@/utils/Logger.js';
 
-// Global logging methods
+// Class-based pattern (preferred for classes)
+class MyGameClass {
+  #logger;
+  
+  constructor() {
+    this.#logger = Logger.scope('MyGameClass');
+  }
+  
+  someMethod() {
+    this.#logger.debug('Method called');
+    this.#logger.info('Important event');
+    this.#logger.warn('Warning condition');
+    this.#logger.error('Error occurred');
+  }
+}
+
+// Global logging methods (for standalone functions/utilities)
 Logger.debug('Player spawned at', x, y);
 Logger.info('Level completed');
 Logger.warn('Low health warning');
 Logger.error('Critical error');
 
-// Scoped logging (recommended pattern)
+// Direct scoped logging (when not using class pattern)
 Logger.scope('SpaceShooterGame').info('Destroying game instance');
 Logger.scope('GameScene').debug('Enemy spawned', enemy.id);
 Logger.scope('WeaponSystem').warn('Weapon overheating');
