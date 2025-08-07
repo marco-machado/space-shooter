@@ -11,7 +11,35 @@ export {
   cleanupWorld 
 } from './world.js';
 
-// Future exports for components, systems, and entity creation functions will be added here
-// Components: Position, Velocity, Health, Weapon, etc.
+// Components
+export {
+  // Data Components
+  Position,
+  Velocity, 
+  Health,
+  Weapon,
+  Render,
+  Physics,
+  AI,
+  // Tag Components
+  Player,
+  Enemy,
+  Projectile,
+  PowerUp,
+  // Default Exports (alternative names)
+  PositionComponent,
+  VelocityComponent,
+  HealthComponent,
+  WeaponComponent,
+  RenderComponent,
+  PhysicsComponent,
+  AIComponent,
+  PlayerTag,
+  EnemyTag,
+  ProjectileTag,
+  PowerUpTag
+} from './components/index.js';
+
+// Future exports for systems and entity creation functions will be added here
 // Systems: MovementSystem, WeaponSystem, CollisionSystem, etc.
 // Entities: createPlayer, createEnemy, createProjectile, etc.
