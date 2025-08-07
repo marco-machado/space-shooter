@@ -1,19 +1,40 @@
-import Logger from './Logger.js';
+import ConfigManager from '@/config/ConfigManager.js';
 import { getEventBus } from '@/event-bus/EventBus.js';
 import { EventPriority, EventTypes } from '@/event-bus/EventTypes.js';
+import Logger from './Logger.js';
 
 /**
  * Game State Manager
- * Manages overall game state, score, lives, progression, and persistence
- * Handles game over conditions and state transitions
+ * @class
+ * @classdesc Manages overall game state, score, lives, progression, and persistence.
+ * Handles game over conditions, state transitions, achievements, and save/load functionality.
+ * Integrates with EventBus for reactive state management and ConfigManager for configuration.
  */
 class GameStateManager {
-  constructor(scene = null) {
-    // EventBus integration - framework independent
-    this.eventBus = getEventBus();
-    this.eventListenerIds = new Map(); // Track listener IDs for cleanup
+  // Private internal fields
+  #logger;
+  #eventBus;
+  #eventListenerIds;
+  #saveKey = 'space-shooter-save';
+  #autoSaveInterval = 30000;
+  #lastAutoSave = 0;
 
-    // Optional scene reference for compatibility (not required for EventBus)
+  /**
+   * Create a new GameStateManager instance
+   * @param {Phaser.Scene} [scene=null] - Optional Phaser scene reference
+   */
+  constructor(scene = null) {
+    // Input validation
+    if (scene !== null && (!scene || typeof scene.scene === 'undefined')) {
+      throw new TypeError('scene parameter must be null or a valid Phaser.Scene instance');
+    }
+
+    this.#logger = Logger.scope('GameStateManager');
+    this.#eventBus = getEventBus();
+    this.#eventListenerIds = new Map();
+
+    const config = ConfigManager.getConfig();
+
     this.scene = scene;
 
     // Game state
@@ -26,7 +47,7 @@ class GameStateManager {
 
     // Player statistics
     this.score = 0;
-    this.lives = 3;
+    this.lives = config.startingLives || 3;
     this.maxLives = 5;
     this.currentLevel = 1;
     this.experience = 0;
@@ -59,7 +80,7 @@ class GameStateManager {
     };
 
     // Multipliers and bonuses
-    this.scoreMultiplier = 1.0;
+    this.scoreMultiplier = config.baseScoreMultiplier || 1.0;
     this.experienceMultiplier = 1.0;
     this.consecutiveHits = 0;
     this.maxConsecutiveHits = 0;
@@ -69,23 +90,45 @@ class GameStateManager {
     this.milestones = new Map();
     this.initializeMilestones();
 
-    // Save data management
-    this.saveKey = 'space-shooter-save';
-    this.autoSaveInterval = 30000; // 30 seconds
-    this.lastAutoSave = 0;
+    // Save data management uses private fields with getters
 
     // Event listeners
     this.setupEventListeners();
+  }
 
-    Logger.scope('GameStateManager').debug('GameStateManager constructed', {
-      lives: this.lives,
-      level: this.currentLevel,
-      saveKey: this.saveKey,
-    });
+  // Getters for private fields
+  get logger() {
+    return this.#logger;
+  }
+
+  get eventBus() {
+    return this.#eventBus;
+  }
+
+  get eventListenerIds() {
+    return this.#eventListenerIds;
+  }
+
+  get saveKey() {
+    return this.#saveKey;
+  }
+
+  get autoSaveInterval() {
+    return this.#autoSaveInterval;
+  }
+
+  get lastAutoSave() {
+    return this.#lastAutoSave;
+  }
+
+  set lastAutoSave(value) {
+    this.#lastAutoSave = value;
   }
 
   /**
-   * Initialize achievement milestones
+   * Initialize achievement milestones with targets and rewards
+   * @private
+   * @returns {void}
    */
   initializeMilestones() {
     this.milestones.set('firstKill', {
@@ -133,7 +176,9 @@ class GameStateManager {
   }
 
   /**
-   * Setup event listeners for game events using EventBus
+   * Setup EventBus listeners for game events
+   * @private
+   * @returns {void}
    */
   setupEventListeners() {
     if (!this.eventBus) {
@@ -142,45 +187,45 @@ class GameStateManager {
 
     try {
       // Enemy destruction events - HIGH priority for immediate score updates
-      const enemyDeathId = this.eventBus.on(
-        'enemyDeath',
+    const enemyDeathId = this.eventBus.on(
+        EventTypes.ENEMY_DEATH,
         this.onEnemyDestroyed,
         this,
-        EventPriority.HIGH
+        EventPriority.HIGH,
       );
       this.eventListenerIds.set('enemyDeath', enemyDeathId);
 
       // Wave events - NORMAL priority
       const waveStartId = this.eventBus.on(
-        'waveStart',
+        EventTypes.WAVE_START,
         this.onWaveStart,
         this,
-        EventPriority.NORMAL
+        EventPriority.NORMAL,
       );
       this.eventListenerIds.set('waveStart', waveStartId);
 
       const waveCompleteId = this.eventBus.on(
-        'waveComplete',
+        EventTypes.WAVE_COMPLETE,
         this.onWaveComplete,
         this,
-        EventPriority.NORMAL
+        EventPriority.NORMAL,
       );
       this.eventListenerIds.set('waveComplete', waveCompleteId);
 
       // Player events - HIGH priority for immediate response
       const playerDamageId = this.eventBus.on(
-        'playerDamage',
+        EventTypes.PLAYER_DAMAGE,
         this.onPlayerDamage,
         this,
-        EventPriority.HIGH
+        EventPriority.HIGH,
       );
       this.eventListenerIds.set('playerDamage', playerDamageId);
 
       const playerDeathId = this.eventBus.on(
-        'playerDeath',
+        EventTypes.PLAYER_DEATH,
         this.onPlayerDeath,
         this,
-        EventPriority.HIGH
+        EventPriority.HIGH,
       );
       this.eventListenerIds.set('playerDeath', playerDeathId);
 
@@ -189,27 +234,32 @@ class GameStateManager {
         EventTypes.WEAPON_FIRED,
         this.onWeaponFire,
         this,
-        EventPriority.HIGH
+        EventPriority.HIGH,
       );
       this.eventListenerIds.set('weaponFire', weaponFireId);
 
-      const weaponHitId = this.eventBus.on('weaponHit', this.onWeaponHit, this, EventPriority.HIGH);
+      const weaponHitId = this.eventBus.on(
+        EventTypes.WEAPON_HIT,
+        this.onWeaponHit,
+        this,
+        EventPriority.HIGH,
+      );
       this.eventListenerIds.set('weaponHit', weaponHitId);
 
       const weaponUnlockedId = this.eventBus.on(
         EventTypes.WEAPON_UNLOCKED,
         this.onWeaponUnlocked,
         this,
-        EventPriority.NORMAL
+        EventPriority.NORMAL,
       );
       this.eventListenerIds.set('weaponUnlocked', weaponUnlockedId);
 
       // Power-up events - NORMAL priority
       const powerUpId = this.eventBus.on(
-        'powerUpCollected',
+        EventTypes.POWERUP_COLLECTED,
         this.onPowerUpCollected,
         this,
-        EventPriority.NORMAL
+        EventPriority.NORMAL,
       );
       this.eventListenerIds.set('powerUpCollected', powerUpId);
 
@@ -218,49 +268,24 @@ class GameStateManager {
         EventTypes.GAME_STARTED,
         this.onGameStart,
         this,
-        EventPriority.LOW
+        EventPriority.LOW,
       );
       this.eventListenerIds.set('gameStart', gameStartId);
 
-      const gamePauseToggleId = this.eventBus.on(
-        EventTypes.GAME_PAUSE_TOGGLE,
-        this.onGamePauseToggle,
-        this,
-        EventPriority.LOW
-      );
-      this.eventListenerIds.set('gamePauseToggle', gamePauseToggleId);
-
-      const gamePauseId = this.eventBus.on(
-        EventTypes.GAME_PAUSED,
-        this.onGamePause,
-        this,
-        EventPriority.LOW
-      );
-      this.eventListenerIds.set('gamePause', gamePauseId);
-
-      const gameResumeId = this.eventBus.on(
-        EventTypes.GAME_RESUMED,
-        this.onGameResume,
-        this,
-        EventPriority.LOW
-      );
-      this.eventListenerIds.set('gameResume', gameResumeId);
-
-      Logger.scope('GameStateManager').debug('EventBus listeners set up successfully', {
-        listenerCount: this.eventListenerIds.size,
-      });
+      // Note: GameStateManager doesn't listen to its own pause events to avoid circular dependencies
+      // It only emits GAME_PAUSED, GAME_RESUMED, and GAME_PAUSE_TOGGLE events
     } catch (error) {
-      Logger.scope('GameStateManager').error('Failed to setup EventBus listeners:', error);
+      this.logger.error('Failed to setup EventBus listeners:', error);
     }
   }
 
   /**
-   * Initializes and starts the game by setting up the initial game state,
-   * logging the start event, and emitting the game start event to the scene.
-   *
-   * @return {void} No return value.
+   * Start a new game session
+   * @returns {void}
    */
   startGame() {
+    this.logger.debug('Starting Game');
+
     this.isPlaying = true;
     this.isPaused = false;
     this.isGameOver = false;
@@ -268,41 +293,38 @@ class GameStateManager {
     this.currentWave = 1;
     this.enemiesDestroyed = 0;
 
-    Logger.scope('GameStateManager').debug('Game started', {
-      lives: this.lives,
-      level: this.currentLevel,
-      startTime: this.gameStartTime,
-    });
-
     this.eventBus.emit(EventTypes.GAME_STARTED, this.getGameState());
   }
 
   /**
-   * Pause game
+   * Pause the current game
+   * @returns {void}
    */
   pauseGame() {
     if (!this.isPlaying || this.isGameOver) return;
 
     this.isPaused = true;
-    Logger.scope('GameStateManager').info('Game paused');
 
     this.eventBus.emit(EventTypes.GAME_PAUSED, this.getGameState());
+    this.eventBus.emit(EventTypes.GAME_PAUSE_TOGGLE, { paused: true });
   }
 
   /**
-   * Resume game
+   * Resume the paused game
+   * @returns {void}
    */
   resumeGame() {
     if (!this.isPlaying || this.isGameOver) return;
 
     this.isPaused = false;
-    Logger.scope('GameStateManager').info('Game resumed');
 
     this.eventBus.emit(EventTypes.GAME_RESUMED, this.getGameState());
+    this.eventBus.emit(EventTypes.GAME_PAUSE_TOGGLE, { paused: false });
   }
 
   /**
-   * Toggle pause state (convenience method for input handlers)
+   * Toggle game pause state
+   * @returns {void}
    */
   togglePause() {
     if (!this.isPlaying || this.isGameOver) return;
@@ -312,15 +334,12 @@ class GameStateManager {
     } else {
       this.pauseGame();
     }
-
-    Logger.scope('GameStateManager').debug('Pause toggled', {
-      isPaused: this.isPaused,
-    });
   }
 
   /**
-   * End game
-   * @param {string} reason - Reason for game over
+   * End the current game session
+   * @param {string} [reason='player_death'] - Reason for game end
+   * @returns {void}
    */
   endGame(reason = 'player_death') {
     if (!this.isPlaying) return;
@@ -333,13 +352,6 @@ class GameStateManager {
     // Update high scores
     this.updateHighScores();
 
-    Logger.scope('GameStateManager').info('Game ended', {
-      reason,
-      score: this.score,
-      wave: this.currentWave,
-      playTime: this.gameEndTime - this.gameStartTime,
-    });
-
     this.eventBus.emit(EventTypes.GAME_OVER, {
       reason,
       ...this.getGameState(),
@@ -350,12 +362,15 @@ class GameStateManager {
   }
 
   /**
-   * Restart game (reset progress but keep unlocks)
+   * Restart the game with a fresh session while keeping permanent progress
+   * @returns {void}
    */
   restartGame() {
+    const config = ConfigManager.getConfig();
+
     // Reset game progress
     this.score = 0;
-    this.lives = 3;
+    this.lives = config.startingLives || 3;
     this.currentWave = 1;
     this.enemiesDestroyed = 0;
     this.shotsFired = 0;
@@ -368,15 +383,16 @@ class GameStateManager {
     // (level, weapons unlocked, achievements remain)
 
     this.startGame();
-    Logger.scope('GameStateManager').info('Game restarted');
   }
 
   /**
    * Handle enemy destroyed event
-   * @param {Object} eventData - Enemy death event data
+   * @param {Object} eventData - Event data containing enemy and score information
+   * @param {number} eventData.scoreValue - Score value for destroying the enemy
+   * @returns {void}
    */
   onEnemyDestroyed(eventData) {
-    const { enemy, scoreValue } = eventData;
+    const { scoreValue } = eventData;
 
     // Add score with multiplier
     const points = Math.floor(scoreValue * this.scoreMultiplier);
@@ -394,17 +410,13 @@ class GameStateManager {
 
     // Check achievements
     this.checkAchievements();
-
-    Logger.scope('GameStateManager').debug(`Enemy destroyed: +${points} score, +${exp} XP`, {
-      enemyType: enemy.enemyType,
-      totalScore: this.score,
-      consecutiveHits: this.consecutiveHits,
-    });
   }
 
   /**
    * Handle wave start event
-   * @param {Object} eventData - Wave start data
+   * @param {Object} eventData - Event data containing wave information
+   * @param {number} eventData.wave - The wave number that started
+   * @returns {void}
    */
   onWaveStart(eventData) {
     this.currentWave = eventData.wave;
@@ -413,14 +425,15 @@ class GameStateManager {
     // Increase score multiplier slightly each wave
     this.scoreMultiplier = 1.0 + (this.currentWave - 1) * 0.05;
 
-    Logger.scope('GameStateManager').info(`Wave ${this.currentWave} started`, {
+    this.logger.info(`Wave ${this.currentWave} started`, {
       scoreMultiplier: this.scoreMultiplier.toFixed(2),
     });
   }
 
   /**
    * Handle wave complete event
-   * @param {Object} eventData - Wave complete data
+   * @param {Object} _eventData - Wave complete data (unused)
+   * @returns {void}
    */
   onWaveComplete(_eventData) {
     this.wavesCompleted++;
@@ -434,7 +447,7 @@ class GameStateManager {
     const expBonus = Math.floor(200 * this.currentWave);
     this.addExperience(expBonus);
 
-    Logger.scope('GameStateManager').info(`Wave ${this.currentWave} completed`, {
+    this.logger.info(`Wave ${this.currentWave} completed`, {
       waveBonus,
       expBonus,
       totalScore: this.score,
@@ -451,11 +464,12 @@ class GameStateManager {
     // Reset consecutive hits on taking damage
     this.consecutiveHits = 0;
 
-    Logger.scope('GameStateManager').debug('Player took damage', { damage: eventData.damage });
+    this.logger.debug('Player took damage', { damage: eventData.damage });
   }
 
   /**
    * Handle player death event
+   * @returns {void}
    */
   onPlayerDeath() {
     this.lives--;
@@ -464,7 +478,7 @@ class GameStateManager {
     if (this.lives <= 0) {
       this.endGame('no_lives');
     } else {
-      Logger.scope('GameStateManager').info(`Player died, ${this.lives} lives remaining`);
+      this.logger.info(`Player died, ${this.lives} lives remaining`);
 
       // Brief invulnerability bonus score
       this.addScore(100);
@@ -473,6 +487,7 @@ class GameStateManager {
 
   /**
    * Handle weapon fire event
+   * @returns {void}
    */
   onWeaponFire() {
     this.shotsFired++;
@@ -481,6 +496,7 @@ class GameStateManager {
 
   /**
    * Handle weapon hit event
+   * @returns {void}
    */
   onWeaponHit() {
     this.shotsHit++;
@@ -493,7 +509,7 @@ class GameStateManager {
    */
   onWeaponUnlocked(eventData) {
     this.weaponsUnlocked.add(eventData.weaponType);
-    Logger.scope('GameStateManager').info(`Weapon unlocked: ${eventData.weaponName}`);
+    this.logger.info(`Weapon unlocked: ${eventData.weaponName}`);
   }
 
   /**
@@ -509,43 +525,16 @@ class GameStateManager {
     // Power-up collection bonus
     this.addScore(250);
 
-    Logger.scope('GameStateManager').debug(`Power-up collected: ${powerUpType}`);
+    this.logger.debug(`Power-up collected: ${powerUpType}`);
   }
 
   /**
    * Handle game start event
    * @param {Object} eventData - Game start data
+   * @returns {void}
    */
   onGameStart(eventData) {
-    Logger.scope('GameStateManager').debug('received game start event', eventData);
-  }
-
-  onGamePauseToggle(eventData) {
-    if (!this.isPlaying || this.isGameOver) return;
-
-    if (this.isPaused) {
-      this.resumeGame();
-    } else {
-      this.pauseGame();
-    }
-
-    Logger.scope('GameStateManager').debug('Pause toggled', eventData);
-  }
-
-  /**
-   * Handle game pause event
-   * @param {Object} eventData - Game pause data
-   */
-  onGamePause(eventData) {
-    Logger.scope('GameStateManager').debug('received game pause event', eventData);
-  }
-
-  /**
-   * Handle game resume event
-   * @param {Object} eventData - Game resume data
-   */
-  onGameResume(eventData) {
-    Logger.scope('GameStateManager').debug('received game resume event', eventData);
+    this.logger.debug('received game start event', eventData);
   }
 
   /**
@@ -553,6 +542,9 @@ class GameStateManager {
    * @param {number} points - Points to add
    */
   addScore(points) {
+    if (typeof points !== 'number' || isNaN(points)) {
+      throw new TypeError('points must be a valid number');
+    }
     if (points <= 0) return;
 
     this.score += points;
@@ -564,7 +556,7 @@ class GameStateManager {
 
     if (currentThreshold > previousThreshold && this.lives < this.maxLives) {
       this.addLife();
-      Logger.scope('GameStateManager').info(`Extra life earned at ${this.score} points!`);
+      this.logger.info(`Extra life earned at ${this.score} points!`);
     }
   }
 
@@ -573,6 +565,9 @@ class GameStateManager {
    * @param {number} exp - Experience to add
    */
   addExperience(exp) {
+    if (typeof exp !== 'number' || isNaN(exp)) {
+      throw new TypeError('exp must be a valid number');
+    }
     if (exp <= 0) return;
 
     this.experience += exp;
@@ -584,6 +579,7 @@ class GameStateManager {
 
   /**
    * Handle level up
+   * @returns {void}
    */
   levelUp() {
     this.experience -= this.experienceToNextLevel;
@@ -598,7 +594,7 @@ class GameStateManager {
     // Check for weapon unlocks
     this.checkWeaponUnlocks();
 
-    Logger.scope('GameStateManager').info(`Level up! Now level ${this.currentLevel}`, {
+    this.logger.info(`Level up! Now level ${this.currentLevel}`, {
       nextLevelXP: this.experienceToNextLevel,
       currentXP: this.experience,
     });
@@ -611,6 +607,8 @@ class GameStateManager {
 
   /**
    * Check for weapon unlocks based on level
+   * @private
+   * @returns {void}
    */
   checkWeaponUnlocks() {
     const weaponUnlocks = {
@@ -630,6 +628,7 @@ class GameStateManager {
 
   /**
    * Add extra life
+   * @returns {void}
    */
   addLife() {
     if (this.lives < this.maxLives) {
@@ -649,6 +648,8 @@ class GameStateManager {
 
   /**
    * Check and unlock achievements
+   * @private
+   * @returns {void}
    */
   checkAchievements() {
     this.milestones.forEach((milestone, name) => {
@@ -711,7 +712,7 @@ class GameStateManager {
         break;
     }
 
-    Logger.scope('GameStateManager').info(`Achievement unlocked: ${name}`, {
+    this.logger.info(`Achievement unlocked: ${name}`, {
       reward: milestone.reward,
       value: milestone.value,
     });
@@ -728,6 +729,9 @@ class GameStateManager {
    * @param {number} fps - Current FPS
    */
   updatePerformance(fps) {
+    if (typeof fps !== 'number' || isNaN(fps) || fps < 0) {
+      throw new TypeError('fps must be a valid non-negative number');
+    }
     this.performanceMetrics.frameCount++;
     this.performanceMetrics.fpsHistory.push(fps);
 
@@ -746,6 +750,8 @@ class GameStateManager {
 
   /**
    * Update high scores
+   * @private
+   * @returns {void}
    */
   updateHighScores() {
     const savedData = this.loadGame();
@@ -840,6 +846,7 @@ class GameStateManager {
 
   /**
    * Save game data to localStorage
+   * @returns {void}
    */
   saveGame() {
     const gameData = {
@@ -864,11 +871,14 @@ class GameStateManager {
    * @param {Object} data - Data to save
    */
   saveGameData(data) {
+    if (!data || typeof data !== 'object') {
+      throw new TypeError('data must be a valid object');
+    }
     try {
       localStorage.setItem(this.saveKey, JSON.stringify(data));
-      Logger.scope('GameStateManager').debug('Game saved successfully');
+      this.logger.debug('Game saved successfully');
     } catch (error) {
-      Logger.scope('GameStateManager').error('Failed to save game:', error);
+      this.logger.error('Failed to save game:', error);
     }
   }
 
@@ -877,8 +887,6 @@ class GameStateManager {
    * @returns {Object} Loaded game data
    */
   loadGame() {
-    Logger.scope('GameStateManager').debug('loadGame()');
-
     try {
       const savedData = localStorage.getItem(this.saveKey);
       if (savedData) {
@@ -892,16 +900,10 @@ class GameStateManager {
         if (data.highestWave) this.highestWave = data.highestWave;
         if (data.totalPlayTime) this.totalPlayTime = data.totalPlayTime;
 
-        Logger.scope('GameStateManager').debug('Saved data loaded successfully', {
-          level: this.currentLevel,
-          weapons: this.weaponsUnlocked.size,
-          achievements: this.achievements.size,
-        });
-
         return data;
       }
     } catch (error) {
-      Logger.scope('GameStateManager').error('Failed to load game:', error);
+      this.logger.error('Failed to load game:', error);
     }
 
     return {};
@@ -909,6 +911,7 @@ class GameStateManager {
 
   /**
    * Reset all progress (for debugging or new player)
+   * @returns {void}
    */
   resetProgress() {
     localStorage.removeItem(this.saveKey);
@@ -923,7 +926,7 @@ class GameStateManager {
 
     this.initializeMilestones();
 
-    Logger.scope('GameStateManager').info('All progress reset');
+    this.logger.info('All progress reset');
   }
 
   /**
@@ -945,11 +948,12 @@ class GameStateManager {
 
   /**
    * Clean up event listeners and save final state
+   * @returns {void}
    */
   destroy() {
     // Clean up all EventBus listeners
     if (this.eventBus && this.eventListenerIds.size > 0) {
-      Logger.scope('GameStateManager').debug('Cleaning up EventBus listeners', {
+      this.logger.debug('Cleaning up EventBus listeners', {
         listenerCount: this.eventListenerIds.size,
       });
 
@@ -957,15 +961,10 @@ class GameStateManager {
         try {
           const removed = this.eventBus.off(listenerId);
           if (!removed) {
-            Logger.scope('GameStateManager').warn(
-              `Failed to remove listener for ${eventName}: ${listenerId}`
-            );
+            this.logger.warn(`Failed to remove listener for ${eventName}: ${listenerId}`);
           }
         } catch (error) {
-          Logger.scope('GameStateManager').error(
-            `Error removing listener for ${eventName}:`,
-            error
-          );
+          this.logger.error(`Error removing listener for ${eventName}:`, error);
         }
       }
 
@@ -979,7 +978,7 @@ class GameStateManager {
     this.eventBus = null;
     this.scene = null;
 
-    Logger.scope('GameStateManager').info('GameStateManager destroyed');
+    this.logger.info('GameStateManager destroyed');
   }
 }
 
