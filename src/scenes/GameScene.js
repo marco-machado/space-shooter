@@ -58,10 +58,10 @@ export default class GameScene extends Phaser.Scene {
   /**
    * Main game update loop.
    *
-   * @param {number} time - Current time
-   * @param {number} delta - Time delta in milliseconds
+   * @param {number} _time - Current time (unused)
+   * @param {number} _delta - Time delta in milliseconds (unused)
    */
-  update(time, delta) {
+  update(_time, _delta) {
     // const gameState = this.gameStateManager.getGameState();
     //
     // if (!gameState.isPlaying || gameState.isPaused) {
@@ -71,8 +71,7 @@ export default class GameScene extends Phaser.Scene {
     // Update game state manager
     // this.gameStateManager.update(delta);
 
-    // Update background stars
-    this.updateBackground(delta);
+    this.updateBackground();
   }
 
   createBackground() {
@@ -84,7 +83,6 @@ export default class GameScene extends Phaser.Scene {
     // Dark space background
     this.add.rectangle(centerX, centerY, this.scale.width, this.scale.height, 0x000011);
 
-    // Add scrolling stars for space feel
     this.stars = this.add.group();
 
     for (let i = 0; i < 100; i++) {
@@ -96,7 +94,11 @@ export default class GameScene extends Phaser.Scene {
         Math.random() * 0.8 + 0.2,
       );
 
-      star.setData('speed', Math.random() * 50 + 25);
+      this.physics.add.existing(star);
+
+      star.body.setVelocity(0, Math.random() * 50 + 25);
+      star.body.setCollideWorldBounds(false);
+
       this.stars.add(star);
     }
   }
@@ -114,7 +116,7 @@ export default class GameScene extends Phaser.Scene {
   }
 
   setupCollisionDetection() {
-    this.logger.debug('Creating collision Detection');
+    this.logger.debug('Creating collision detection');
 
     // Player projectiles vs enemies
     this.physics.add.overlap(
@@ -159,12 +161,9 @@ export default class GameScene extends Phaser.Scene {
     }
   }
 
-  updateBackground(delta) {
+  updateBackground() {
     this.stars.children.entries.forEach(star => {
-      const speed = star.getData('speed');
-      star.y += speed * (delta / 1000);
-
-      // Reset star position when it goes off screen
+      // Reset star position when it goes off screen (physics-based wrapping)
       if (star.y > this.scale.height + 10) {
         star.y = -10;
         star.x = Math.random() * this.scale.width;
