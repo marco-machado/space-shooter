@@ -200,8 +200,8 @@ export default class PreloaderScene extends Phaser.Scene {
 
     // Auto-start after delay if in debug mode
     if (ConfigManager.getConfig().debugMode) {
-      this.time.delayedCall(2000, () => {
-        // this.startGame();
+      this.time.delayedCall(500, () => {
+        this.startGame();
       });
     }
   }

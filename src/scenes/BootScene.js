@@ -30,7 +30,7 @@ export default class BootScene extends Phaser.Scene {
     this.createLoadingIndicator();
 
     // Add small delay to show boot scene, then transition
-    this.time.delayedCall(5000, () => {
+    this.time.delayedCall(500, () => {
       this.transitionToPreloader();
     });
   }
