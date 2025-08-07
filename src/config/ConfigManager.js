@@ -1,17 +1,9 @@
 import Logger from '@/utils/Logger.js';
+import Phaser from 'phaser';
 
 /**
  * Unified Configuration Manager
  * Consolidates environment variables, game constants, and Phaser configuration
- * 
- * Features:
- * - Auto-initialization with comprehensive validation
- * - Logger scopeName integration for consistent error reporting
- * - Production safety with secure defaults
- * - Type-safe parsing with bounds checking
- * - Comprehensive schema validation for all parameters
- * - Phaser game configuration with scene management
- * - Game constants and physics settings
  */
 export default class ConfigManager {
   // Environment configuration schema with validation rules
@@ -72,21 +64,14 @@ export default class ConfigManager {
     },
   };
 
-  // Track initialization state
   static isInitialized = false;
   static validationErrors = [];
   static registeredScenes = [];
 
-  /**
-   * Initialize complete configuration scopeName with comprehensive validation
-   * Auto-initializes on first access if not already initialized
-   */
   static init() {
     if (this.isInitialized) {
       return;
     }
-
-    Logger.debug('[ConfigManager] Initializing unified configuration scopeName...');
 
     try {
       this.validationErrors = [];
@@ -102,32 +87,16 @@ export default class ConfigManager {
 
       if (isValid) {
         this.isInitialized = true;
-        Logger.info('[ConfigManager] Configuration initialized successfully', {
-          debugMode: this.DEBUG_MODE,
-          logLevel: this.LOG_LEVEL,
-          environment: this.IS_DEVELOPMENT ? 'development' : 'production',
-        });
       } else {
-        Logger.error(
-          '[ConfigManager] Configuration validation failed with errors:',
-          this.validationErrors
-        );
         throw new Error(`Configuration validation failed: ${this.validationErrors.join(', ')}`);
       }
     } catch (error) {
-      Logger.error('[ConfigManager] Failed to initialize configuration:', error);
       this.loadFailsafeDefaults();
       this.isInitialized = true;
     }
   }
 
-  /**
-   * Initialize environment variables and settings
-   * @private
-   */
   static _initializeEnvironment() {
-    Logger.debug('[ConfigManager] Initializing environment configuration...');
-
     // Development flags
     this.DEBUG_MODE = this.parseBooleanSafe('VITE_DEBUG_MODE', false, 'DEBUG_MODE');
     this.LOG_LEVEL = this.parseStringWithValidation('VITE_LOG_LEVEL', 'info', 'LOG_LEVEL', [
@@ -146,32 +115,22 @@ export default class ConfigManager {
       1.0,
       'BASE_SCORE_MULTIPLIER',
       0.1,
-      10.0
+      10.0,
     );
 
     // Performance settings
-    this.MAX_PARTICLES = this.parseIntSafe(
-      'VITE_MAX_PARTICLES',
-      1000,
-      'MAX_PARTICLES',
-      100,
-      10000
-    );
+    this.MAX_PARTICLES = this.parseIntSafe('VITE_MAX_PARTICLES', 1000, 'MAX_PARTICLES', 100, 10000);
     this.OBJECT_POOL_SIZE = this.parseIntSafe(
       'VITE_OBJECT_POOL_SIZE',
       200,
       'OBJECT_POOL_SIZE',
       50,
-      1000
+      1000,
     );
 
     // Development graphics
     this.SHOW_FPS = this.parseBooleanSafe('VITE_SHOW_FPS', false, 'SHOW_FPS');
-    this.SHOW_DEBUG_INFO = this.parseBooleanSafe(
-      'VITE_SHOW_DEBUG_INFO',
-      false,
-      'SHOW_DEBUG_INFO'
-    );
+    this.SHOW_DEBUG_INFO = this.parseBooleanSafe('VITE_SHOW_DEBUG_INFO', false, 'SHOW_DEBUG_INFO');
 
     // Derived settings
     this.IS_DEVELOPMENT = import.meta.env.DEV;
@@ -181,16 +140,10 @@ export default class ConfigManager {
     this.checkProductionSafety();
   }
 
-  /**
-   * Initialize game constants and configuration
-   * @private
-   */
   static _initializeGameConfig() {
-    Logger.debug('[ConfigManager] Initializing game configuration...');
-
     // Game constants
     this.GAME_WIDTH = 800;
-    this.GAME_HEIGHT = 600;
+    this.GAME_HEIGHT = 800;
 
     // Colors (development phase)
     this.COLORS = {
@@ -213,17 +166,16 @@ export default class ConfigManager {
       PLAYER_PROJECTILE: 'playerProjectile',
       ENEMY_PROJECTILE: 'enemyProjectile',
       POWERUP: 'powerup',
-      OBSTACLE: 'obstacle',
     };
 
     // Collision categories (bitmasks for Phaser physics)
     this.COLLISION_CATEGORIES = {
-      PLAYER: 0x0001,        // 1
-      ENEMY: 0x0002,         // 2
+      PLAYER: 0x0001, // 1
+      ENEMY: 0x0002, // 2
       PLAYER_PROJECTILE: 0x0004, // 4
-      ENEMY_PROJECTILE: 0x0008,  // 8
-      POWERUP: 0x0010,       // 16
-      OBSTACLE: 0x0020,      // 32
+      ENEMY_PROJECTILE: 0x0008, // 8
+      POWERUP: 0x0010, // 16
+      OBSTACLE: 0x0020, // 32
     };
 
     // Collision matrix - defines what collides with what
@@ -232,39 +184,23 @@ export default class ConfigManager {
         this.COLLISION_CATEGORIES.ENEMY,
         this.COLLISION_CATEGORIES.ENEMY_PROJECTILE,
         this.COLLISION_CATEGORIES.POWERUP,
-        this.COLLISION_CATEGORIES.OBSTACLE
       ],
       [this.COLLISION_GROUPS.ENEMY]: [
         this.COLLISION_CATEGORIES.PLAYER,
         this.COLLISION_CATEGORIES.PLAYER_PROJECTILE,
-        this.COLLISION_CATEGORIES.OBSTACLE
       ],
-      [this.COLLISION_GROUPS.PLAYER_PROJECTILE]: [
-        this.COLLISION_CATEGORIES.ENEMY,
-        this.COLLISION_CATEGORIES.OBSTACLE
-      ],
-      [this.COLLISION_GROUPS.ENEMY_PROJECTILE]: [
-        this.COLLISION_CATEGORIES.PLAYER,
-        this.COLLISION_CATEGORIES.OBSTACLE
-      ],
-      [this.COLLISION_GROUPS.POWERUP]: [
-        this.COLLISION_CATEGORIES.PLAYER
-      ],
-      [this.COLLISION_GROUPS.OBSTACLE]: [
-        this.COLLISION_CATEGORIES.PLAYER,
-        this.COLLISION_CATEGORIES.ENEMY,
-        this.COLLISION_CATEGORIES.PLAYER_PROJECTILE,
-        this.COLLISION_CATEGORIES.ENEMY_PROJECTILE
-      ]
+      [this.COLLISION_GROUPS.PLAYER_PROJECTILE]: [this.COLLISION_CATEGORIES.ENEMY],
+      [this.COLLISION_GROUPS.ENEMY_PROJECTILE]: [this.COLLISION_CATEGORIES.PLAYER],
+      [this.COLLISION_GROUPS.POWERUP]: [this.COLLISION_CATEGORIES.PLAYER],
     };
 
     // Collision cooldown settings (in milliseconds)
     this.COLLISION_COOLDOWNS = {
-      PLAYER_ENEMY: 1000,        // 1 second invulnerability after enemy contact
-      PLAYER_PROJECTILE: 500,    // 0.5 second invulnerability after projectile hit
-      ENEMY_PROJECTILE: 100,     // 0.1 second for enemy projectile hits (brief)
-      PLAYER_OBSTACLE: 500,      // 0.5 second after obstacle collision
-      ENEMY_OBSTACLE: 200,       // 0.2 second for enemies hitting obstacles
+      PLAYER_ENEMY: 1000, // 1 second invulnerability after enemy contact
+      PLAYER_PROJECTILE: 500, // 0.5 second invulnerability after projectile hit
+      ENEMY_PROJECTILE: 100, // 0.1 second for enemy projectile hits (brief)
+      PLAYER_OBSTACLE: 500, // 0.5 second after obstacle collision
+      ENEMY_OBSTACLE: 200, // 0.2 second for enemies hitting obstacles
     };
 
     // Collision effect settings
@@ -272,30 +208,19 @@ export default class ConfigManager {
       SCREEN_SHAKE: {
         PLAYER_HIT: { duration: 300, intensity: 8 },
         ENEMY_DESTROYED: { duration: 150, intensity: 4 },
-        OBSTACLE_HIT: { duration: 100, intensity: 3 }
       },
       FLASH_EFFECT: {
-        PLAYER_HIT: { color: 0xff0000, duration: 200 },  // Red flash
-        ENEMY_HIT: { color: 0xffffff, duration: 100 },   // White flash
-        POWERUP_COLLECTED: { color: 0x00ff00, duration: 150 } // Green flash
+        PLAYER_HIT: { color: 0xff0000, duration: 200 }, // Red flash
+        ENEMY_HIT: { color: 0xffffff, duration: 100 }, // White flash
+        POWERUP_COLLECTED: { color: 0x00ff00, duration: 150 }, // Green flash
       },
       PARTICLES: {
         EXPLOSION_SMALL: { count: 15, speed: 100, life: 500 },
         EXPLOSION_LARGE: { count: 30, speed: 150, life: 800 },
-        SPARK_EFFECT: { count: 8, speed: 80, life: 300 }
-      }
+        SPARK_EFFECT: { count: 8, speed: 80, life: 300 },
+      },
     };
 
-    // Legacy physics groups (for backward compatibility during migration)
-    this.PHYSICS_GROUPS = {
-      PLAYER: 'player',
-      ENEMIES: 'enemies',
-      PLAYER_PROJECTILES: 'playerProjectiles',
-      ENEMY_PROJECTILES: 'enemyProjectiles',
-      POWERUPS: 'powerups',
-    };
-
-    // Z-depths for layering
     this.DEPTHS = {
       BACKGROUND: -100,
       POWERUPS: 10,
@@ -340,13 +265,6 @@ export default class ConfigManager {
       showDebugInfo: this.SHOW_DEBUG_INFO,
       isDevelopment: this.IS_DEVELOPMENT,
       isProduction: this.IS_PRODUCTION,
-
-      // Metadata
-      _metadata: {
-        initialized: this.isInitialized,
-        validationErrors: this.validationErrors.length,
-        timestamp: new Date().toISOString(),
-      },
     };
   }
 
@@ -379,19 +297,17 @@ export default class ConfigManager {
 
     return {
       type: Phaser.AUTO,
-      width: 600,
-      height: 800,
+      width: this.GAME_WIDTH,
+      height: this.GAME_HEIGHT,
       parent: 'game-container',
-      backgroundColor: '#000011', // Dark space background
+      backgroundColor: this.COLORS.BACKGROUND,
 
-      // Scene configuration - will be provided by main.js
       scene: scenes || this.registeredScenes,
 
-      // Physics configuration
       physics: {
         default: 'arcade',
         arcade: {
-          gravity: { y: 0 }, // No gravity for space shooter
+          gravity: { y: 0 },
           debug: this.PHYSICS_DEBUG,
           debugShowBody: this.PHYSICS_DEBUG,
           debugShowStaticBody: this.PHYSICS_DEBUG,
@@ -402,9 +318,8 @@ export default class ConfigManager {
         },
       },
 
-      // Rendering options
       render: {
-        antialias: false, // Pixel-perfect for retro feel
+        antialias: true, // Pixel-perfect for retro feel
         pixelArt: false, // May enable later for pixel art
         roundPixels: true, // Prevent sub-pixel rendering
         transparent: false,
@@ -414,39 +329,30 @@ export default class ConfigManager {
         powerPreference: 'default',
       },
 
-      // Audio configuration
       audio: {
         disableWebAudio: false,
         context: false,
         noAudio: !this.AUDIO_ENABLED,
       },
 
-      // Input configuration
       input: {
         keyboard: true,
-        mouse: true,
-        touch: true,
-        gamepad: false, // May enable later
+        mouse: false,
+        touch: false,
+        gamepad: false,
       },
 
-      // Scale configuration - TEMPORARILY DISABLED RESCALING
       scale: {
-        mode: Phaser.Scale.NONE, // Disabled rescaling temporarily
-        autoCenter: Phaser.Scale.NO_CENTER, // Disabled auto-centering
-        width: 600,
-        height: 800,
+        mode: Phaser.Scale.FIT,
+        autoCenter: Phaser.Scale.CENTER_BOTH,
+        width: this.GAME_WIDTH,
+        height: this.GAME_HEIGHT,
       },
 
-      // Banner configuration
       banner: {
         hidePhaser: !this.DEBUG_MODE,
-        text: this.DEBUG_MODE ? '#FFFFFF' : 'transparent',
-        background: this.DEBUG_MODE
-          ? ['#FF6600', '#000000', '#FF6600', '#000000']
-          : 'transparent',
       },
 
-      // Development options
       fps: this.SHOW_FPS
         ? {
             target: 60,
@@ -457,26 +363,16 @@ export default class ConfigManager {
           }
         : undefined,
 
-      // Performance options
-      disableContextMenu: true,
-      transparent: false,
-      antialias: false,
-      desynchronized: false,
-
-      // Callbacks
       callbacks: {
         preBoot: game => {
-          // Game pre-boot setup
           if (this.DEBUG_MODE) {
             game.debug = true;
           }
         },
 
         postBoot: game => {
-          // Game post-boot setup
           if (this.SHOW_DEBUG_INFO) {
             game.scene.scenes.forEach(scene => {
-              // Ensure scene is properly initialized before accessing displayList
               if (scene.sys && scene.sys.displayList && scene.sys.displayList.on) {
                 scene.sys.displayList.on('addedtoscene', gameObject => {
                   gameObject.setData('created', Date.now());
@@ -495,12 +391,11 @@ export default class ConfigManager {
    */
   static registerScenes(sceneClasses) {
     if (!Array.isArray(sceneClasses)) {
-      Logger.warn('[ConfigManager] registerScenes: scenes must be an array');
+      Logger.scope('ConfigManager').error('RegisterScenes: scenes must be an array');
       return;
     }
 
     this.registeredScenes = [...sceneClasses];
-    Logger.debug(`[ConfigManager] Registered ${sceneClasses.length} scenes`);
   }
 
   /**
@@ -548,31 +443,6 @@ export default class ConfigManager {
     };
   }
 
-  /**
-   * Export configuration for debugging or support purposes
-   * @returns {Object} Complete configuration export with schema and validation
-   */
-  static exportConfig() {
-    this._ensureInitialized();
-
-    const exportData = {
-      version: '2.0.0',
-      timestamp: new Date().toISOString(),
-      environment: this.IS_DEVELOPMENT ? 'development' : 'production',
-      configuration: this.getConfig(),
-      constants: this.getConstants(),
-      schema: this.getSchema(),
-      validation: this.getValidationStatus(),
-    };
-
-    // Only include Phaser config if not in test environment
-    if (typeof process === 'undefined' || process.env.NODE_ENV !== 'test') {
-      exportData.phaserConfig = this.getPhaserConfig();
-    }
-
-    return exportData;
-  }
-
   // ============================================================================
   // PARSING METHODS
   // ============================================================================
@@ -590,34 +460,23 @@ export default class ConfigManager {
     const rawValue = import.meta.env[envKey];
 
     if (rawValue === undefined || rawValue === '') {
-      Logger.debug(`[ConfigManager] ${name}: Using default value ${defaultValue}`);
       return defaultValue;
     }
 
     const parsed = parseInt(rawValue, 10);
 
     if (isNaN(parsed)) {
-      Logger.warn(
-        `[ConfigManager] ${name}: Invalid value '${rawValue}', using default ${defaultValue}`
-      );
       return defaultValue;
     }
 
     if (min !== null && parsed < min) {
-      Logger.warn(
-        `[ConfigManager] ${name}: Value ${parsed} below minimum ${min}, using default ${defaultValue}`
-      );
       return defaultValue;
     }
 
     if (max !== null && parsed > max) {
-      Logger.warn(
-        `[ConfigManager] ${name}: Value ${parsed} above maximum ${max}, using default ${defaultValue}`
-      );
       return defaultValue;
     }
 
-    Logger.debug(`[ConfigManager] ${name}: Set to ${parsed}`);
     return parsed;
   }
 
@@ -634,34 +493,23 @@ export default class ConfigManager {
     const rawValue = import.meta.env[envKey];
 
     if (rawValue === undefined || rawValue === '') {
-      Logger.debug(`[ConfigManager] ${name}: Using default value ${defaultValue}`);
       return defaultValue;
     }
 
     const parsed = parseFloat(rawValue);
 
     if (isNaN(parsed)) {
-      Logger.warn(
-        `[ConfigManager] ${name}: Invalid value '${rawValue}', using default ${defaultValue}`
-      );
       return defaultValue;
     }
 
     if (min !== null && parsed < min) {
-      Logger.warn(
-        `[ConfigManager] ${name}: Value ${parsed} below minimum ${min}, using default ${defaultValue}`
-      );
       return defaultValue;
     }
 
     if (max !== null && parsed > max) {
-      Logger.warn(
-        `[ConfigManager] ${name}: Value ${parsed} above maximum ${max}, using default ${defaultValue}`
-      );
       return defaultValue;
     }
 
-    Logger.debug(`[ConfigManager] ${name}: Set to ${parsed}`);
     return parsed;
   }
 
@@ -676,7 +524,6 @@ export default class ConfigManager {
     const rawValue = import.meta.env[envKey];
 
     if (rawValue === undefined || rawValue === '') {
-      Logger.debug(`[ConfigManager] ${name}: Using default value ${defaultValue}`);
       return defaultValue;
     }
 
@@ -684,18 +531,13 @@ export default class ConfigManager {
     const normalizedValue = rawValue.toString().toLowerCase().trim();
 
     if (['true', '1', 'yes', 'on'].includes(normalizedValue)) {
-      Logger.debug(`[ConfigManager] ${name}: Set to true`);
       return true;
     }
 
     if (['false', '0', 'no', 'off'].includes(normalizedValue)) {
-      Logger.debug(`[ConfigManager] ${name}: Set to false`);
       return false;
     }
 
-    Logger.warn(
-      `[ConfigManager] ${name}: Invalid boolean value '${rawValue}', using default ${defaultValue}`
-    );
     return defaultValue;
   }
 
@@ -710,18 +552,15 @@ export default class ConfigManager {
     const rawValue = import.meta.env[envKey];
 
     if (rawValue === undefined || rawValue === '') {
-      Logger.debug(`[ConfigManager] ${name}: Using default value '${defaultValue}'`);
       return defaultValue;
     }
 
     const trimmedValue = rawValue.toString().trim();
 
     if (trimmedValue === '') {
-      Logger.warn(`[ConfigManager] ${name}: Empty value provided, using default '${defaultValue}'`);
       return defaultValue;
     }
 
-    Logger.debug(`[ConfigManager] ${name}: Set to '${trimmedValue}'`);
     return trimmedValue;
   }
 
@@ -737,25 +576,19 @@ export default class ConfigManager {
     const rawValue = import.meta.env[envKey];
 
     if (rawValue === undefined || rawValue === '') {
-      Logger.debug(`[ConfigManager] ${name}: Using default value '${defaultValue}'`);
       return defaultValue;
     }
 
     const trimmedValue = rawValue.toString().trim();
 
     if (trimmedValue === '') {
-      Logger.warn(`[ConfigManager] ${name}: Empty value provided, using default '${defaultValue}'`);
       return defaultValue;
     }
 
     if (!allowedValues.includes(trimmedValue)) {
-      Logger.warn(
-        `[ConfigManager] ${name}: Invalid value '${trimmedValue}', must be one of: ${allowedValues.join(', ')}. Using default '${defaultValue}'`
-      );
       return defaultValue;
     }
 
-    Logger.debug(`[ConfigManager] ${name}: Set to '${trimmedValue}'`);
     return trimmedValue;
   }
 
@@ -769,24 +602,24 @@ export default class ConfigManager {
   static checkProductionSafety() {
     if (this.IS_PRODUCTION) {
       if (this.DEBUG_MODE) {
-        Logger.warn(
-          '[ConfigManager] WARNING: DEBUG_MODE is enabled in production - this may impact performance and security'
+        Logger.scope('ConfigManager').warn(
+          'WARNING: DEBUG_MODE is enabled in production - this may impact performance and security',
         );
       }
 
       if (this.PHYSICS_DEBUG) {
-        Logger.warn(
-          '[ConfigManager] WARNING: PHYSICS_DEBUG is enabled in production - this will impact performance'
+        Logger.scope('ConfigManager').warn(
+          'WARNING: PHYSICS_DEBUG is enabled in production - this will impact performance',
         );
       }
 
       if (this.SHOW_FPS || this.SHOW_DEBUG_INFO) {
-        Logger.warn('[ConfigManager] WARNING: Debug UI elements are enabled in production');
+        Logger.scope('ConfigManager').warn('WARNING: Debug UI elements are enabled in production');
       }
 
       if (this.LOG_LEVEL === 'debug') {
-        Logger.warn(
-          '[ConfigManager] WARNING: LOG_LEVEL is set to debug in production - this may impact performance'
+        Logger.scope('ConfigManager').warn(
+          'WARNING: LOG_LEVEL is set to debug in production - this may impact performance',
         );
       }
     }
@@ -796,7 +629,7 @@ export default class ConfigManager {
    * Load failsafe defaults when initialization fails
    */
   static loadFailsafeDefaults() {
-    Logger.warn('[ConfigManager] Loading failsafe defaults due to initialization failure');
+    Logger.scope('ConfigManager').warn('Loading failsafe defaults due to initialization failure');
 
     // Reset initialization state to allow values to be overridden
     this.isInitialized = false;
@@ -817,7 +650,7 @@ export default class ConfigManager {
 
     // Initialize game constants with safe defaults
     this._initializeGameConfig();
-    
+
     // Mark as initialized again
     this.isInitialized = true;
   }
@@ -843,14 +676,13 @@ export default class ConfigManager {
 
     // Additional cross-parameter validations
     if (this.MAX_PARTICLES < this.OBJECT_POOL_SIZE) {
-      const error =
-        'MAX_PARTICLES should be greater than or equal to OBJECT_POOL_SIZE for optimal performance';
-      Logger.warn(`[ConfigManager] ${error}`);
-      // This is a warning, not a validation failure
+      Logger.scope('ConfigManager').warn(
+        'MAX_PARTICLES should be greater than or equal to OBJECT_POOL_SIZE for optimal performance',
+      );
     }
 
     if (this.validationErrors.length > 0) {
-      Logger.error('[ConfigManager] Validation errors found:', this.validationErrors);
+      Logger.scope('ConfigManager').error('Validation errors found:', this.validationErrors);
     }
 
     return isValid;
@@ -898,7 +730,6 @@ export default class ConfigManager {
 
     return { valid: true };
   }
-
 
   /**
    * Auto-initialize if not already initialized
