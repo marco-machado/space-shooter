@@ -11,14 +11,31 @@ import { EventTypes, EventPriority } from '@/event-bus/EventTypes.js';
 import { resetMockEventBus } from '../__mocks__/EventBus.js';
 
 // Mock dependencies
-vi.mock('@/utils/Logger.js', () => ({
-  default: {
+vi.mock('@/utils/Logger.js', () => {
+  const mockLogger = {
+    scope: vi.fn(() => ({
+      debug: vi.fn(),
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+      time: vi.fn(),
+      timeEnd: vi.fn(),
+      group: vi.fn(),
+      groupEnd: vi.fn(),
+      table: vi.fn(),
+    })),
     debug: vi.fn(),
     info: vi.fn(),
     warn: vi.fn(),
     error: vi.fn(),
-  },
-}));
+    time: vi.fn(),
+    timeEnd: vi.fn(),
+    group: vi.fn(),
+    groupEnd: vi.fn(),
+    table: vi.fn(),
+  };
+  return { default: mockLogger };
+});
 
 vi.mock('@/event-bus/EventBus.js', async () => {
   const actual = await vi.importActual('../__mocks__/EventBus.js');

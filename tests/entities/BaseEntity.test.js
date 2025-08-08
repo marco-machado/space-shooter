@@ -3,14 +3,37 @@ import BaseEntity from '../../src/entities/BaseEntity.js';
 import Logger from '../../src/utils/Logger.js';
 
 // Mock Logger completely to avoid Environment dependencies
-vi.mock('../../src/utils/Logger.js', () => ({
-  default: {
+vi.mock('../../src/utils/Logger.js', () => {
+  const scopeCache = new Map();
+  const mockLogger = {
+    scope: vi.fn((scopeName) => {
+      if (!scopeCache.has(scopeName)) {
+        scopeCache.set(scopeName, {
+          debug: vi.fn(),
+          info: vi.fn(),
+          warn: vi.fn(),
+          error: vi.fn(),
+          time: vi.fn(),
+          timeEnd: vi.fn(),
+          group: vi.fn(),
+          groupEnd: vi.fn(),
+          table: vi.fn(),
+        });
+      }
+      return scopeCache.get(scopeName);
+    }),
     debug: vi.fn(),
     info: vi.fn(),
     warn: vi.fn(),
     error: vi.fn(),
-  },
-}));
+    time: vi.fn(),
+    timeEnd: vi.fn(),
+    group: vi.fn(),
+    groupEnd: vi.fn(),
+    table: vi.fn(),
+  };
+  return { default: mockLogger };
+});
 
 describe('BaseEntity', () => {
   let mockScene;
@@ -1314,7 +1337,7 @@ describe('BaseEntity', () => {
     it('should log entity creation', () => {
       new BaseEntity(mockScene, { type: 'rectangle', name: 'testEntity' });
 
-      expect(Logger.debug).toHaveBeenCalledWith(
+      expect(Logger.scope('BaseEntity').debug).toHaveBeenCalledWith(
         expect.stringContaining('[BaseEntity] Entity created:'),
         expect.objectContaining({
           type: 'rectangle',
@@ -1331,13 +1354,13 @@ describe('BaseEntity', () => {
 
       entity.addComponent(component);
 
-      expect(Logger.debug).toHaveBeenCalledWith(
+      expect(Logger.scope('BaseEntity').debug).toHaveBeenCalledWith(
         expect.stringContaining('[BaseEntity] Component added: TestComponent')
       );
 
       entity.removeComponent(component.constructor);
 
-      expect(Logger.debug).toHaveBeenCalledWith(
+      expect(Logger.scope('BaseEntity').debug).toHaveBeenCalledWith(
         expect.stringContaining('[BaseEntity] Component removed: TestComponent')
       );
     });
@@ -1348,17 +1371,17 @@ describe('BaseEntity', () => {
       vi.clearAllMocks(); // Clear creation logs again
 
       entity.setPosition(100, 200);
-      expect(Logger.debug).toHaveBeenCalledWith(
+      expect(Logger.scope('BaseEntity').debug).toHaveBeenCalledWith(
         expect.stringContaining('moved to (100, 200)')
       );
 
       entity.setSize(50, 60);
-      expect(Logger.debug).toHaveBeenCalledWith(
+      expect(Logger.scope('BaseEntity').debug).toHaveBeenCalledWith(
         expect.stringContaining('resized to 50x60')
       );
 
       entity.destroy();
-      expect(Logger.debug).toHaveBeenCalledWith(
+      expect(Logger.scope('BaseEntity').debug).toHaveBeenCalledWith(
         expect.stringContaining('[BaseEntity] Entity destroyed:')
       );
     });

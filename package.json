@@ -20,10 +20,12 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
+    "canvas": "^3.1.2",
     "eslint": "^9.32.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.3",
     "jsdom": "^26.1.0",
+    "phaser3spectorjs": "^0.0.8",
     "prettier": "^3.6.2",
     "terser": "^5.43.1",
     "vite": "^7.0.4",

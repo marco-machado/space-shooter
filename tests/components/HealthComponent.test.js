@@ -3,14 +3,37 @@ import HealthComponent from '../../src/components/HealthComponent.js';
 import BaseComponent from '../../src/components/BaseComponent.js';
 
 // Mock Logger to avoid Environment dependencies
-vi.mock('../../src/utils/Logger.js', () => ({
-  default: {
+vi.mock('../../src/utils/Logger.js', () => {
+  const scopeCache = new Map();
+  const mockLogger = {
+    scope: vi.fn((scopeName) => {
+      if (!scopeCache.has(scopeName)) {
+        scopeCache.set(scopeName, {
+          debug: vi.fn(),
+          info: vi.fn(),
+          warn: vi.fn(),
+          error: vi.fn(),
+          time: vi.fn(),
+          timeEnd: vi.fn(),
+          group: vi.fn(),
+          groupEnd: vi.fn(),
+          table: vi.fn(),
+        });
+      }
+      return scopeCache.get(scopeName);
+    }),
     debug: vi.fn(),
     info: vi.fn(),
     warn: vi.fn(),
     error: vi.fn(),
-  },
-}));
+    time: vi.fn(),
+    timeEnd: vi.fn(),
+    group: vi.fn(),
+    groupEnd: vi.fn(),
+    table: vi.fn(),
+  };
+  return { default: mockLogger };
+});
 
 import Logger from '../../src/utils/Logger.js';
 
@@ -80,7 +103,7 @@ describe('HealthComponent', () => {
     });
 
     it('should log component creation', () => {
-      expect(Logger.debug).toHaveBeenCalledWith(
+      expect(Logger.scope('HealthComponent').debug).toHaveBeenCalledWith(
         '[HealthComponent] Created: 100 max health'
       );
     });
@@ -314,7 +337,7 @@ describe('HealthComponent', () => {
     it('should log damage calculation', () => {
       healthComponent.takeDamage(30);
       
-      expect(Logger.debug).toHaveBeenCalledWith(
+      expect(Logger.scope('HealthComponent').debug).toHaveBeenCalledWith(
         '[HealthComponent] damage: 30 -> 30 (100 -> 70)'
       );
     });
@@ -325,7 +348,7 @@ describe('HealthComponent', () => {
       healthComponent.takeDamage(25);
       
       // (25 - 5) * (1 - 0.2) = 16
-      expect(Logger.debug).toHaveBeenCalledWith(
+      expect(Logger.scope('HealthComponent').debug).toHaveBeenCalledWith(
         '[HealthComponent] damage: 25 -> 16 (100 -> 84)'
       );
     });
@@ -406,7 +429,7 @@ describe('HealthComponent', () => {
     it('should log healing calculation', () => {
       healthComponent.heal(25);
       
-      expect(Logger.debug).toHaveBeenCalledWith(
+      expect(Logger.scope('HealthComponent').debug).toHaveBeenCalledWith(
         '[HealthComponent] heal: 25 -> 25 (50 -> 75)'
       );
     });
@@ -414,7 +437,7 @@ describe('HealthComponent', () => {
     it('should log healing with clamping', () => {
       healthComponent.heal(70);
       
-      expect(Logger.debug).toHaveBeenCalledWith(
+      expect(Logger.scope('HealthComponent').debug).toHaveBeenCalledWith(
         '[HealthComponent] heal: 70 -> 50 (50 -> 100)'
       );
     });
@@ -461,7 +484,7 @@ describe('HealthComponent', () => {
     it('should log invulnerability setting', () => {
       healthComponent.setInvulnerable(2000);
       
-      expect(Logger.debug).toHaveBeenCalledWith(
+      expect(Logger.scope('HealthComponent').debug).toHaveBeenCalledWith(
         '[HealthComponent] invulnerability: 2000ms'
       );
     });
@@ -1054,7 +1077,7 @@ describe('HealthComponent', () => {
     it('should log creation with max health', () => {
       const customComponent = new HealthComponent(150);
       
-      expect(Logger.debug).toHaveBeenCalledWith(
+      expect(Logger.scope('HealthComponent').debug).toHaveBeenCalledWith(
         '[HealthComponent] Created: 150 max health'
       );
     });
@@ -1066,13 +1089,13 @@ describe('HealthComponent', () => {
       vi.clearAllMocks();
       
       healthComponent.takeDamage(25);
-      expect(Logger.debug).toHaveBeenCalledWith(
+      expect(Logger.scope('HealthComponent').debug).toHaveBeenCalledWith(
         '[HealthComponent] damage: 25 -> 25 (100 -> 75)'
       );
       
       healthComponent.armor = 5;
       healthComponent.takeDamage(20);
-      expect(Logger.debug).toHaveBeenCalledWith(
+      expect(Logger.scope('HealthComponent').debug).toHaveBeenCalledWith(
         '[HealthComponent] damage: 20 -> 15 (75 -> 60)'
       );
     });
@@ -1084,7 +1107,7 @@ describe('HealthComponent', () => {
       vi.clearAllMocks();
       
       healthComponent.heal(30);
-      expect(Logger.debug).toHaveBeenCalledWith(
+      expect(Logger.scope('HealthComponent').debug).toHaveBeenCalledWith(
         '[HealthComponent] heal: 30 -> 30 (40 -> 70)'
       );
     });
@@ -1093,7 +1116,7 @@ describe('HealthComponent', () => {
       vi.clearAllMocks();
       
       healthComponent.setInvulnerable(1500);
-      expect(Logger.debug).toHaveBeenCalledWith(
+      expect(Logger.scope('HealthComponent').debug).toHaveBeenCalledWith(
         '[HealthComponent] invulnerability: 1500ms'
       );
     });

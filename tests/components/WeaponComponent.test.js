@@ -2,14 +2,37 @@ import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import WeaponComponent from '../../src/components/WeaponComponent.js';
 
 // Mock Logger to avoid console output during tests
-vi.mock('../../src/utils/Logger.js', () => ({
-  default: {
+vi.mock('../../src/utils/Logger.js', () => {
+  const scopeCache = new Map();
+  const mockLogger = {
+    scope: vi.fn((scopeName) => {
+      if (!scopeCache.has(scopeName)) {
+        scopeCache.set(scopeName, {
+          debug: vi.fn(),
+          info: vi.fn(),
+          warn: vi.fn(),
+          error: vi.fn(),
+          time: vi.fn(),
+          timeEnd: vi.fn(),
+          group: vi.fn(),
+          groupEnd: vi.fn(),
+          table: vi.fn(),
+        });
+      }
+      return scopeCache.get(scopeName);
+    }),
     debug: vi.fn(),
     info: vi.fn(),
     warn: vi.fn(),
     error: vi.fn(),
-  },
-}));
+    time: vi.fn(),
+    timeEnd: vi.fn(),
+    group: vi.fn(),
+    groupEnd: vi.fn(),
+    table: vi.fn(),
+  };
+  return { default: mockLogger };
+});
 
 // Mock BaseComponent
 vi.mock('../../src/components/BaseComponent.js', () => ({
@@ -122,7 +145,7 @@ describe('WeaponComponent', () => {
     });
 
     it('should log weapon creation', () => {
-      expect(Logger.debug).toHaveBeenCalledWith(
+      expect(Logger.scope('WeaponComponent').debug).toHaveBeenCalledWith(
         '[WeaponComponent] created: laser weapon'
       );
     });
@@ -382,7 +405,7 @@ describe('WeaponComponent', () => {
     it('should log firing with ammo information', () => {
       weapon.fire();
       
-      expect(Logger.debug).toHaveBeenCalledWith(
+      expect(Logger.scope('WeaponComponent').debug).toHaveBeenCalledWith(
         '[WeaponComponent] fired: laser (ammo: -1)'
       );
     });
@@ -508,7 +531,7 @@ describe('WeaponComponent', () => {
       const result = weapon.unlockWeapon('laser', 10);
       
       expect(result).toBe(false);
-      expect(Logger.debug).toHaveBeenCalledWith(
+      expect(Logger.scope('WeaponComponent').debug).toHaveBeenCalledWith(
         'WeaponComponent: Weapon already unlocked: laser'
       );
     });
@@ -517,7 +540,7 @@ describe('WeaponComponent', () => {
       const result = weapon.unlockWeapon('plasma', 2); // Requires level 3
       
       expect(result).toBe(false);
-      expect(Logger.debug).toHaveBeenCalledWith(
+      expect(Logger.scope('WeaponComponent').debug).toHaveBeenCalledWith(
         'WeaponComponent: Level 2 insufficient for plasma (requires 3)'
       );
     });
@@ -615,7 +638,7 @@ describe('WeaponComponent', () => {
       weapon.weaponSpecs.missile.currentAmmo = 20;
       weapon.addAmmo('missile', 10);
       
-      expect(Logger.debug).toHaveBeenCalledWith(
+      expect(Logger.scope('WeaponComponent').debug).toHaveBeenCalledWith(
         'WeaponComponent: Added 10 ammo to missile (30/50)'
       );
     });
