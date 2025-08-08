@@ -37,23 +37,11 @@ const logger = Logger.scope('ECS:CreateEnemy');
  * @returns {number} The created entity ID
  */
 export const createEnemy = (world, scene, x, y, enemyType = 'scout') => {
-  console.log('[DEBUG] createEnemy called', { 
-    enemyType, 
-    x, 
-    y, 
-    worldExists: !!world, 
-    sceneExists: !!scene 
-  });
-  
-  logger.debug(`Creating ECS enemy: ${enemyType} at (${x}, ${y})`);
-  
   // Get enemy configuration
   const config = getEnemyConfig(enemyType);
-  console.log('[DEBUG] createEnemy - enemy config', config);
   
   // Create entity
   const eid = addEntity(world);
-  console.log('[DEBUG] createEnemy - entity created', { eid });
   
   // Add all required components for enemies
   addComponent(world, Position, eid);
@@ -107,12 +95,7 @@ export const createEnemy = (world, scene, x, y, enemyType = 'scout') => {
   }
   
   // Create Phaser sprite using DevShapes
-  console.log('[DEBUG] createEnemy - creating sprite', { x, y, devShapeType: config.devShapeType });
   const sprite = DevShapes.createEnemy(scene, x, y, config.devShapeType);
-  console.log('[DEBUG] createEnemy - sprite created', { 
-    sprite: !!sprite, 
-    spritePosition: sprite ? { x: sprite.x, y: sprite.y } : null 
-  });
   
   // Store entity reference on sprite for collision detection bridge
   sprite.entityId = eid;
@@ -121,35 +104,18 @@ export const createEnemy = (world, scene, x, y, enemyType = 'scout') => {
   
   // Add sprite to entity mapping
   addSpriteMapping(world, eid, sprite);
-  console.log('[DEBUG] createEnemy - sprite mapping added');
   
   // Add to scene's enemy group for collision detection  
   if (scene.enemyGroup) {
     scene.enemyGroup.add(sprite);
-    console.log('[DEBUG] createEnemy - sprite added to enemyGroup');
   } else {
-    console.warn('[DEBUG] createEnemy - No enemyGroup found on scene!');
+    logger.warn('createEnemy - No enemyGroup found on scene!');
   }
   
   // Set sprite render depth
   sprite.setDepth(config.layer);
   
-  console.log('[DEBUG] createEnemy - Entity creation complete', {
-    eid,
-    enemyType,
-    position: { x, y },
-    health: config.health,
-    canFire: config.canFire,
-    aiPattern: config.aiPattern,
-    spriteVisible: sprite.visible
-  });
-  
-  logger.debug(`ECS enemy created: ${enemyType} entity ${eid}`, {
-    position: { x, y },
-    health: config.health,
-    canFire: config.canFire,
-    aiPattern: config.aiPattern
-  });
+  logger.debug(`ECS enemy created: ${enemyType} entity ${eid} at (${x}, ${y})`);
   
   return eid;
 };
@@ -205,16 +171,17 @@ export const reactivateEntity = (world, eid, x, y, enemyType = 'scout') => {
   Position.x[eid] = x;
   Position.y[eid] = y;
   
-  // Reset velocity
+  // Reset velocity - TEMP: Give enemies downward velocity for testing
   Velocity.x[eid] = 0;
-  Velocity.y[eid] = 0;
+  Velocity.y[eid] = 0.05; // 0.05 pixels per millisecond = 50 pixels per second downward
+  
   
   // Reset health to full
   Health.current[eid] = config.health;
   Health.max[eid] = config.health;
   
-  // Reset AI
-  AI.pattern[eid] = config.aiPattern;
+  // Reset AI - TEMP: Use a simple downward movement pattern
+  AI.pattern[eid] = 0; // Use IDLE for now, but we'll modify IDLE to move downward
   AI.targetEntity[eid] = 0;
   for (let i = 0; i < 8; i++) {
     AI.patternData[eid][i] = 0;

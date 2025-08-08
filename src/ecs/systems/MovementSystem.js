@@ -36,18 +36,22 @@ export const movementSystem = (world) => {
   const enteredEntities = enteredMovementQuery(world);
   for (let i = 0; i < enteredEntities.length; i++) {
     const eid = enteredEntities[i];
-    logger.debug('Entity entered movement system', { eid });
+    logger.debug(`Entity ${eid} entered movement system`);
   }
   
   // Apply movement logic to all movable entities
   const entities = movementQuery(world);
+  
+  
   for (let i = 0; i < entities.length; i++) {
     const eid = entities[i];
+    
     
     // Update position based on velocity and delta time
     // Velocity is stored in pixels per millisecond
     Position.x[eid] += Velocity.x[eid] * delta;
     Position.y[eid] += Velocity.y[eid] * delta;
+    
     
     // Simple boundary check - deactivate enemies that move too far off-screen
     // This prevents them from staying "active" forever and blocking wave completion
@@ -66,7 +70,7 @@ export const movementSystem = (world) => {
       }
       
       // Log deactivation for debugging
-      console.log('[DEBUG] MovementSystem - Enemy moved off-screen, deactivated', { eid });
+      logger.debug('MovementSystem - Enemy moved off-screen, deactivated', { eid });
     }
   }
   

@@ -278,27 +278,15 @@ export default class EnemySpawnSystem extends BaseSystem {
    * @param {number} delta - Time delta in milliseconds
    */
   handleActiveWave(_delta) {
-    console.log('[DEBUG] handleActiveWave called', {
-      enemiesSpawned: this.enemiesSpawned,
-      enemiesInWave: this.enemiesInWave,
-      enemiesRemaining: this.enemiesRemaining,
-      waveComplete: this.enemiesSpawned >= this.enemiesInWave && this.enemiesRemaining === 0,
-      shouldSpawn: this.enemiesSpawned < this.enemiesInWave
-    });
-
     // Check if wave is complete
     if (this.enemiesSpawned >= this.enemiesInWave && this.enemiesRemaining === 0) {
-      console.log('[DEBUG] handleActiveWave - Wave complete, calling completeWave()');
       this.completeWave();
       return;
     }
 
     // Spawn enemies if needed
     if (this.enemiesSpawned < this.enemiesInWave) {
-      console.log('[DEBUG] handleActiveWave - Need to spawn enemies, calling updateSpawning()');
       this.updateSpawning();
-    } else {
-      console.log('[DEBUG] handleActiveWave - No more enemies to spawn in this wave');
     }
   }
 

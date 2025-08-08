@@ -1,6 +1,5 @@
-import { defineQuery, enterQuery, exitQuery } from 'bitecs';
-import { Position, Velocity, AI, Enemy, Player } from '@/ecs/components/index.js';
-import { aiQuery, enemyAIQuery, playerQuery, enteredAIQuery, exitedAIQuery } from './queries.js';
+import { Position, AI } from '@/ecs/components/index.js';
+import { aiQuery, playerQuery, enteredAIQuery, exitedAIQuery } from './queries.js';
 import { setVelocity } from './MovementSystem.js';
 import Logger from '@/utils/Logger.js';
 
@@ -24,7 +23,7 @@ export const AI_PATTERNS = {
  * @returns {Object} The world instance for pipeline chaining
  */
 export const aiSystem = (world) => {
-  const { time: { delta, elapsed } } = world;
+  const { time: { elapsed } } = world;
   
   // Handle entities that just entered the AI system
   const enteredEntities = enteredAIQuery(world);
@@ -40,9 +39,9 @@ export const aiSystem = (world) => {
       const players = playerQuery(world);
       if (players.length > 0) {
         AI.targetEntity[eid] = players[0];
-        console.log('[DEBUG] AI System - Set player target for enemy', { enemyEid: eid, playerEid: players[0] });
+        logger.debug(`Set player target for enemy ${eid}`);
       } else {
-        console.warn('[DEBUG] AI System - No player found for enemy targeting', { enemyEid: eid });
+        logger.warn(`No player found for enemy targeting ${eid}`);
       }
     }
     
@@ -57,6 +56,7 @@ export const aiSystem = (world) => {
   const aiEntities = aiQuery(world);
   let aiUpdates = 0;
   
+  
   for (let i = 0; i < aiEntities.length; i++) {
     const eid = aiEntities[i];
     
@@ -64,30 +64,31 @@ export const aiSystem = (world) => {
     const pattern = AI.pattern[eid];
     const targetEid = AI.targetEntity[eid];
     
+    
     // Execute AI behavior based on pattern
     switch (pattern) {
       case AI_PATTERNS.IDLE:
-        handleIdleAI(eid, world);
+        handleIdleAI(eid);
         break;
         
       case AI_PATTERNS.CHASE_PLAYER:
-        handleChasePlayerAI(eid, targetEid, world);
+        handleChasePlayerAI(eid, targetEid);
         break;
         
       case AI_PATTERNS.PATROL:
-        handlePatrolAI(eid, world, elapsed);
+        handlePatrolAI(eid, elapsed);
         break;
         
       case AI_PATTERNS.FLEE:
-        handleFleeAI(eid, targetEid, world);
+        handleFleeAI(eid, targetEid);
         break;
         
       case AI_PATTERNS.CIRCLE:
-        handleCircleAI(eid, targetEid, world, elapsed);
+        handleCircleAI(eid, targetEid, elapsed);
         break;
         
       case AI_PATTERNS.ZIGZAG:
-        handleZigzagAI(eid, world, elapsed);
+        handleZigzagAI(eid, elapsed);
         break;
         
       default:
@@ -110,14 +111,6 @@ export const aiSystem = (world) => {
   
   // Log system execution
   if (aiUpdates > 0) {
-    // Debug AI system activity every few seconds
-    if (elapsed % 2000 < delta) {
-      console.log('[DEBUG] AI System active', { 
-        totalAIEntities: aiEntities.length,
-        aiUpdates,
-        elapsed
-      });
-    }
     logger.debug('AI system updated', { 
       totalAIEntities: aiEntities.length,
       aiUpdates
@@ -134,9 +127,9 @@ export const aiSystem = (world) => {
  * @param {Object} world - World instance
  * @returns {void}
  */
-function handleIdleAI(eid, world) {
-  // Simply stop movement
-  setVelocity(eid, 0, 0);
+function handleIdleAI(eid) {
+  // TEMP: Move enemies downward for testing
+  setVelocity(eid, 0, 0.05); // 0.05 pixels per millisecond = 50 pixels per second downward
 }
 
 /**
@@ -147,7 +140,7 @@ function handleIdleAI(eid, world) {
  * @param {Object} world - World instance
  * @returns {void}
  */
-function handleChasePlayerAI(eid, targetEid, world) {
+function handleChasePlayerAI(eid, targetEid) {
   if (!targetEid || Position.x[targetEid] === undefined) {
     // Target doesn't exist or has no position, stop moving
     setVelocity(eid, 0, 0);
@@ -179,14 +172,15 @@ function handleChasePlayerAI(eid, targetEid, world) {
  * @param {number} elapsed - Elapsed time
  * @returns {void}
  */
-function handlePatrolAI(eid, world, elapsed) {
+function handlePatrolAI(eid, elapsed) {
   // Use pattern data to store patrol waypoints and current target
   const patrolSpeed = 0.05;
   const downwardSpeed = 0.03; // Enemies move down into screen
   
   // Simple back-and-forth patrol with downward movement
   const patrolPhase = (elapsed * 0.001) % 4; // 4 second cycle
-  let vx = 0, vy = downwardSpeed; // Always move downward
+  let vx = 0;
+  const vy = downwardSpeed; // Always move downward
   
   if (patrolPhase < 2) {
     vx = patrolSpeed; // Move right
@@ -205,7 +199,7 @@ function handlePatrolAI(eid, world, elapsed) {
  * @param {Object} world - World instance
  * @returns {void}
  */
-function handleFleeAI(eid, targetEid, world) {
+function handleFleeAI(eid, targetEid) {
   if (!targetEid || Position.x[targetEid] === undefined) {
     setVelocity(eid, 0, 0);
     return;
@@ -240,7 +234,7 @@ function handleFleeAI(eid, targetEid, world) {
  * @param {number} elapsed - Elapsed time
  * @returns {void}
  */
-function handleCircleAI(eid, targetEid, world, elapsed) {
+function handleCircleAI(eid, targetEid, elapsed) {
   if (!targetEid || Position.x[targetEid] === undefined) {
     setVelocity(eid, 0, 0);
     return;
@@ -276,7 +270,7 @@ function handleCircleAI(eid, targetEid, world, elapsed) {
  * @param {number} elapsed - Elapsed time
  * @returns {void}
  */
-function handleZigzagAI(eid, world, elapsed) {
+function handleZigzagAI(eid, elapsed) {
   const zigzagSpeed = 0.05;
   const zigzagFreq = 0.003; // Frequency of zigzag
   

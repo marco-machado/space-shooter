@@ -46,11 +46,10 @@ export default class GameScene extends Phaser.Scene {
    * @return {void} Does not return a value.
    */
   create() {
-    console.log('[DEBUG] GameScene.create() called - Game scene starting');
     this.logger.debug('Creating game scene');
 
-    // Initialize bitECS world
-    this.world = initializeWorld();
+    // Initialize bitECS world with scene reference
+    this.world = initializeWorld(this);
 
     // Initialize game state manager (now that event scopeName is ready)
     this.gameStateManager = new GameStateManager(this);
@@ -89,13 +88,6 @@ export default class GameScene extends Phaser.Scene {
     // Start the game
     this.gameStateManager.startGame();
     
-    // DEBUG: Check game state immediately after starting
-    const debugGameState = this.gameStateManager.getGameState();
-    console.log('[DEBUG] GameScene.create - Game state after startGame():', {
-      isPlaying: debugGameState.isPlaying,
-      isPaused: debugGameState.isPaused,
-      gameStateManagerExists: !!this.gameStateManager
-    });
   }
 
   onPauseToggle(data) {
@@ -135,24 +127,7 @@ export default class GameScene extends Phaser.Scene {
 
     const gameState = this.gameStateManager.getGameState();
     
-    // Debug game state periodically (reduced frequency)
-    if (Date.now() % 10000 < delta) {
-      console.log('[DEBUG] GameScene.update - Game State:', {
-        isPlaying: gameState.isPlaying,
-        isPaused: gameState.isPaused,
-        currentWave: gameState.currentWave,
-        score: gameState.score,
-        hasEnemySpawnSystem: !!this.enemySpawnSystem
-      });
-    }
-
     if (!gameState.isPlaying || gameState.isPaused) {
-      if (Date.now() % 2000 < delta) {
-        console.log('[DEBUG] GameScene.update - Early return due to game state', {
-          isPlaying: gameState.isPlaying,
-          isPaused: gameState.isPaused
-        });
-      }
       return;
     }
 
@@ -184,14 +159,7 @@ export default class GameScene extends Phaser.Scene {
 
     // Run BaseEntity systems that manage ECS entities
     if (this.enemySpawnSystem) {
-      console.log('[DEBUG] GameScene.update - Calling enemySpawnSystem.update', {
-        delta,
-        systemExists: !!this.enemySpawnSystem,
-        entitiesArrayLength: this.entities?.length || 0
-      });
       this.enemySpawnSystem.update(this.entities, delta);
-    } else {
-      console.warn('[DEBUG] GameScene.update - No enemySpawnSystem found!');
     }
   }
 
