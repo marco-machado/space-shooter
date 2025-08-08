@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import ConfigManager from '@/config/ConfigManager.js';
 import Player from '@/entities/Player.js';
 import { getEventBus } from '@/event-bus/EventBus.js';
@@ -78,7 +79,7 @@ export default class GameScene extends Phaser.Scene {
     this.pauseKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
     this.debugSpawnKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E); // DEBUG: E to force spawn enemy
 
-    this.playerFireCooldown = 200;
+    this.playerFireCooldown = config.playerFireCooldown ?? 200;
     this.lastPlayerShotTime = 0;
 
     this.startBackgroundMusic();

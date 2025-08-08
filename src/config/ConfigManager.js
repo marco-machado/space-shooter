@@ -1,3 +1,4 @@
+/* global process */
 import Logger from '@/utils/Logger.js';
 import Phaser from 'phaser';
 
@@ -37,6 +38,14 @@ export default class ConfigManager {
       max: 10.0,
       default: 1.0,
       description: 'Base score multiplier for gameplay',
+    },
+
+    PLAYER_FIRE_COOLDOWN: {
+      type: 'number',
+      min: 50,
+      max: 5000,
+      default: 200,
+      description: 'Player fire cooldown in ms',
     },
 
     // Performance settings
@@ -90,7 +99,7 @@ export default class ConfigManager {
       } else {
         throw new Error(`Configuration validation failed: ${this.validationErrors.join(', ')}`);
       }
-    } catch (error) {
+    } catch {
       this.loadFailsafeDefaults();
       this.isInitialized = true;
     }
@@ -116,6 +125,13 @@ export default class ConfigManager {
       'BASE_SCORE_MULTIPLIER',
       0.1,
       10.0,
+    );
+    this.PLAYER_FIRE_COOLDOWN = this.parseIntSafe(
+      'VITE_PLAYER_FIRE_COOLDOWN',
+      200,
+      'PLAYER_FIRE_COOLDOWN',
+      50,
+      5000,
     );
 
     // Performance settings
@@ -259,6 +275,7 @@ export default class ConfigManager {
       audioEnabled: this.AUDIO_ENABLED,
       startingLives: this.STARTING_LIVES,
       baseScoreMultiplier: this.BASE_SCORE_MULTIPLIER,
+      playerFireCooldown: this.PLAYER_FIRE_COOLDOWN,
       maxParticles: this.MAX_PARTICLES,
       objectPoolSize: this.OBJECT_POOL_SIZE,
       showFps: this.SHOW_FPS,
@@ -520,7 +537,7 @@ export default class ConfigManager {
    * @param {string} name - Configuration parameter name for logging
    * @returns {boolean} Parsed boolean value
    */
-  static parseBooleanSafe(envKey, defaultValue, name) {
+  static parseBooleanSafe(envKey, defaultValue, _name) {
     const rawValue = import.meta.env[envKey];
 
     if (rawValue === undefined || rawValue === '') {
@@ -548,7 +565,7 @@ export default class ConfigManager {
    * @param {string} name - Configuration parameter name for logging
    * @returns {string} Parsed string value
    */
-  static parseStringSafe(envKey, defaultValue, name) {
+  static parseStringSafe(envKey, defaultValue, _name) {
     const rawValue = import.meta.env[envKey];
 
     if (rawValue === undefined || rawValue === '') {
@@ -572,7 +589,7 @@ export default class ConfigManager {
    * @param {Array<string>} allowedValues - Array of allowed values
    * @returns {string} Parsed and validated string value
    */
-  static parseStringWithValidation(envKey, defaultValue, name, allowedValues) {
+  static parseStringWithValidation(envKey, defaultValue, _name, allowedValues) {
     const rawValue = import.meta.env[envKey];
 
     if (rawValue === undefined || rawValue === '') {
