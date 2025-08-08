@@ -2,14 +2,37 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import BaseComponent from '../../src/components/BaseComponent.js';
 
 // Mock Logger to avoid Environment dependencies
-vi.mock('../../src/utils/Logger.js', () => ({
-  default: {
+vi.mock('../../src/utils/Logger.js', () => {
+  const scopeCache = new Map();
+  const mockLogger = {
+    scope: vi.fn((scopeName) => {
+      if (!scopeCache.has(scopeName)) {
+        scopeCache.set(scopeName, {
+          debug: vi.fn(),
+          info: vi.fn(),
+          warn: vi.fn(),
+          error: vi.fn(),
+          time: vi.fn(),
+          timeEnd: vi.fn(),
+          group: vi.fn(),
+          groupEnd: vi.fn(),
+          table: vi.fn(),
+        });
+      }
+      return scopeCache.get(scopeName);
+    }),
     debug: vi.fn(),
     info: vi.fn(),
     warn: vi.fn(),
     error: vi.fn(),
-  },
-}));
+    time: vi.fn(),
+    timeEnd: vi.fn(),
+    group: vi.fn(),
+    groupEnd: vi.fn(),
+    table: vi.fn(),
+  };
+  return { default: mockLogger };
+});
 
 import Logger from '../../src/utils/Logger.js';
 
@@ -40,7 +63,7 @@ describe('BaseComponent', () => {
     });
 
     it('should log component creation', () => {
-      expect(Logger.debug).toHaveBeenCalledWith(
+      expect(Logger.scope('BaseComponent').debug).toHaveBeenCalledWith(
         `[BaseComponent] Component created: BaseComponent (${component.componentId})`
       );
     });
@@ -90,7 +113,7 @@ describe('BaseComponent', () => {
       
       component.init(initData);
       
-      expect(Logger.debug).toHaveBeenCalledWith(
+      expect(Logger.scope('BaseComponent').debug).toHaveBeenCalledWith(
         `[BaseComponent] Component initialized: BaseComponent`,
         initData
       );
@@ -99,7 +122,7 @@ describe('BaseComponent', () => {
     it('should handle empty initialization data', () => {
       component.init();
       
-      expect(Logger.debug).toHaveBeenCalledWith(
+      expect(Logger.scope('BaseComponent').debug).toHaveBeenCalledWith(
         `[BaseComponent] Component initialized: BaseComponent`,
         {}
       );
@@ -111,7 +134,7 @@ describe('BaseComponent', () => {
       
       component.init(null);
       
-      expect(Logger.debug).toHaveBeenCalledWith(
+      expect(Logger.scope('BaseComponent').debug).toHaveBeenCalledWith(
         `[BaseComponent] Component initialized: BaseComponent`,
         null
       );
@@ -119,7 +142,7 @@ describe('BaseComponent', () => {
       // When undefined is passed, the default parameter makes it {}
       component.init(undefined);
       
-      expect(Logger.debug).toHaveBeenCalledWith(
+      expect(Logger.scope('BaseComponent').debug).toHaveBeenCalledWith(
         `[BaseComponent] Component initialized: BaseComponent`,
         {}
       );
@@ -136,7 +159,7 @@ describe('BaseComponent', () => {
       
       component.init(complexData);
       
-      expect(Logger.debug).toHaveBeenCalledWith(
+      expect(Logger.scope('BaseComponent').debug).toHaveBeenCalledWith(
         `[BaseComponent] Component initialized: BaseComponent`,
         complexData
       );
@@ -229,7 +252,7 @@ describe('BaseComponent', () => {
 
       expect(component.componentId).toBe(testId);
       expect(component.active).toBe(false);
-      expect(Logger.debug).toHaveBeenCalledWith(
+      expect(Logger.scope('BaseComponent').debug).toHaveBeenCalledWith(
         `[BaseComponent] Component deserialized: BaseComponent`,
         data
       );
@@ -340,7 +363,7 @@ describe('BaseComponent', () => {
 
       expect(component.entity).toBe(null);
       expect(component.active).toBe(false);
-      expect(Logger.debug).toHaveBeenCalledWith(
+      expect(Logger.scope('BaseComponent').debug).toHaveBeenCalledWith(
         `[BaseComponent] Component destroyed: BaseComponent (${component.componentId})`
       );
     });
@@ -668,7 +691,7 @@ describe('BaseComponent', () => {
     it('should log creation with correct parameters', () => {
       const newComponent = new BaseComponent();
       
-      expect(Logger.debug).toHaveBeenCalledWith(
+      expect(Logger.scope('BaseComponent').debug).toHaveBeenCalledWith(
         `[BaseComponent] Component created: BaseComponent (${newComponent.componentId})`
       );
     });
@@ -677,7 +700,7 @@ describe('BaseComponent', () => {
       const initData = { test: 'data' };
       component.init(initData);
       
-      expect(Logger.debug).toHaveBeenCalledWith(
+      expect(Logger.scope('BaseComponent').debug).toHaveBeenCalledWith(
         `[BaseComponent] Component initialized: BaseComponent`,
         initData
       );
@@ -687,7 +710,7 @@ describe('BaseComponent', () => {
       const deserializeData = { componentId: 'test-id', active: false };
       component.deserialize(deserializeData);
       
-      expect(Logger.debug).toHaveBeenCalledWith(
+      expect(Logger.scope('BaseComponent').debug).toHaveBeenCalledWith(
         `[BaseComponent] Component deserialized: BaseComponent`,
         deserializeData
       );
@@ -697,7 +720,7 @@ describe('BaseComponent', () => {
       const componentId = component.componentId;
       component.destroy();
       
-      expect(Logger.debug).toHaveBeenCalledWith(
+      expect(Logger.scope('BaseComponent').debug).toHaveBeenCalledWith(
         `[BaseComponent] Component destroyed: BaseComponent (${componentId})`
       );
     });
@@ -711,18 +734,18 @@ describe('BaseComponent', () => {
       customComponent.destroy();
 
       // Check that logs use the correct class name
-      expect(Logger.debug).toHaveBeenCalledWith(
+      expect(Logger.scope('BaseComponent').debug).toHaveBeenCalledWith(
         `[BaseComponent] Component created: CustomComponent (${customComponent.componentId})`
       );
-      expect(Logger.debug).toHaveBeenCalledWith(
+      expect(Logger.scope('BaseComponent').debug).toHaveBeenCalledWith(
         `[BaseComponent] Component initialized: CustomComponent`,
         { custom: 'data' }
       );
-      expect(Logger.debug).toHaveBeenCalledWith(
+      expect(Logger.scope('BaseComponent').debug).toHaveBeenCalledWith(
         `[BaseComponent] Component deserialized: CustomComponent`,
         { active: false }
       );
-      expect(Logger.debug).toHaveBeenCalledWith(
+      expect(Logger.scope('BaseComponent').debug).toHaveBeenCalledWith(
         `[BaseComponent] Component destroyed: CustomComponent (${customComponent.componentId})`
       );
     });

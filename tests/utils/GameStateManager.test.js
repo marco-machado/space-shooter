@@ -1,20 +1,31 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 // Mock Logger - define before import
-vi.mock('../../src/utils/Logger.js', () => ({
-  default: {
+vi.mock('../../src/utils/Logger.js', () => {
+  const mockLogger = {
     scope: vi.fn(() => ({
-      info: vi.fn(),
       debug: vi.fn(),
+      info: vi.fn(),
       warn: vi.fn(),
       error: vi.fn(),
+      time: vi.fn(),
+      timeEnd: vi.fn(),
+      group: vi.fn(),
+      groupEnd: vi.fn(),
+      table: vi.fn(),
     })),
-    info: vi.fn(),
     debug: vi.fn(),
+    info: vi.fn(),
     warn: vi.fn(),
     error: vi.fn(),
-  },
-}));
+    time: vi.fn(),
+    timeEnd: vi.fn(),
+    group: vi.fn(),
+    groupEnd: vi.fn(),
+    table: vi.fn(),
+  };
+  return { default: mockLogger };
+});
 
 // Mock EventBus
 import { getEventBus, resetMockEventBus, createMockEventBus } from '../__mocks__/EventBus.js';

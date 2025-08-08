@@ -1,6 +1,6 @@
 import { defineQuery, enterQuery, exitQuery } from 'bitecs';
 import { Position, Render } from '@/ecs/components/index.js';
-import { getSpriteForEntity, removeSpriteMapping } from '@/ecs/world.js';
+import { getSpriteForEntity } from '@/ecs/world.js';
 import Logger from '@/utils/Logger.js';
 
 const logger = Logger.scope('ECS:RenderSystem');
@@ -31,6 +31,7 @@ const exitedRenderQuery = exitQuery(renderQuery);
  * @returns {Object} The world instance for pipeline chaining
  */
 export const renderSystem = (world) => {
+  
   // Handle entities that just entered the render system
   const enteredEntities = enteredRenderQuery(world);
   for (let i = 0; i < enteredEntities.length; i++) {
@@ -41,33 +42,33 @@ export const renderSystem = (world) => {
       // Initialize sprite properties based on Render component
       sprite.visible = Render.visible[eid] === 1;
       sprite.depth = Render.layer[eid];
-      logger.debug('Entity entered render system', { 
-        eid, 
-        visible: sprite.visible,
-        layer: Render.layer[eid]
-      });
+      logger.debug(`Entity ${eid} entered render system - visible: ${sprite.visible}`);
     } else {
-      logger.warn('Entity entered render system but has no sprite mapping', { eid });
+      logger.warn(`Entity ${eid} entered render system but has no sprite mapping!`);
     }
   }
   
   // Synchronize all renderable entities with their sprites
   const entities = renderQuery(world);
-  let renderedCount = 0;
+  
   
   for (let i = 0; i < entities.length; i++) {
     const eid = entities[i];
     const sprite = getSpriteForEntity(world, eid);
     
     if (sprite) {
+      const oldVisible = sprite.visible;
+      
       // Update sprite position from ECS Position component
       sprite.x = Position.x[eid];
       sprite.y = Position.y[eid];
+      
       
       // Update sprite visibility from ECS Render component
       const shouldBeVisible = Render.visible[eid] === 1;
       if (sprite.visible !== shouldBeVisible) {
         sprite.visible = shouldBeVisible;
+        logger.debug(`Entity ${eid} visibility changed: ${oldVisible} -> ${sprite.visible}`);
       }
       
       // Update sprite layer/depth if needed
@@ -75,11 +76,8 @@ export const renderSystem = (world) => {
         sprite.depth = Render.layer[eid];
       }
       
-      if (shouldBeVisible) {
-        renderedCount++;
-      }
     } else {
-      logger.warn('Renderable entity has no sprite mapping', { eid });
+      logger.warn(`Renderable entity ${eid} has no sprite mapping`);
     }
   }
   
@@ -90,22 +88,9 @@ export const renderSystem = (world) => {
     const sprite = getSpriteForEntity(world, eid);
     
     if (sprite) {
-      // Hide sprite when entity exits render system
       sprite.visible = false;
-      logger.debug('Entity exited render system, sprite hidden', { eid });
+      logger.debug(`Entity ${eid} exited render system - sprite hidden`);
     }
-    
-    // Note: We don't remove sprite mapping here since the entity might re-enter
-    // Mapping cleanup should be handled by entity destruction
-  }
-  
-  // Log system execution in debug mode
-  if (renderedCount > 0) {
-    logger.debug('Render system updated', { 
-      totalEntities: entities.length,
-      renderedCount,
-      hiddenCount: entities.length - renderedCount
-    });
   }
   
   return world;

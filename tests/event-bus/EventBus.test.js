@@ -2,14 +2,37 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import EventBus, { getEventBus } from '@/event-bus/EventBus.js';
 
 // Mock dependencies
-vi.mock('@/utils/Logger.js', () => ({
-  default: {
+vi.mock('@/utils/Logger.js', () => {
+  const scopeCache = new Map();
+  const mockLogger = {
+    scope: vi.fn((scopeName) => {
+      if (!scopeCache.has(scopeName)) {
+        scopeCache.set(scopeName, {
+          debug: vi.fn(),
+          info: vi.fn(),
+          warn: vi.fn(),
+          error: vi.fn(),
+          time: vi.fn(),
+          timeEnd: vi.fn(),
+          group: vi.fn(),
+          groupEnd: vi.fn(),
+          table: vi.fn(),
+        });
+      }
+      return scopeCache.get(scopeName);
+    }),
     debug: vi.fn(),
     info: vi.fn(),
     warn: vi.fn(),
-    error: vi.fn()
-  }
-}));
+    error: vi.fn(),
+    time: vi.fn(),
+    timeEnd: vi.fn(),
+    group: vi.fn(),
+    groupEnd: vi.fn(),
+    table: vi.fn(),
+  };
+  return { default: mockLogger };
+});
 
 vi.mock('@/event-bus/EventTypes.js', () => ({
   getDefaultPriority: vi.fn().mockReturnValue(50),
@@ -74,7 +97,7 @@ describe('EventBus', () => {
       expect(typeof listenerId).toBe('string');
       expect(eventBus.listeners.has('test-event')).toBe(true);
       expect(eventBus.listeners.get('test-event').size).toBe(1);
-      expect(Logger.debug).toHaveBeenCalledWith(
+      expect(Logger.scope('EventBus').debug).toHaveBeenCalledWith(
         expect.stringContaining(`[EventBus] Listener ${listenerId} added for test-event`)
       );
     });
@@ -85,7 +108,7 @@ describe('EventBus', () => {
 
       expect(eventBus.listeners.has('event1')).toBe(true);
       expect(eventBus.listeners.has('event2')).toBe(true);
-      expect(Logger.debug).toHaveBeenCalledWith(
+      expect(Logger.scope('EventBus').debug).toHaveBeenCalledWith(
         expect.stringContaining(`[EventBus] Listener ${listenerId} added for event1, event2`)
       );
     });
@@ -400,7 +423,7 @@ describe('EventBus', () => {
     it('should log debug information for event emission', () => {
       eventBus.emit('test-event', { data: 'test' });
 
-      expect(Logger.debug).toHaveBeenCalledWith('[EventBus] Emitting event type', 'test-event');
+      expect(Logger.scope('EventBus').debug).toHaveBeenCalledWith('[EventBus] Emitting event type', 'test-event');
     });
   });
 
@@ -415,7 +438,7 @@ describe('EventBus', () => {
       
       expect(removed).toBe(true);
       expect(eventBus.listeners.has('test-event')).toBe(false);
-      expect(Logger.debug).toHaveBeenCalledWith(
+      expect(Logger.scope('EventBus').debug).toHaveBeenCalledWith(
         expect.stringContaining(`[EventBus] Removed regular listener ${listenerId} from test-event`)
       );
     });
@@ -800,7 +823,7 @@ describe('EventBus', () => {
       eventBus.on('test-event', callback);
       eventBus.emit('test-event');
 
-      expect(Logger.debug).toHaveBeenCalledWith(
+      expect(Logger.scope('EventBus').debug).toHaveBeenCalledWith(
         expect.stringContaining('[EventBus]'),
         expect.anything()
       );
@@ -850,7 +873,7 @@ describe('EventBus', () => {
       expect(eventBus.getStats().regularListeners).toBe(0);
       expect(eventBus.getStats().oneTimeListeners).toBe(0);
       expect(eventBus.getStats().wildcardListeners).toBe(0);
-      expect(Logger.debug).toHaveBeenCalledWith('[EventBus] All listeners cleared');
+      expect(Logger.scope('EventBus').debug).toHaveBeenCalledWith('[EventBus] All listeners cleared');
     });
   });
 

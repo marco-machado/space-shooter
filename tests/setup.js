@@ -3,6 +3,21 @@
  * Configures the testing environment for Space Shooter game
  */
 
+import { Canvas } from 'canvas';
+
+// Setup canvas for JSDOM to support Phaser canvas operations
+global.HTMLCanvasElement.prototype.getContext = function (contextType, contextAttributes) {
+  if (contextType === '2d') {
+    const canvas = new Canvas(this.width || 300, this.height || 150);
+    return canvas.getContext('2d');
+  }
+  if (contextType === 'webgl' || contextType === 'experimental-webgl') {
+    // Mock WebGL context for Phaser
+    return {};
+  }
+  return null;
+};
+
 // Mock localStorage for Node.js environment
 const localStorageMock = {
   storage: {},

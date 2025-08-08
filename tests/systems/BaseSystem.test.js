@@ -1,14 +1,37 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 // Mock Logger - define before import
-vi.mock('../../src/utils/Logger.js', () => ({
-  default: {
-    info: vi.fn(),
+vi.mock('../../src/utils/Logger.js', () => {
+  const scopeCache = new Map();
+  const mockLogger = {
+    scope: vi.fn((scopeName) => {
+      if (!scopeCache.has(scopeName)) {
+        scopeCache.set(scopeName, {
+          debug: vi.fn(),
+          info: vi.fn(),
+          warn: vi.fn(),
+          error: vi.fn(),
+          time: vi.fn(),
+          timeEnd: vi.fn(),
+          group: vi.fn(),
+          groupEnd: vi.fn(),
+          table: vi.fn(),
+        });
+      }
+      return scopeCache.get(scopeName);
+    }),
     debug: vi.fn(),
+    info: vi.fn(),
     warn: vi.fn(),
     error: vi.fn(),
-  },
-}));
+    time: vi.fn(),
+    timeEnd: vi.fn(),
+    group: vi.fn(),
+    groupEnd: vi.fn(),
+    table: vi.fn(),
+  };
+  return { default: mockLogger };
+});
 
 import BaseSystem from '../../src/systems/BaseSystem.js';
 import Logger from '@/utils/Logger.js';
@@ -121,7 +144,7 @@ describe('BaseSystem', () => {
     it('should log scopeName creation', () => {
       const system = new BaseSystem();
 
-      expect(Logger.debug).toHaveBeenCalledWith(
+      expect(Logger.scope('BaseSystem').debug).toHaveBeenCalledWith(
         `[BaseSystem] System created: BaseSystem (${system.systemId})`
       );
     });
@@ -130,7 +153,7 @@ describe('BaseSystem', () => {
       const testSystem = new TestSystem();
 
       expect(testSystem.name).toBe('TestSystem');
-      expect(Logger.debug).toHaveBeenCalledWith(
+      expect(Logger.scope('BaseSystem').debug).toHaveBeenCalledWith(
         expect.stringContaining('System created: TestSystem')
       );
     });
@@ -144,7 +167,7 @@ describe('BaseSystem', () => {
 
       expect(system.active).toBe(true);
       expect(system.priority).toBe(0);
-      expect(Logger.debug).toHaveBeenCalledWith(
+      expect(Logger.scope('BaseSystem').debug).toHaveBeenCalledWith(
         '[BaseSystem] System initialized: BaseSystem',
         {}
       );
@@ -158,7 +181,7 @@ describe('BaseSystem', () => {
 
       expect(system.active).toBe(false);
       expect(system.priority).toBe(5);
-      expect(Logger.debug).toHaveBeenCalledWith(
+      expect(Logger.scope('BaseSystem').debug).toHaveBeenCalledWith(
         '[BaseSystem] System initialized: BaseSystem',
         config
       );
@@ -416,7 +439,7 @@ describe('BaseSystem', () => {
 
         system.onAddedToScene(scene);
 
-        expect(Logger.debug).toHaveBeenCalledWith(
+        expect(Logger.scope('BaseSystem').debug).toHaveBeenCalledWith(
           '[BaseSystem] System BaseSystem added to scene: GameScene'
         );
       });
@@ -427,7 +450,7 @@ describe('BaseSystem', () => {
 
         testSystem.onAddedToScene(scene);
 
-        expect(Logger.debug).toHaveBeenCalledWith(
+        expect(Logger.scope('BaseSystem').debug).toHaveBeenCalledWith(
           '[BaseSystem] System TestSystem added to scene: MenuScene'
         );
       });
@@ -440,7 +463,7 @@ describe('BaseSystem', () => {
 
         system.onRemovedFromScene(scene);
 
-        expect(Logger.debug).toHaveBeenCalledWith(
+        expect(Logger.scope('BaseSystem').debug).toHaveBeenCalledWith(
           '[BaseSystem] System BaseSystem removed from scene: GameScene'
         );
       });
@@ -451,7 +474,7 @@ describe('BaseSystem', () => {
 
         testSystem.onRemovedFromScene(scene);
 
-        expect(Logger.debug).toHaveBeenCalledWith(
+        expect(Logger.scope('BaseSystem').debug).toHaveBeenCalledWith(
           '[BaseSystem] System TestSystem removed from scene: MenuScene'
         );
       });
@@ -467,7 +490,7 @@ describe('BaseSystem', () => {
         system.setActive(true);
 
         expect(system.active).toBe(true);
-        expect(Logger.debug).toHaveBeenCalledWith(
+        expect(Logger.scope('BaseSystem').debug).toHaveBeenCalledWith(
           '[BaseSystem] System BaseSystem enabled'
         );
       });
@@ -479,7 +502,7 @@ describe('BaseSystem', () => {
         system.setActive(false);
 
         expect(system.active).toBe(false);
-        expect(Logger.debug).toHaveBeenCalledWith(
+        expect(Logger.scope('BaseSystem').debug).toHaveBeenCalledWith(
           '[BaseSystem] System BaseSystem disabled'
         );
       });
@@ -503,7 +526,7 @@ describe('BaseSystem', () => {
         system.setPriority(10);
 
         expect(system.priority).toBe(10);
-        expect(Logger.debug).toHaveBeenCalledWith(
+        expect(Logger.scope('BaseSystem').debug).toHaveBeenCalledWith(
           '[BaseSystem] System BaseSystem priority set to 10'
         );
       });
@@ -514,7 +537,7 @@ describe('BaseSystem', () => {
         system.setPriority(-5);
 
         expect(system.priority).toBe(-5);
-        expect(Logger.debug).toHaveBeenCalledWith(
+        expect(Logger.scope('BaseSystem').debug).toHaveBeenCalledWith(
           '[BaseSystem] System BaseSystem priority set to -5'
         );
       });
@@ -525,7 +548,7 @@ describe('BaseSystem', () => {
         system.setPriority(0);
 
         expect(system.priority).toBe(0);
-        expect(Logger.debug).toHaveBeenCalledWith(
+        expect(Logger.scope('BaseSystem').debug).toHaveBeenCalledWith(
           '[BaseSystem] System BaseSystem priority set to 0'
         );
       });
@@ -582,7 +605,7 @@ describe('BaseSystem', () => {
         expect(system.updateCount).toBe(0);
         expect(system.totalUpdateTime).toBe(0);
         expect(system.averageUpdateTime).toBe(0);
-        expect(Logger.debug).toHaveBeenCalledWith(
+        expect(Logger.scope('BaseSystem').debug).toHaveBeenCalledWith(
           '[BaseSystem] Performance stats reset for scopeName: BaseSystem'
         );
       });
@@ -636,7 +659,7 @@ describe('BaseSystem', () => {
         expect(system.systemId).toBe('custom_id_123');
         expect(system.active).toBe(false);
         expect(system.priority).toBe(7);
-        expect(Logger.debug).toHaveBeenCalledWith(
+        expect(Logger.scope('BaseSystem').debug).toHaveBeenCalledWith(
           '[BaseSystem] System deserialized: BaseSystem',
           data
         );
@@ -690,7 +713,7 @@ describe('BaseSystem', () => {
         system.destroy();
 
         expect(system.active).toBe(false);
-        expect(Logger.debug).toHaveBeenCalledWith(
+        expect(Logger.scope('BaseSystem').debug).toHaveBeenCalledWith(
           `[BaseSystem] System destroyed: BaseSystem (${system.systemId})`
         );
       });
@@ -702,7 +725,7 @@ describe('BaseSystem', () => {
         testSystem.destroy();
 
         expect(testSystem.active).toBe(false);
-        expect(Logger.debug).toHaveBeenCalledWith(
+        expect(Logger.scope('BaseSystem').debug).toHaveBeenCalledWith(
           expect.stringContaining('System destroyed: TestSystem')
         );
       });
