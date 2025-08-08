@@ -70,7 +70,7 @@ class WeaponComponent extends BaseComponent {
       projectileSpeedBonus: 0,
     };
 
-    Logger.debug(`[WeaponComponent] created: ${this.currentWeapon} weapon`);
+    Logger.scope('WeaponComponent').debug(`[WeaponComponent] created: ${this.currentWeapon} weapon`);
   }
 
   /**
@@ -160,7 +160,7 @@ class WeaponComponent extends BaseComponent {
       this.weaponSpecs[this.currentWeapon].currentAmmo--;
     }
 
-    Logger.debug(
+    Logger.scope('WeaponComponent').debug(
       `[WeaponComponent] fired: ${this.currentWeapon} (ammo: ${weaponSpec.currentAmmo})`
     );
 
@@ -191,7 +191,7 @@ class WeaponComponent extends BaseComponent {
    */
   switchWeapon(weaponType) {
     if (!this.availableWeapons.has(weaponType) || !this.weaponSpecs[weaponType]) {
-      Logger.warn(`[WeaponComponent]: Cannot switch to unavailable weapon: ${weaponType}`);
+      Logger.scope('WeaponComponent').warn(`[WeaponComponent]: Cannot switch to unavailable weapon: ${weaponType}`);
       return false;
     }
 
@@ -199,7 +199,7 @@ class WeaponComponent extends BaseComponent {
     this.currentWeapon = weaponType;
     this.lastFireTime = 0; // Reset cooldown when switching
 
-    Logger.info(`[WeaponComponent]: Switched from ${previousWeapon} to ${weaponType}`);
+    Logger.scope('WeaponComponent').info(`[WeaponComponent]: Switched from ${previousWeapon} to ${weaponType}`);
 
     // Emit weapon switch event if entity supports it
     if (this.entity && this.entity.emit) {
@@ -223,24 +223,24 @@ class WeaponComponent extends BaseComponent {
     const weaponSpec = this.weaponSpecs[weaponType];
 
     if (!weaponSpec) {
-      Logger.warn(`WeaponComponent: Unknown weapon type: ${weaponType}`);
+      Logger.scope('WeaponComponent').warn(`WeaponComponent: Unknown weapon type: ${weaponType}`);
       return false;
     }
 
     if (this.availableWeapons.has(weaponType)) {
-      Logger.debug(`WeaponComponent: Weapon already unlocked: ${weaponType}`);
+      Logger.scope('WeaponComponent').debug(`WeaponComponent: Weapon already unlocked: ${weaponType}`);
       return false;
     }
 
     if (playerLevel < weaponSpec.unlockLevel) {
-      Logger.debug(
+      Logger.scope('WeaponComponent').debug(
         `WeaponComponent: Level ${playerLevel} insufficient for ${weaponType} (requires ${weaponSpec.unlockLevel})`
       );
       return false;
     }
 
     this.availableWeapons.add(weaponType);
-    Logger.info(`WeaponComponent: Unlocked ${weaponSpec.name} at level ${playerLevel}`);
+    Logger.scope('WeaponComponent').info(`WeaponComponent: Unlocked ${weaponSpec.name} at level ${playerLevel}`);
 
     // Emit unlock event if entity supports it
     if (this.entity && this.entity.emit) {
@@ -272,7 +272,7 @@ class WeaponComponent extends BaseComponent {
     const actualAmmoAdded = weaponSpec.currentAmmo - previousAmmo;
 
     if (actualAmmoAdded > 0) {
-      Logger.debug(
+      Logger.scope('WeaponComponent').debug(
         `WeaponComponent: Added ${actualAmmoAdded} ammo to ${weaponType} (${weaponSpec.currentAmmo}/${weaponSpec.maxAmmo})`
       );
     }
@@ -286,7 +286,7 @@ class WeaponComponent extends BaseComponent {
    */
   upgradeDamage(damageBonus) {
     this.upgradeBonuses.damage += damageBonus;
-    Logger.info(
+    Logger.scope('WeaponComponent').info(
       `WeaponComponent: Damage upgraded by ${damageBonus} (total bonus: ${this.upgradeBonuses.damage})`
     );
   }
@@ -297,7 +297,7 @@ class WeaponComponent extends BaseComponent {
    */
   upgradeFireRate(fireRateReduction) {
     this.upgradeBonuses.fireRateReduction += fireRateReduction;
-    Logger.info(
+    Logger.scope('WeaponComponent').info(
       `WeaponComponent: Fire rate upgraded by ${fireRateReduction}ms (total reduction: ${this.upgradeBonuses.fireRateReduction})`
     );
   }
@@ -308,7 +308,7 @@ class WeaponComponent extends BaseComponent {
    */
   upgradeProjectileSpeed(speedBonus) {
     this.upgradeBonuses.projectileSpeedBonus += speedBonus;
-    Logger.info(
+    Logger.scope('WeaponComponent').info(
       `WeaponComponent: Projectile speed upgraded by ${speedBonus} (total bonus: ${this.upgradeBonuses.projectileSpeedBonus})`
     );
   }

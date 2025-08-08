@@ -17,7 +17,7 @@ export default class BaseSystem {
     this.totalUpdateTime = 0;
     this.averageUpdateTime = 0;
 
-    Logger.debug(`[BaseSystem] System created: ${this.name} (${this.systemId})`);
+    Logger.scope('BaseSystem').debug(`[BaseSystem] System created: ${this.name} (${this.systemId})`);
   }
 
   /**
@@ -36,7 +36,7 @@ export default class BaseSystem {
   init(config = {}) {
     this.active = config.active !== undefined ? config.active : true;
     this.priority = config.priority || 0;
-    Logger.debug(`[BaseSystem] System initialized: ${this.name}`, config);
+    Logger.scope('BaseSystem').debug(`[BaseSystem] System initialized: ${this.name}`, config);
   }
 
   /**
@@ -62,7 +62,7 @@ export default class BaseSystem {
       this.update(entities, delta);
       this.updateCount++;
     } catch (error) {
-      Logger.error(`[BaseSystem] Error processing system ${this.name}:`, error);
+      Logger.scope('BaseSystem').error(`[BaseSystem] Error processing system ${this.name}:`, error);
     }
 
     const endTime = performance.now();
@@ -73,7 +73,7 @@ export default class BaseSystem {
     // Log performance warnings for slow systems
     if (updateTime > 16.67) {
       // More than one frame at 60fps
-      Logger.warn(`[BaseSystem] Slow system update: ${this.name} took ${updateTime.toFixed(2)}ms`);
+      Logger.scope('BaseSystem').warn(`[BaseSystem] Slow system update: ${this.name} took ${updateTime.toFixed(2)}ms`);
     }
   }
 
@@ -111,7 +111,7 @@ export default class BaseSystem {
    * @param {Phaser.Scene} scene - The scene this scopeName is added to
    */
   onAddedToScene(scene) {
-    Logger.debug(`[BaseSystem] System ${this.name} added to scene: ${scene.scene.key}`);
+    Logger.scope('BaseSystem').debug(`[BaseSystem] System ${this.name} added to scene: ${scene.scene.key}`);
   }
 
   /**
@@ -120,7 +120,7 @@ export default class BaseSystem {
    * @param {Phaser.Scene} scene - The scene this scopeName is removed from
    */
   onRemovedFromScene(scene) {
-    Logger.debug(`[BaseSystem] System ${this.name} removed from scene: ${scene.scene.key}`);
+    Logger.scope('BaseSystem').debug(`[BaseSystem] System ${this.name} removed from scene: ${scene.scene.key}`);
   }
 
   /**
@@ -132,7 +132,7 @@ export default class BaseSystem {
     this.active = active;
 
     if (wasActive !== active) {
-      Logger.debug(`[BaseSystem] System ${this.name} ${active ? 'enabled' : 'disabled'}`);
+      Logger.scope('BaseSystem').debug(`[BaseSystem] System ${this.name} ${active ? 'enabled' : 'disabled'}`);
     }
   }
 
@@ -142,7 +142,7 @@ export default class BaseSystem {
    */
   setPriority(priority) {
     this.priority = priority;
-    Logger.debug(`[BaseSystem] System ${this.name} priority set to ${priority}`);
+    Logger.scope('BaseSystem').debug(`[BaseSystem] System ${this.name} priority set to ${priority}`);
   }
 
   /**
@@ -167,7 +167,7 @@ export default class BaseSystem {
     this.updateCount = 0;
     this.totalUpdateTime = 0;
     this.averageUpdateTime = 0;
-    Logger.debug(`[BaseSystem] Performance stats reset for system: ${this.name}`);
+    Logger.scope('BaseSystem').debug(`[BaseSystem] Performance stats reset for system: ${this.name}`);
   }
 
   /**
@@ -176,7 +176,7 @@ export default class BaseSystem {
    */
   destroy() {
     this.active = false;
-    Logger.debug(`[BaseSystem] System destroyed: ${this.name} (${this.systemId})`);
+    Logger.scope('BaseSystem').debug(`[BaseSystem] System destroyed: ${this.name} (${this.systemId})`);
   }
 
   /**
@@ -202,6 +202,6 @@ export default class BaseSystem {
     this.systemId = data.systemId || this.systemId;
     this.active = data.active !== undefined ? data.active : true;
     this.priority = data.priority || 0;
-    Logger.debug(`[BaseSystem] System deserialized: ${this.name}`, data);
+    Logger.scope('BaseSystem').debug(`[BaseSystem] System deserialized: ${this.name}`, data);
   }
 }

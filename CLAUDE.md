@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a space shooter game built with Phaser.js 3.x and Vite build tooling. The game features multiple weapon types, enemy varieties, player progression, and power-up systems using an enhanced BaseEntity BaseComponent BaseSystem architecture with flexible GameObject support, unified ConfigManager scopeName, auto-initializing Logger scopeName, and event-driven input management. All game data is persisted using browser localStorage. The development phase uses simple colored rectangles for rapid prototyping before final graphics are implemented.
+This is a space shooter game built with Phaser.js 3.x and Vite build tooling. The game features multiple weapon types, enemy varieties, player progression, and power-up systems using an enhanced ECS (Entity Component System) architecture with bitECS, sophisticated enemy spawning system with object pooling, unified ConfigManager scopeName, auto-initializing Logger scopeName, and event-driven input management. All game data is persisted using browser localStorage. The development phase uses simple colored rectangles for rapid prototyping before final graphics are implemented.
 
 ## Quick Start Commands
 
@@ -48,7 +48,15 @@ cp .env.example .env
 
 - **Logger**: `Logger.debug('message')` works immediately - no setup needed
 - **ConfigManager**: `ConfigManager.getConfig()` auto-initializes with validation
-- **BaseEntity**: Flexible GameObject types with runtime switching
+- **ECS World**: BitECS entity-component system with performance optimizations
+
+### Enemy Spawning System
+
+- **Object Pooling**: Pre-created enemies at (-1000, -1000) for performance
+- **Wave Management**: Progressive difficulty with scout/fighter/bomber varieties
+- **Formation Flying**: V-formation, Diamond, Wedge, and Line formations
+- **Spawn Zones**: 5 intelligent spawn zones across screen width with cooldowns
+- **Debug Controls**: Press 'E' key to manually spawn enemies for testing
 
 ### Development Graphics Strategy
 
@@ -60,10 +68,23 @@ cp .env.example .env
 
 ### Core Patterns
 
-- **ECS Architecture**: BaseEntity + Components (data) + Systems (logic)
+- **ECS Architecture**: BitECS + Components (data) + Systems (logic) 
 - **Event-Driven Input**: Normalized movement, structured events
 - **Unified Configuration**: Single source for all settings and constants
+- **Object Pooling**: Memory-efficient enemy/projectile management
 - **Comprehensive Testing**: Unit tests with proper mocking and comprehensive coverage
+
+## Gameplay Instructions
+
+### Starting the Game
+1. **Launch**: Run `npm run dev` and navigate to `http://localhost:5173`
+2. **Main Menu**: Press `Enter` or click "START GAME" button
+3. **Controls**: Arrow keys to move, `Space` to fire, `ESC` to pause
+
+### Debug Features
+- **E Key**: Force spawn enemy for immediate testing
+- **Console Logs**: Comprehensive ECS and spawn system debugging
+- **Performance Monitoring**: FPS tracking and memory usage metrics
 
 ## Usage Examples
 

@@ -1,6 +1,7 @@
-import Logger from '@/utils/Logger.js';
 import ConfigManager from '@/config/ConfigManager.js';
 import { getEventBus } from '@/event-bus/EventBus.js';
+import { EventTypes } from '@/event-bus/EventTypes.js';
+import Logger from '@/utils/Logger.js';
 
 /**
  * UI Scene - Dedicated scene for all user interface elements
@@ -20,42 +21,14 @@ export default class UIScene extends Phaser.Scene {
     this.listenerIds = [];
   }
 
-  /**
-   * Initialize UI scene
-   */
-  init() {
-    Logger.scope('UIScene').debug('init() begin');
-    Logger.scope('UIScene').debug('init() end');
-  }
-
-  /**
-   * Create UI scene elements
-   */
   create() {
-    Logger.scope('UIScene').debug('create() begin');
-
     // Create all UI elements
     this.createUI();
 
     // Set up EventBus listeners for UI updates
     this.setupEventListeners();
-
-    Logger.scope('UIScene').debug('create() end');
   }
 
-  /**
-   * Update UI scene (called every frame if needed)
-   * @param {number} time - Current time
-   * @param {number} delta - Time delta in milliseconds
-   */
-  update(time, delta) {
-    // UI updates will be handled through EventBus events
-    // No continuous updates needed for most UI elements
-  }
-
-  /**
-   * Create all UI elements
-   */
   createUI() {
     // Score display
     this.uiElements.scoreText = this.add.text(20, 20, 'SCORE: 0', {
@@ -125,14 +98,14 @@ export default class UIScene extends Phaser.Scene {
     this.uiElements.healthBar.setScrollFactor(0);
 
     // Health text label
-    this.uiElements.healthText = this.add
-      .text(healthBarX + healthBarWidth + 10, healthBarY, 'HEALTH', {
-        fontSize: '14px',
-        color: '#ffffff',
-        fontFamily: 'monospace',
-      })
-      .setOrigin(0, 0.5);
-    this.uiElements.healthText.setScrollFactor(0);
+    // this.uiElements.healthText = this.add
+    //   .text(healthBarX + healthBarWidth + 10, healthBarY, 'HEALTH', {
+    //     fontSize: '14px',
+    //     color: '#ffffff',
+    //     fontFamily: 'monospace',
+    //   })
+    //   .setOrigin(0, 0.5);
+    // this.uiElements.healthText.setScrollFactor(0);
 
     // Debug info (if enabled)
     if (ConfigManager.getConfig().showDebugInfo) {
@@ -146,11 +119,22 @@ export default class UIScene extends Phaser.Scene {
 
     // Pause indicator (initially hidden)
     this.uiElements.pauseText = this.add
-      .text(this.scale.width / 2, this.scale.height / 2, 'PAUSED\nPress ESC to resume', {
-        fontSize: '32px',
+      .text(this.scale.width / 2, this.scale.height / 2, 'PAUSED', {
+        fontSize: '48px',
         color: '#ffffff',
         fontFamily: 'Arial, sans-serif',
         align: 'center',
+        fontStyle: 'bold',
+        stroke: '#000000',
+        strokeThickness: 4,
+        shadow: {
+          offsetX: 3,
+          offsetY: 3,
+          color: '#000000',
+          blur: 5,
+          stroke: true,
+          fill: true,
+        },
       })
       .setOrigin(0.5)
       .setVisible(false);
@@ -162,8 +146,6 @@ export default class UIScene extends Phaser.Scene {
         element.setDepth(100);
       }
     });
-
-    Logger.scope('UIScene').debug('UI elements created');
   }
 
   /**
@@ -183,11 +165,19 @@ export default class UIScene extends Phaser.Scene {
     this.listenerIds.push(weaponListenerId);
 
     // Game state update listener (lives, level, wave)
-    const gameStateListenerId = this.eventBus.on('ui:gameStateUpdate', this.handleGameStateUpdate, this);
+    const gameStateListenerId = this.eventBus.on(
+      'ui:gameStateUpdate',
+      this.handleGameStateUpdate,
+      this,
+    );
     this.listenerIds.push(gameStateListenerId);
 
     // Accuracy update listener
-    const accuracyListenerId = this.eventBus.on('ui:accuracyUpdate', this.handleAccuracyUpdate, this);
+    const accuracyListenerId = this.eventBus.on(
+      'ui:accuracyUpdate',
+      this.handleAccuracyUpdate,
+      this,
+    );
     this.listenerIds.push(accuracyListenerId);
 
     // Debug info update listener
@@ -197,10 +187,16 @@ export default class UIScene extends Phaser.Scene {
     }
 
     // Pause state listeners
-    const pauseListenerId = this.eventBus.on('ui:pauseStateChanged', this.handlePauseStateChanged, this);
+    const pauseListenerId = this.eventBus.on(
+      EventTypes.GAME_PAUSE_TOGGLE,
+      this.handlePauseStateChanged,
+      this,
+    );
     this.listenerIds.push(pauseListenerId);
 
-    Logger.scope('UIScene').debug(`EventBus listeners set up (${this.listenerIds.length} listeners)`);
+    Logger.scope('UIScene').debug(
+      `EventBus listeners set up (${this.listenerIds.length} listeners)`,
+    );
   }
 
   /**
@@ -296,9 +292,6 @@ export default class UIScene extends Phaser.Scene {
     }
   }
 
-  /**
-   * Show pause UI with overlay
-   */
   showPauseUI() {
     // Create semi-transparent overlay background if not exists
     if (!this.uiElements.pauseOverlay) {
@@ -308,7 +301,7 @@ export default class UIScene extends Phaser.Scene {
         this.scale.width,
         this.scale.height,
         0x000000,
-        0.6
+        0.6,
       );
       this.uiElements.pauseOverlay.setScrollFactor(0);
       this.uiElements.pauseOverlay.setDepth(90); // Below pause text but above game
@@ -321,22 +314,17 @@ export default class UIScene extends Phaser.Scene {
     // Animate pause text appearance
     this.uiElements.pauseText.setAlpha(0);
     this.uiElements.pauseText.setScale(0.8);
-    
+
     this.tweens.add({
       targets: this.uiElements.pauseText,
       alpha: { from: 0, to: 1 },
       scaleX: { from: 0.8, to: 1 },
       scaleY: { from: 0.8, to: 1 },
       duration: 300,
-      ease: 'Back.easeOut'
+      ease: 'Back.easeOut',
     });
-
-    Logger.scope('UIScene').debug('Pause UI shown with visual effects');
   }
 
-  /**
-   * Hide pause UI
-   */
   hidePauseUI() {
     // Animate pause text disappearance
     this.tweens.add({
@@ -348,35 +336,23 @@ export default class UIScene extends Phaser.Scene {
       ease: 'Power2.easeIn',
       onComplete: () => {
         this.uiElements.pauseText.setVisible(false);
-      }
+      },
     });
 
     // Hide overlay
     if (this.uiElements.pauseOverlay) {
       this.uiElements.pauseOverlay.setVisible(false);
     }
-
-    Logger.scope('UIScene').debug('Pause UI hidden with visual effects');
   }
 
-  /**
-   * Clean up UI scene
-   */
   shutdown() {
-    Logger.scope('UIScene').debug('Shutting down');
-
     // Clean up EventBus listeners
     this.listenerIds.forEach(listenerId => {
       this.eventBus.off(listenerId);
     });
     this.listenerIds = [];
 
-    // Clean up tweens
     this.tweens.killAll();
-
-    // Clear UI references
     this.uiElements = {};
-
-    Logger.scope('UIScene').debug('UIScene shutdown complete');
   }
 }

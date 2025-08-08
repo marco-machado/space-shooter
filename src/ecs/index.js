@@ -40,6 +40,78 @@ export {
   PowerUpTag
 } from './components/index.js';
 
-// Future exports for systems and entity creation functions will be added here
-// Systems: MovementSystem, WeaponSystem, CollisionSystem, etc.
+// Systems
+export {
+  // Individual Systems
+  movementSystem,
+  renderSystem,
+  weaponSystem,
+  aiSystem,
+  timeSystem,
+  
+  // System Pipeline
+  systemPipeline,
+  runSystemPipeline,
+  debugSystemPipeline,
+  testPipeline,
+  createCustomPipeline,
+  getPipelineForMode,
+  PIPELINE_MODES,
+  
+  // System Utilities
+  setVelocity,
+  getVelocity,
+  stopEntity,
+  setVisibility,
+  setLayer,
+  hideEntity,
+  showEntity,
+  isVisible,
+  triggerWeaponFire,
+  setWeaponConfig,
+  getWeaponCooldown,
+  canWeaponFire,
+  AI_PATTERNS,
+  setAIPattern,
+  setAITarget,
+  getAIState,
+  getCurrentFPS,
+  getElapsedSeconds,
+  getDeltaSeconds,
+  hasTimeElapsed,
+  getTimeRemaining,
+  createTimer,
+  performanceMonitor,
+  interpolation,
+  
+  // Queries
+  playerQuery,
+  enemyQuery,
+  projectileQuery,
+  powerUpQuery,
+  weaponQuery,
+  healthQuery,
+  damageableQuery,
+  aiQuery,
+  enemyAIQuery,
+  physicsQuery,
+  collidableQuery,
+  projectilePhysicsQuery,
+  playerCombatQuery,
+  enemyCombatQuery,
+  movingEnemiesQuery,
+  renderableEnemiesQuery,
+  executeQuery,
+  getQueryStats,
+  
+  // System Registry
+  getSystem,
+  getQuery,
+  getSystemNames,
+  getQueryNames,
+  getSystemInfo,
+  validateSystems
+} from './systems/index.js';
+
+// Future exports for entity creation functions will be added here
 // Entities: createPlayer, createEnemy, createProjectile, etc.

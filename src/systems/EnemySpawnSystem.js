@@ -1,6 +1,14 @@
 import BaseSystem from './BaseSystem.js';
-import Enemy from '@/entities/Enemy.js';
 import Logger from '@/utils/Logger.js';
+
+// ECS enemy creation system
+import { 
+  createEnemy, 
+  deactivateEntity, 
+  reactivateEntity,
+  isEntityActive,
+  getEnemyConfig 
+} from '../ecs/entities/index.js';
 
 /**
  * Enemy Spawn BaseSystem
@@ -8,9 +16,10 @@ import Logger from '@/utils/Logger.js';
  * Manages difficulty progression and enemy variety
  */
 export default class EnemySpawnSystem extends BaseSystem {
-  constructor(scene) {
+  constructor(scene, world) {
     super();
     this.scene = scene;
+    this.world = world; // ECS world for enemy creation
 
     // Wave management
     this.currentWave = 1;
@@ -23,7 +32,7 @@ export default class EnemySpawnSystem extends BaseSystem {
     this.waveDelay = 3000; // 3 seconds between waves
 
     // Spawn timing
-    this.lastSpawnTime = 0;
+    this.lastSpawnTime = Date.now(); // Initialize to current time for proper delay calculation
     this.baseSpawnDelay = 1500; // Base delay between spawns in ms
     this.currentSpawnDelay = this.baseSpawnDelay;
     this.spawnVariation = 500; // Random variation in spawn timing
@@ -32,7 +41,7 @@ export default class EnemySpawnSystem extends BaseSystem {
     this.activeFormations = [];
     this.formationSpawnChance = 0.3; // 30% chance for formation spawn
 
-    // Enemy pools for performance
+    // ECS Enemy pools for performance (stores entity IDs)
     this.enemyPool = {
       scout: [],
       fighter: [],
@@ -62,7 +71,18 @@ export default class EnemySpawnSystem extends BaseSystem {
     this.initializeEnemyPools();
     this.generateWave();
 
-    Logger.info('EnemySpawnSystem initialized', {
+    console.log('[DEBUG] EnemySpawnSystem constructor completed', {
+      currentWave: this.currentWave,
+      betweenWaves: this.betweenWaves,
+      enemiesInWave: this.enemiesInWave,
+      enemiesSpawned: this.enemiesSpawned,
+      baseSpawnDelay: this.baseSpawnDelay,
+      poolSize: this.poolSize,
+      worldExists: !!this.world,
+      sceneExists: !!this.scene
+    });
+
+    Logger.scope('EnemySpawnSystem').info('EnemySpawnSystem initialized', {
       currentWave: this.currentWave,
       baseSpawnDelay: this.baseSpawnDelay,
       poolSize: this.poolSize,
@@ -89,23 +109,27 @@ export default class EnemySpawnSystem extends BaseSystem {
       });
     }
 
-    Logger.debug(`Spawn zones initialized: ${this.spawnZones.length} zones with X-buffer ${this.SPAWN_BUFFER_X}px`);
+    Logger.scope('EnemySpawnSystem').debug(`Spawn zones initialized: ${this.spawnZones.length} zones with X-buffer ${this.SPAWN_BUFFER_X}px`);
   }
 
   /**
-   * Initialize enemy object pools for performance
+   * Initialize ECS enemy entity pools for performance
    */
   initializeEnemyPools() {
     Object.keys(this.enemyPool).forEach(enemyType => {
       for (let i = 0; i < this.poolSize; i++) {
-        const enemy = new Enemy(this.scene, -100, -100, enemyType);
-        enemy.setActive(false);
-        enemy.setVisible(false);
-        this.enemyPool[enemyType].push(enemy);
+        // Create ECS enemy entity
+        const enemyEid = createEnemy(this.world, this.scene, -1000, -1000, enemyType);
+        
+        // Immediately deactivate for pooling
+        deactivateEntity(this.world, enemyEid);
+        
+        // Store entity ID in pool
+        this.enemyPool[enemyType].push(enemyEid);
       }
     });
 
-    Logger.debug('Enemy pools initialized', {
+    Logger.scope('EnemySpawnSystem').debug('ECS Enemy pools initialized', {
       scout: this.enemyPool.scout.length,
       fighter: this.enemyPool.fighter.length,
       bomber: this.enemyPool.bomber.length,
@@ -147,13 +171,40 @@ export default class EnemySpawnSystem extends BaseSystem {
   }
 
   /**
-   * Update enemy spawn scopeName
-   * @param {Array} entities - All entities in the scene
+   * Update enemy spawn system
+   * @param {Array} _entities - All entities in the scene (unused for ECS)
    * @param {number} delta - Time delta in milliseconds
    */
-  update(entities, delta) {
-    // Update enemy count
-    this.updateEnemyCount(entities);
+  update(_entities, delta) {
+    // Update enemy count using ECS world
+    this.updateEnemyCount();
+    
+    // DEBUG: Log spawn system state every few seconds
+    const currentTime = Date.now();
+    if (currentTime % 5000 < delta) { // Log every 5 seconds
+      console.log('[DEBUG] EnemySpawnSystem.update - State check:', {
+        currentWave: this.currentWave,
+        betweenWaves: this.betweenWaves,
+        enemiesInWave: this.enemiesInWave,
+        enemiesSpawned: this.enemiesSpawned,
+        enemiesRemaining: this.enemiesRemaining,
+        lastSpawnTime: new Date(this.lastSpawnTime).toLocaleTimeString(),
+        currentSpawnDelay: this.currentSpawnDelay,
+        timeUntilNextSpawn: Math.max(0, this.currentSpawnDelay - (currentTime - this.lastSpawnTime))
+      });
+    }
+
+    // Debug logging for spawn system state (reduced frequency) - reuse currentTime
+    if (currentTime % 2000 < delta) { // Log every 2 seconds
+      console.log('[DEBUG] EnemySpawnSystem.update - State', {
+        currentWave: this.currentWave,
+        betweenWaves: this.betweenWaves,
+        enemiesInWave: this.enemiesInWave,
+        enemiesSpawned: this.enemiesSpawned,
+        enemiesRemaining: this.enemiesRemaining,
+        timeSinceLastSpawn: currentTime - this.lastSpawnTime
+      });
+    }
 
     // Handle wave management
     if (this.betweenWaves) {
@@ -163,7 +214,7 @@ export default class EnemySpawnSystem extends BaseSystem {
     }
 
     // Update formations
-    this.updateFormations(entities);
+    this.updateFormations();
 
     // Update spawn zone cooldowns
     this.updateSpawnZones(delta);
@@ -173,15 +224,42 @@ export default class EnemySpawnSystem extends BaseSystem {
   }
 
   /**
-   * Update count of remaining enemies
-   * @param {Array} entities - All entities in the scene
+   * Update count of remaining ECS enemies
    */
-  updateEnemyCount(entities) {
-    const activeEnemies = entities.filter(
-      entity => entity.constructor.name === 'Enemy' && entity.active
-    );
+  updateEnemyCount() {
+    // Count active ECS enemies across all pools
+    let activeCount = 0;
+    const enemyPositions = [];
+    
+    Object.keys(this.enemyPool).forEach(enemyType => {
+      this.enemyPool[enemyType].forEach(enemyEid => {
+        if (isEntityActive(this.world, enemyEid)) {
+          activeCount++;
+          // Get enemy position for debugging
+          if (this.world.spriteMap && this.world.spriteMap.get(enemyEid)) {
+            const sprite = this.world.spriteMap.get(enemyEid);
+            enemyPositions.push({
+              eid: enemyEid,
+              type: enemyType,
+              x: sprite.x,
+              y: sprite.y,
+              visible: sprite.visible
+            });
+          }
+        }
+      });
+    });
 
-    this.enemiesRemaining = activeEnemies.length;
+    // Debug active enemies every few seconds
+    const now = Date.now();
+    if (now % 3000 < 50 && activeCount > 0) { // Every 3 seconds if enemies exist
+      console.log('[DEBUG] Active enemies:', {
+        activeCount,
+        enemyPositions: enemyPositions.slice(0, 5) // Show first 5 for readability
+      });
+    }
+
+    this.enemiesRemaining = activeCount;
   }
 
   /**
@@ -200,15 +278,27 @@ export default class EnemySpawnSystem extends BaseSystem {
    * @param {number} delta - Time delta in milliseconds
    */
   handleActiveWave(_delta) {
+    console.log('[DEBUG] handleActiveWave called', {
+      enemiesSpawned: this.enemiesSpawned,
+      enemiesInWave: this.enemiesInWave,
+      enemiesRemaining: this.enemiesRemaining,
+      waveComplete: this.enemiesSpawned >= this.enemiesInWave && this.enemiesRemaining === 0,
+      shouldSpawn: this.enemiesSpawned < this.enemiesInWave
+    });
+
     // Check if wave is complete
     if (this.enemiesSpawned >= this.enemiesInWave && this.enemiesRemaining === 0) {
+      console.log('[DEBUG] handleActiveWave - Wave complete, calling completeWave()');
       this.completeWave();
       return;
     }
 
     // Spawn enemies if needed
     if (this.enemiesSpawned < this.enemiesInWave) {
+      console.log('[DEBUG] handleActiveWave - Need to spawn enemies, calling updateSpawning()');
       this.updateSpawning();
+    } else {
+      console.log('[DEBUG] handleActiveWave - No more enemies to spawn in this wave');
     }
   }
 
@@ -218,13 +308,23 @@ export default class EnemySpawnSystem extends BaseSystem {
    */
   updateSpawning() {
     const currentTime = Date.now();
+    const timeSinceLastSpawn = currentTime - this.lastSpawnTime;
 
-    if (currentTime - this.lastSpawnTime >= this.currentSpawnDelay) {
+    if (timeSinceLastSpawn >= this.currentSpawnDelay) {
+      Logger.scope('EnemySpawnSystem').info('Spawn delay reached, attempting to spawn enemy', {
+        timeSinceLastSpawn,
+        currentSpawnDelay: this.currentSpawnDelay
+      });
       this.spawnNextEnemy();
       this.lastSpawnTime = currentTime;
 
       // Add some variation to spawn timing
       this.currentSpawnDelay = this.baseSpawnDelay + (Math.random() - 0.5) * this.spawnVariation;
+      
+      Logger.scope('EnemySpawnSystem').debug('Updated spawn timing', {
+        newLastSpawnTime: this.lastSpawnTime,
+        newCurrentSpawnDelay: this.currentSpawnDelay
+      });
     }
   }
 
@@ -233,14 +333,27 @@ export default class EnemySpawnSystem extends BaseSystem {
    */
   spawnNextEnemy() {
     const waveConfig = this.getCurrentWaveConfig();
-    const enemyType = this.selectEnemyType(waveConfig);
+    Logger.scope('EnemySpawnSystem').debug('spawnNextEnemy called', {
+      currentWave: this.currentWave,
+      waveConfig,
+      enemiesSpawned: this.enemiesSpawned,
+      enemiesInWave: this.enemiesInWave
+    });
 
-    if (!enemyType) return;
+    const enemyType = this.selectEnemyType(waveConfig);
+    Logger.scope('EnemySpawnSystem').debug('Enemy type selected', { enemyType });
+
+    if (!enemyType) {
+      Logger.scope('EnemySpawnSystem').warn('No enemy type selected for spawn');
+      return;
+    }
 
     // Decide between formation and individual spawn
     if (this.shouldSpawnFormation(waveConfig)) {
+      Logger.scope('EnemySpawnSystem').info(`Spawning formation of ${enemyType}`);
       this.spawnFormation(enemyType);
     } else {
+      Logger.scope('EnemySpawnSystem').info(`Spawning individual ${enemyType}`);
       this.spawnIndividualEnemy(enemyType);
     }
   }
@@ -345,18 +458,28 @@ export default class EnemySpawnSystem extends BaseSystem {
   }
 
   /**
-   * Spawn individual enemy
+   * Spawn individual ECS enemy
    * @param {string} enemyType - Type of enemy to spawn
    */
   spawnIndividualEnemy(enemyType) {
-    const spawnZone = this.getAvailableSpawnZone();
-    if (!spawnZone) return;
+    console.log('[DEBUG] spawnIndividualEnemy called', { enemyType });
 
-    const enemy = this.getEnemyFromPool(enemyType);
-    if (!enemy) return;
+    const spawnZone = this.getAvailableSpawnZone();
+    console.log('[DEBUG] spawnIndividualEnemy - spawn zone', spawnZone);
+    if (!spawnZone) {
+      console.warn('[DEBUG] spawnIndividualEnemy - No available spawn zone!');
+      return;
+    }
+
+    const enemyEid = this.getEnemyFromPool(enemyType);
+    console.log('[DEBUG] spawnIndividualEnemy - enemy from pool', { enemyEid, enemyType });
+    if (enemyEid === null) {
+      console.warn('[DEBUG] spawnIndividualEnemy - No enemy available from pool!');
+      return;
+    }
 
     // Position enemy in spawn zone with size awareness
-    const enemyConfig = Enemy.getEnemyConfig(enemyType);
+    const enemyConfig = getEnemyConfig(enemyType);
     const enemyHalfWidth = enemyConfig.size.width / 2;
     const minSpawnX = this.SPAWN_BUFFER_X + enemyHalfWidth;
     const maxSpawnX = this.scene.scale.width - this.SPAWN_BUFFER_X - enemyHalfWidth;
@@ -366,18 +489,21 @@ export default class EnemySpawnSystem extends BaseSystem {
 
     const spawnY = spawnZone.y + Math.random() * spawnZone.height;
 
-    enemy.setPosition(spawnX, spawnY);
-    enemy.setActive(true);
-    enemy.setVisible(true);
+    console.log('[DEBUG] spawnIndividualEnemy - spawn position calculated', { spawnX, spawnY });
 
-    // Add to scene entities array for scopeName processing
-    if (this.scene.entities && !this.scene.entities.includes(enemy)) {
-      this.scene.entities.push(enemy);
-    }
+    // Reactivate ECS entity at spawn position
+    console.log('[DEBUG] spawnIndividualEnemy - calling reactivateEntity');
+    reactivateEntity(this.world, enemyEid, spawnX, spawnY, enemyType);
 
-    // Add to enemy group for collision detection
-    if (this.scene.enemyGroup) {
-      this.scene.enemyGroup.add(enemy);
+    // Get sprite for group management
+    const sprite = this.world.spriteMap.get(enemyEid);
+    console.log('[DEBUG] spawnIndividualEnemy - sprite from world', { 
+      sprite: !!sprite, 
+      enemyGroup: !!this.scene.enemyGroup,
+      spritePosition: sprite ? { x: sprite.x, y: sprite.y, visible: sprite.visible } : null
+    });
+    if (sprite && this.scene.enemyGroup) {
+      this.scene.enemyGroup.add(sprite);
     }
 
     // Mark spawn zone as used
@@ -386,11 +512,20 @@ export default class EnemySpawnSystem extends BaseSystem {
     this.enemiesSpawned++;
     this.stats.totalEnemiesSpawned++;
 
-    Logger.debug(`Enemy spawned: ${enemyType} at (${spawnX.toFixed(0)}, ${spawnY.toFixed(0)})`);
+    console.log('[DEBUG] spawnIndividualEnemy - Enemy spawned successfully!', {
+      enemyType,
+      enemyEid,
+      spawnX: spawnX.toFixed(0),
+      spawnY: spawnY.toFixed(0),
+      enemiesSpawned: this.enemiesSpawned,
+      totalSpawned: this.stats.totalEnemiesSpawned
+    });
+
+    Logger.scope('EnemySpawnSystem').debug(`ECS Enemy spawned: ${enemyType} entity ${enemyEid} at (${spawnX.toFixed(0)}, ${spawnY.toFixed(0)})`);
   }
 
   /**
-   * Spawn enemy formation
+   * Spawn ECS enemy formation
    * @param {string} enemyType - Type of enemies in formation
    */
   spawnFormation(enemyType) {
@@ -403,49 +538,41 @@ export default class EnemySpawnSystem extends BaseSystem {
     const formation = {
       id: `formation_${Date.now()}`,
       leader: null,
-      members: [],
+      members: [], // Will store entity IDs
       pattern: pattern.name,
       startTime: Date.now(),
     };
 
     // Spawn formation members with buffer validation
-    const enemyConfig = Enemy.getEnemyConfig(enemyType);
+    const enemyConfig = getEnemyConfig(enemyType);
     const enemyHalfWidth = enemyConfig.size.width / 2;
     const minSpawnX = this.SPAWN_BUFFER_X + enemyHalfWidth;
     const maxSpawnX = this.scene.scale.width - this.SPAWN_BUFFER_X - enemyHalfWidth;
 
     pattern.positions.forEach((pos, index) => {
-      const enemy = this.getEnemyFromPool(enemyType);
-      if (!enemy) return;
+      const enemyEid = this.getEnemyFromPool(enemyType);
+      if (enemyEid === null) return;
 
       let spawnX = spawnZone.x + pos.x;
       spawnX = Math.max(minSpawnX, Math.min(maxSpawnX, spawnX)); // Clamp to safe bounds
       const spawnY = spawnZone.y + pos.y;
 
-      enemy.setPosition(spawnX, spawnY);
-      enemy.setActive(true);
-      enemy.setVisible(true);
+      // Reactivate ECS entity at formation position
+      reactivateEntity(this.world, enemyEid, spawnX, spawnY, enemyType);
 
-      // Add to scene entities array for scopeName processing
-      if (this.scene.entities && !this.scene.entities.includes(enemy)) {
-        this.scene.entities.push(enemy);
-      }
-
-      // Add to enemy group for collision detection
-      if (this.scene.enemyGroup) {
-        this.scene.enemyGroup.add(enemy);
+      // Get sprite for group management
+      const sprite = this.world.spriteMap.get(enemyEid);
+      if (sprite && this.scene.enemyGroup) {
+        this.scene.enemyGroup.add(sprite);
       }
 
       if (index === 0) {
         // First enemy is the leader
-        formation.leader = enemy;
-        enemy.isFormationLeader = true;
-      } else {
-        // Other enemies follow the leader
-        enemy.setFormation(formation.leader, pos.x, pos.y);
+        formation.leader = enemyEid;
+        // Note: Formation AI patterns will be handled by ECS AISystem
       }
 
-      formation.members.push(enemy);
+      formation.members.push(enemyEid);
       this.enemiesSpawned++;
       this.stats.totalEnemiesSpawned++;
     });
@@ -453,8 +580,8 @@ export default class EnemySpawnSystem extends BaseSystem {
     this.activeFormations.push(formation);
     spawnZone.lastUsed = Date.now();
 
-    Logger.info(
-      `Formation spawned: ${pattern.name} with ${formation.members.length} ${enemyType}s`
+    Logger.scope('EnemySpawnSystem').info(
+      `ECS Formation spawned: ${pattern.name} with ${formation.members.length} ${enemyType}s`
     );
   }
 
@@ -532,54 +659,46 @@ export default class EnemySpawnSystem extends BaseSystem {
   }
 
   /**
-   * Get enemy from pool
+   * Get ECS enemy entity from pool
    * @param {string} enemyType - Type of enemy needed
-   * @returns {Enemy|null} Enemy from pool or null
+   * @returns {number|null} Enemy entity ID from pool or null
    */
   getEnemyFromPool(enemyType) {
     const pool = this.enemyPool[enemyType];
     if (!pool) return null;
 
-    const enemy = pool.find(e => !e.active);
+    // Find inactive entity in pool
+    const enemyEid = pool.find(eid => !isEntityActive(this.world, eid));
 
-    if (!enemy) {
-      Logger.warn(`Enemy pool exhausted for type: ${enemyType}`);
-      // Create new enemy if pool exhausted
-      return new Enemy(this.scene, -100, -100, enemyType);
+    if (enemyEid === undefined) {
+      Logger.scope('EnemySpawnSystem').warn(`ECS Enemy pool exhausted for type: ${enemyType}`);
+      // Create new ECS enemy if pool exhausted
+      const newEnemyEid = createEnemy(this.world, this.scene, -1000, -1000, enemyType);
+      deactivateEntity(this.world, newEnemyEid);
+      pool.push(newEnemyEid); // Add to pool
+      return newEnemyEid;
     }
 
-    return enemy;
+    return enemyEid;
   }
 
   /**
-   * Update formations (remove completed ones)
-   * @param {Array} entities - All entities in the scene
+   * Update ECS formations (remove completed ones)
    */
-  updateFormations(_entities) {
+  updateFormations() {
     this.activeFormations = this.activeFormations.filter(formation => {
       // Check if formation leader still exists and is active
-      if (!formation.leader || !formation.leader.active) {
-        // Leader destroyed, break formation
-        formation.members.forEach(member => {
-          if (member.active) {
-            member.leaveFormation();
-          }
-        });
-        Logger.debug(`Formation disbanded: ${formation.pattern} (leader destroyed)`);
+      if (!formation.leader || !isEntityActive(this.world, formation.leader)) {
+        Logger.scope('EnemySpawnSystem').debug(`ECS Formation disbanded: ${formation.pattern} (leader destroyed)`);
         return false;
       }
 
-      // Remove destroyed members
-      formation.members = formation.members.filter(member => member.active);
+      // Remove destroyed members (filter to active entities only)
+      formation.members = formation.members.filter(memberEid => isEntityActive(this.world, memberEid));
 
       // Disband if too few members remain
       if (formation.members.length < 2) {
-        formation.members.forEach(member => {
-          if (member.active) {
-            member.leaveFormation();
-          }
-        });
-        Logger.debug(`Formation disbanded: ${formation.pattern} (too few members)`);
+        Logger.scope('EnemySpawnSystem').debug(`ECS Formation disbanded: ${formation.pattern} (too few members)`);
         return false;
       }
 
@@ -597,32 +716,18 @@ export default class EnemySpawnSystem extends BaseSystem {
   }
 
   /**
-   * Clean up inactive enemies and return them to pools
+   * Clean up inactive ECS enemies and manage sprite groups
    */
   cleanupInactiveEnemies() {
     Object.keys(this.enemyPool).forEach(enemyType => {
-      this.enemyPool[enemyType].forEach(enemy => {
-        if (!enemy.active && enemy.x !== -100) {
-          // Remove from scene entities array
-          if (this.scene.entities) {
-            const index = this.scene.entities.indexOf(enemy);
-            if (index !== -1) {
-              this.scene.entities.splice(index, 1);
-            }
-          }
-
-          // Remove from enemy group
-          if (this.scene.enemyGroup && enemy.body) {
-            this.scene.enemyGroup.remove(enemy);
-          }
-
-          // Reset enemy to pool state
-          enemy.setPosition(-100, -100);
-          enemy.setVisible(false);
-
-          // Reset enemy properties
-          if (enemy.formationLeader) {
-            enemy.leaveFormation();
+      this.enemyPool[enemyType].forEach(enemyEid => {
+        // Check if entity is inactive but sprite is still in groups
+        if (!isEntityActive(this.world, enemyEid)) {
+          const sprite = this.world.spriteMap.get(enemyEid);
+          
+          // Remove sprite from enemy group if still present
+          if (sprite && this.scene.enemyGroup) {
+            this.scene.enemyGroup.remove(sprite);
           }
         }
       });
@@ -642,7 +747,16 @@ export default class EnemySpawnSystem extends BaseSystem {
     this.baseSpawnDelay = Math.max(500, 1500 - this.currentWave * 50);
     this.currentSpawnDelay = this.baseSpawnDelay;
 
-    Logger.info(`Wave ${this.currentWave} generated`, {
+    console.log('[DEBUG] generateWave completed', {
+      currentWave: this.currentWave,
+      waveConfig,
+      enemiesInWave: this.enemiesInWave,
+      enemiesSpawned: this.enemiesSpawned,
+      baseSpawnDelay: this.baseSpawnDelay,
+      currentSpawnDelay: this.currentSpawnDelay
+    });
+
+    Logger.scope('EnemySpawnSystem').info(`Wave ${this.currentWave} generated`, {
       enemies: this.enemiesInWave,
       config: waveConfig,
       spawnDelay: this.baseSpawnDelay,
@@ -681,7 +795,7 @@ export default class EnemySpawnSystem extends BaseSystem {
       (this.stats.averageWaveTime * (this.stats.totalWavesCompleted - 1) + waveTime) /
       this.stats.totalWavesCompleted;
 
-    Logger.info(`Wave ${this.currentWave} completed`, {
+    Logger.scope('EnemySpawnSystem').info(`Wave ${this.currentWave} completed`, {
       waveTime: `${(waveTime / 1000).toFixed(1)}s`,
       enemiesDestroyed: this.stats.enemiesDestroyedThisWave,
     });
@@ -710,8 +824,8 @@ export default class EnemySpawnSystem extends BaseSystem {
   }
 
   /**
-   * Get spawn scopeName statistics
-   * @returns {Object} BaseSystem statistics
+   * Get ECS spawn system statistics
+   * @returns {Object} System statistics
    */
   getStats() {
     return {
@@ -722,9 +836,9 @@ export default class EnemySpawnSystem extends BaseSystem {
       enemiesRemaining: this.enemiesRemaining,
       activeFormations: this.activeFormations.length,
       poolUtilization: {
-        scout: this.enemyPool.scout.filter(e => e.active).length,
-        fighter: this.enemyPool.fighter.filter(e => e.active).length,
-        bomber: this.enemyPool.bomber.filter(e => e.active).length,
+        scout: this.enemyPool.scout.filter(eid => isEntityActive(this.world, eid)).length,
+        fighter: this.enemyPool.fighter.filter(eid => isEntityActive(this.world, eid)).length,
+        bomber: this.enemyPool.bomber.filter(eid => isEntityActive(this.world, eid)).length,
       },
     };
   }
@@ -733,12 +847,11 @@ export default class EnemySpawnSystem extends BaseSystem {
    * Force start next wave (for testing/debugging)
    */
   skipToNextWave() {
-    // Destroy all remaining enemies
+    // Deactivate all remaining ECS enemies
     Object.values(this.enemyPool).forEach(pool => {
-      pool.forEach(enemy => {
-        if (enemy.active) {
-          enemy.setActive(false);
-          enemy.setVisible(false);
+      pool.forEach(enemyEid => {
+        if (isEntityActive(this.world, enemyEid)) {
+          deactivateEntity(this.world, enemyEid);
         }
       });
     });
@@ -746,25 +859,18 @@ export default class EnemySpawnSystem extends BaseSystem {
     this.enemiesRemaining = 0;
     this.completeWave();
 
-    Logger.debug('Skipped to next wave');
+    Logger.scope('EnemySpawnSystem').debug('Skipped to next wave');
   }
 
   /**
-   * Clean up spawn scopeName
+   * Clean up ECS enemy spawn system
    */
   destroy() {
-    // Destroy all pooled enemies
-    Object.values(this.enemyPool).forEach(pool => {
-      pool.forEach(enemy => {
-        if (enemy.destroy) {
-          enemy.destroy();
-        }
-      });
-    });
-
+    // Note: ECS entities are managed by the world, sprites handled by world cleanup
+    // We just clear our pools and formations
     this.enemyPool = { scout: [], fighter: [], bomber: [] };
     this.activeFormations = [];
 
-    Logger.info('EnemySpawnSystem destroyed');
+    Logger.scope('EnemySpawnSystem').info('ECS EnemySpawnSystem destroyed');
   }
 }

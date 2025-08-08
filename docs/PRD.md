@@ -386,3 +386,110 @@ Create an engaging top-down space shooter game using Phaser.js 3.x with Vite bui
 This PRD outlines a comprehensive space shooter game that combines classic arcade action with modern progression mechanics. The phased development approach ensures steady progress while maintaining flexibility for improvements and enhancements based on playtesting feedback.
 
 The game's success will depend on tight controls, balanced difficulty progression, and meaningful upgrade systems that keep players engaged for multiple sessions. Regular playtesting and iteration will be crucial for achieving the optimal gameplay experience.
+
+## ECS Implementation Status & Next Steps
+
+### Status Update
+
+- ECS projectile path implemented and integrated into the ECS system pipeline (post-weapon events).
+- New elements added: `ProjectileData` component, `createProjectile` entity creator, and `projectileSystem`.
+- GameScene collisions updated to deactivate ECS projectiles and apply damage to ECS enemies and the BaseEntity player as appropriate.
+- Pipelines updated to include `projectileSystem` after `weaponSystem` in production, debug, and test modes.
+
+### Next Steps
+
+- Wire player firing into ECS (produce weapon events from input or call `createProjectile` with `owner: 'player'`).
+- Replace any remaining BaseEntity projectile spawns with ECS creation; remove legacy `src/entities/Projectile.js` when fully migrated.
+- Improve projectile direction targeting (enemy aim at player; player aim direction inheritance).
+- Add pooling for ECS projectiles to reduce allocations.
+- Expand tests around projectile lifecycle and collision side effects.
+\n+## ECS Migration Plan & Status
+\n+### Overview
+Complete migration from current BaseEntity/BaseComponent/BaseSystem architecture to bitECS. This replaces existing ECS-like code with bitECS for better performance and data-oriented design.
+\n+- Current Progress: Phase 1, 2, and 3 core enemy implementation complete and validated; player and projectiles remain in BaseEntity for now.
+\n+### Phase 1: Setup & Core Infrastructure — COMPLETED
+\n+1) Install bitECS and dependencies
+\n+```bash
+npm install bitecs
+```
+\n+2) ECS directory structure
+\n+```
+src/ecs/
+├── components/
+├── systems/
+├── entities/
+├── world.js
+└── index.js
+```
+\n+3) World management
+- `src/ecs/world.js` creates and manages the bitECS world, world time, and a `spriteMap` for entity-sprite mapping.
+- World time updated each frame from Phaser in `GameScene.update()` via `updateWorldTime(world, delta)`.
+\n+4) Component definitions (implemented)
+- Position, Velocity, Health, Weapon, Render, Physics, AI
+- Tags: Player, Enemy, Projectile, PowerUp
+\n+Example:
+\n+```js
+// Position.js
+export const Position = defineComponent({ x: Types.f32, y: Types.f32 });
+\n+// Health.js
+export const Health = defineComponent({ current: Types.i32, max: Types.i32 });
+\n+// Tags
+export const Player = defineComponent();
+export const Enemy = defineComponent();
+```
+\n+### Phase 2: Systems — COMPLETED
+\n+Implemented core systems with queries and lifecycle handling:
+- MovementSystem: Position updates based on Velocity and delta
+- RenderSystem: Sync sprites from Position/Render via `spriteMap`
+- WeaponSystem: Cooldowns, event emission for projectile creation
+- AISystem: Patterns (idle, chase, patrol, flee, circle, zigzag)
+- TimeSystem: Time book-keeping, pruning short-lived events, perf helpers
+\n+Queries are centralized in `src/ecs/systems/queries.js` with enter/exit lifecycle queries and utilities like `executeQuery` and `getQueryStats`.
+\n+Pipeline options in `src/ecs/systems/pipeline.js`:
+- `runSystemPipeline` (production), `debugSystemPipeline`, and `testPipeline`
+\n+### Phase 3: Enemy-First Integration — CORE COMPLETE
+\n+Enemy entities are created and managed via ECS while Player and Projectiles remain BaseEntity.
+\n+Key elements:
+- `src/ecs/entities/createEnemy.js`: creates enemies (scout/fighter/bomber), adds components, maps sprites, and supports pooling via `deactivateEntity`/`reactivateEntity`/`isEntityActive`.
+- `src/systems/EnemySpawnSystem.js`: uses ECS enemy pools (20 per type), spawns individuals/formations, tracks waves, and integrates with Phaser groups.
+- `src/scenes/GameScene.js`: initializes ECS world, updates time, runs ECS system pipeline each frame; BaseEntity player remains unchanged.
+\n+Example system excerpt:
+\n+```js
+// MovementSystem
+export const movementSystem = (world) => {
+  const { time: { delta } } = world;
+  const entities = movementQuery(world);
+  for (let i = 0; i < entities.length; i++) {
+    const eid = entities[i];
+    Position.x[eid] += Velocity.x[eid] * delta;
+    Position.y[eid] += Velocity.y[eid] * delta;
+  }
+  return world;
+};
+```
+\n+### Collision Bridge — IN PROGRESS
+\n+- Player projectiles vs ECS enemies: `GameScene.handleProjectileEnemyCollision()` reads ECS `Health` and deactivates enemies on death, while destroying BaseEntity projectile.
+- ECS enemy vs BaseEntity player: damage applied to player; ECS enemy remains managed via pooling.
+- ECS projectiles are planned for a future phase; current enemy firing uses events queued by WeaponSystem.
+\n+### Legacy Cleanup — IN PROGRESS (Post-Enemy Migration)
+\n+- Remove legacy `src/entities/Enemy.js` and any direct instantiation once ECS enemies are fully integrated everywhere.
+- Keep BaseEntity.js, Player.js, Projectile.js for future migration phases.
+\n+### Validation Results (Evidence-Based) — CRITERIA MET FOR ENEMY PHASE
+\n+1) ECS architecture compliance
+- Entity-component-system separation verified across `src/ecs/*`.
+\n+2) Object pooling implementation
+- Pools per enemy type; pooled entities set to offscreen and hidden; reactivated with clean state.
+\n+3) Component integration
+- Enemies configured via `enemyConfig`, conditional Weapon component for firing types.
+\n+4) Entity lifecycle management
+- Deactivate/reactivate/isActive functions implemented and used by spawner and death handling.
+\n+5) AI system integration
+- 6 patterns implemented with player targeting and pattern data arrays.
+\n+6) Phaser integration
+- DevShapes creation, bidirectional sprite mapping, `enemyGroup` integration.
+\n+7) Performance optimizations
+- Preallocated pools, centralized queries, and debug pipeline timings.
+\n+### Next Phases (Future Work)
+\n+- Migrate Player and Projectile to ECS.
+- Implement ECS-driven collision for projectiles and finalize bridge removal.
+- Remove remaining BaseEntity enemy code and references after full ECS adoption.

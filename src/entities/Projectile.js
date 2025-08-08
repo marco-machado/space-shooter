@@ -43,8 +43,7 @@ export default class Projectile extends BaseEntity {
       this._fallbackProjectilePhysicsConfiguration();
     }
 
-    Logger.debug(
-      `[Projectile] Created: ${this.weaponType} (${this.isPlayerProjectile ? 'player' : 'enemy'})`,
+    Logger.scope('Projectile').debug(` Created: ${this.weaponType} (${this.isPlayerProjectile ? 'player' : 'enemy'})`,
       {
         damage: this.damage,
         speed: this.speed,
@@ -124,7 +123,7 @@ export default class Projectile extends BaseEntity {
       pool.push(projectile);
     }
 
-    Logger.debug(`[Projectile] Pool created with ${size} projectiles`);
+    Logger.scope('Projectile').debug(` Pool created with ${size} projectiles`);
     return pool;
   }
 
@@ -168,7 +167,7 @@ export default class Projectile extends BaseEntity {
 
       // Check for destroyed or corrupted projectiles
       if (!candidate.setPosition || !candidate.getComponent) {
-        Logger.warn(`[Projectile] Pool contains corrupted projectile at index ${i}, removing`);
+        Logger.scope('Projectile').warn(` Pool contains corrupted projectile at index ${i}, removing`);
         pool.splice(i, 1);
         i--; // Adjust index after removal
         continue;
@@ -185,12 +184,12 @@ export default class Projectile extends BaseEntity {
       try {
         // CRITICAL FIX: Recreate GameObject if it's null (destroyed during pooling)
         if (!projectile.gameObject) {
-          Logger.debug('[Projectile] Recreating GameObject for pooled projectile');
+          Logger.scope('Projectile').debug('[Projectile] Recreating GameObject for pooled projectile');
           projectile.recreateGameObject();
 
           // Verify GameObject was successfully recreated
           if (!projectile.gameObject) {
-            Logger.error(
+            Logger.scope('Projectile').error(
               '[Projectile] Failed to recreate GameObject for pooled projectile, removing from pool'
             );
             const index = pool.indexOf(projectile);
@@ -245,7 +244,7 @@ export default class Projectile extends BaseEntity {
           projectile._fallbackProjectilePhysicsConfiguration();
         }
 
-        Logger.debug(`[Projectile] Projectile retrieved from pool: ${config.weaponType}`, {
+        Logger.scope('Projectile').debug(` Projectile retrieved from pool: ${config.weaponType}`, {
           position: { x, y },
           damage: projectile.damage,
           speed: projectile.speed,
@@ -254,7 +253,7 @@ export default class Projectile extends BaseEntity {
         });
         return projectile;
       } catch (error) {
-        Logger.error('[Projectile] Failed to initialize projectile from pool', {
+        Logger.scope('Projectile').error('[Projectile] Failed to initialize projectile from pool', {
           error: error.message,
           weaponType: config.weaponType,
           projectileState: {
@@ -276,7 +275,7 @@ export default class Projectile extends BaseEntity {
       }
     }
 
-    Logger.warn('[Projectile] Projectile pool exhausted - no valid projectiles available', {
+    Logger.scope('Projectile').warn('[Projectile] Projectile pool exhausted - no valid projectiles available', {
       poolSize: pool.length,
       activeCount: pool.filter(p => p && p.active).length,
     });
@@ -292,7 +291,7 @@ export default class Projectile extends BaseEntity {
     try {
       // Validate inputs
       if (!Array.isArray(pool) || !projectile) {
-        Logger.warn('Invalid parameters for returnToPool', {
+        Logger.scope('Projectile').warn('Invalid parameters for returnToPool', {
           hasPool: Array.isArray(pool),
           hasProjectile: !!projectile,
         });
@@ -301,13 +300,13 @@ export default class Projectile extends BaseEntity {
 
       // Check if projectile is in this pool
       if (!pool.includes(projectile)) {
-        Logger.warn('Projectile not found in pool, cannot return');
+        Logger.scope('Projectile').warn('Projectile not found in pool, cannot return');
         return;
       }
 
       // Validate projectile state before returning
       if (!projectile.setPosition) {
-        Logger.warn('Projectile appears corrupted, removing from pool instead of returning');
+        Logger.scope('Projectile').warn('Projectile appears corrupted, removing from pool instead of returning');
         const index = pool.indexOf(projectile);
         if (index > -1) {
           pool.splice(index, 1);
@@ -322,12 +321,12 @@ export default class Projectile extends BaseEntity {
       projectile.setAlpha(1);
       projectile.setRotation(0);
 
-      Logger.debug(`Projectile returned to pool: ${projectile.weaponType || 'unknown'}`, {
+      Logger.scope('Projectile').debug(`Projectile returned to pool: ${projectile.weaponType || 'unknown'}`, {
         poolSize: pool.length,
         activeCount: pool.filter(p => p && p.active).length,
       });
     } catch (error) {
-      Logger.error('Failed to return projectile to pool', {
+      Logger.scope('Projectile').error('Failed to return projectile to pool', {
         error: error.message,
         weaponType: projectile ? projectile.weaponType : 'unknown',
       });
@@ -336,7 +335,7 @@ export default class Projectile extends BaseEntity {
       const index = pool.indexOf(projectile);
       if (index > -1) {
         pool.splice(index, 1);
-        Logger.warn('Removed corrupted projectile from pool');
+        Logger.scope('Projectile').warn('Removed corrupted projectile from pool');
       }
     }
   }
@@ -356,7 +355,7 @@ export default class Projectile extends BaseEntity {
     this.body.setDrag(0);
     this.body.setMaxVelocity(600, 600);
 
-    Logger.debug(`[Projectile] Fallback physics configuration applied for ${this.entityId}`);
+    Logger.scope('Projectile').debug(` Fallback physics configuration applied for ${this.entityId}`);
   }
 
   /**
@@ -387,7 +386,7 @@ export default class Projectile extends BaseEntity {
 
     if (movement) {
       movement.moveInDirection(angle, projectileSpeed);
-      Logger.debug(`Projectile fired: angle ${angle.toFixed(2)}, speed ${projectileSpeed}`);
+      Logger.scope('Projectile').debug(`Projectile fired: angle ${angle.toFixed(2)}, speed ${projectileSpeed}`);
     }
   }
 
@@ -409,7 +408,7 @@ export default class Projectile extends BaseEntity {
 
       // Use moveInDirection which exists in MovementComponent
       movement.moveInDirection(angle, projectileSpeed);
-      Logger.debug(
+      Logger.scope('Projectile').debug(
         `Projectile fired towards: (${targetX}, ${targetY}) at angle ${angle.toFixed(2)}`
       );
     }
@@ -425,7 +424,7 @@ export default class Projectile extends BaseEntity {
     // Check lifetime expiration
     const currentTime = Date.now();
     if (currentTime - this.creationTime > this.maxLifetime) {
-      Logger.debug(`Projectile expired after ${this.maxLifetime}ms`);
+      Logger.scope('Projectile').debug(`Projectile expired after ${this.maxLifetime}ms`);
       this.destroy();
       return;
     }
@@ -471,7 +470,7 @@ export default class Projectile extends BaseEntity {
    * @param {BaseEntity} otherEntity - BaseEntity that was hit
    */
   onCollision(otherEntity) {
-    Logger.debug(`Projectile hit: ${otherEntity.constructor.name}`, {
+    Logger.scope('Projectile').debug(`Projectile hit: ${otherEntity.constructor.name}`, {
       damage: this.damage,
       piercing: this.piercing,
       weaponType: this.weaponType,

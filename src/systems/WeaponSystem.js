@@ -62,7 +62,7 @@ export default class WeaponSystem extends BaseSystem {
    */
   getEntitiesWithComponents(entities, componentTypes) {
     if (!Array.isArray(entities) || !Array.isArray(componentTypes)) {
-      Logger.warn('WeaponSystem: Invalid parameters for getEntitiesWithComponents', {
+      Logger.scope('WeaponSystem').warn('WeaponSystem: Invalid parameters for getEntitiesWithComponents', {
         hasEntities: Array.isArray(entities),
         hasComponentTypes: Array.isArray(componentTypes),
       });
@@ -191,14 +191,14 @@ export default class WeaponSystem extends BaseSystem {
           this.stats.projectilesFired++;
           this.stats.projectilesActive++;
 
-          Logger.debug(`Player fired: ${projectileConfig.weaponType}`, {
+          Logger.scope('WeaponSystem').debug(`Player fired: ${projectileConfig.weaponType}`, {
             position: { x: fireX, y: fireY },
             damage: projectileConfig.damage,
             speed: projectileConfig.speed,
             activeCount: this.activePlayerProjectiles.length,
           });
         } catch (fireError) {
-          Logger.error('Failed to fire projectile', {
+          Logger.scope('WeaponSystem').error('Failed to fire projectile', {
             error: fireError.message,
             weaponType: projectileConfig.weaponType,
           });
@@ -209,13 +209,13 @@ export default class WeaponSystem extends BaseSystem {
           }
         }
       } else {
-        Logger.warn('Failed to create projectile for player weapon', {
+        Logger.scope('WeaponSystem').warn('Failed to create projectile for player weapon', {
           weaponType: projectileConfig.weaponType,
           playerPosition: { x: player.x, y: player.y },
         });
       }
     } catch (error) {
-      Logger.error('WeaponSystem: Critical error in firePlayerWeapon', {
+      Logger.scope('WeaponSystem').error('WeaponSystem: Critical error in firePlayerWeapon', {
         error: error.message,
         hasPlayer: !!player,
       });
@@ -337,7 +337,7 @@ export default class WeaponSystem extends BaseSystem {
     if (!projectile) {
       projectile = new Projectile(this.scene, fireX, fireY, projectileConfig);
       this.stats.poolMisses++;
-      Logger.warn('Enemy projectile pool exhausted, creating new projectile');
+      Logger.scope('WeaponSystem').warn('Enemy projectile pool exhausted, creating new projectile');
     }
 
     if (projectile) {
@@ -370,7 +370,7 @@ export default class WeaponSystem extends BaseSystem {
 
       // Validate projectile state
       if (!projectile || !projectile.update) {
-        Logger.warn('WeaponSystem: Corrupted projectile in active array, removing', { index: i });
+        Logger.scope('WeaponSystem').warn('WeaponSystem: Corrupted projectile in active array, removing', { index: i });
         this.activePlayerProjectiles.splice(i, 1);
         this.stats.projectilesActive--;
         continue;
@@ -395,7 +395,7 @@ export default class WeaponSystem extends BaseSystem {
 
       // Validate projectile state
       if (!projectile || !projectile.update) {
-        Logger.warn('WeaponSystem: Corrupted enemy projectile in active array, removing', {
+        Logger.scope('WeaponSystem').warn('WeaponSystem: Corrupted enemy projectile in active array, removing', {
           index: i,
         });
         this.activeEnemyProjectiles.splice(i, 1);
@@ -453,7 +453,7 @@ export default class WeaponSystem extends BaseSystem {
 
     const projectile = this.createEnemyProjectile(enemy, config, angle);
     if (projectile) {
-      Logger.debug(`Enemy fired: ${enemy.enemyType}`);
+      Logger.scope('WeaponSystem').debug(`Enemy fired: ${enemy.enemyType}`);
     }
   }
 
@@ -513,7 +513,7 @@ export default class WeaponSystem extends BaseSystem {
     this.activeEnemyProjectiles = [];
     this.stats.projectilesActive = 0;
 
-    Logger.debug('All projectiles cleared');
+    Logger.scope('WeaponSystem').debug('All projectiles cleared');
   }
 
   /**
@@ -545,7 +545,7 @@ export default class WeaponSystem extends BaseSystem {
       }
     }
 
-    Logger.info(`Projectile pools resized: ${oldSize} -> ${newSize}`);
+    Logger.scope('WeaponSystem').info(`Projectile pools resized: ${oldSize} -> ${newSize}`);
   }
 
   /**
@@ -604,6 +604,6 @@ export default class WeaponSystem extends BaseSystem {
     this.activeEnemyProjectiles = [];
     this.stats.projectilesActive = 0;
 
-    Logger.info('WeaponSystem destroyed');
+    Logger.scope('WeaponSystem').info('WeaponSystem destroyed');
   }
 }

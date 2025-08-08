@@ -35,12 +35,12 @@ class ObjectPool {
         const obj = this.createFunction();
         this.pool.push(obj);
       } catch (error) {
-        Logger.error('ObjectPool: Failed to create initial object', { error: error.message });
+        Logger.scope('ObjectPool').error('ObjectPool: Failed to create initial object', { error: error.message });
         break;
       }
     }
 
-    Logger.debug('ObjectPool: Created', {
+    Logger.scope('ObjectPool').debug('ObjectPool: Created', {
       initialSize: this.pool.length,
       maxSize: this.maxSize,
     });
@@ -55,19 +55,19 @@ class ObjectPool {
 
     if (this.pool.length > 0) {
       obj = this.pool.pop();
-      Logger.debug('ObjectPool: Reused object from pool', {
+      Logger.scope('ObjectPool').debug('ObjectPool: Reused object from pool', {
         poolSize: this.pool.length,
         activeCount: this.activeObjects.size,
       });
     } else {
       try {
         obj = this.createFunction();
-        Logger.debug('ObjectPool: Created new object', {
+        Logger.scope('ObjectPool').debug('ObjectPool: Created new object', {
           poolSize: this.pool.length,
           activeCount: this.activeObjects.size,
         });
       } catch (error) {
-        Logger.error('ObjectPool: Failed to create new object', { error: error.message });
+        Logger.scope('ObjectPool').error('ObjectPool: Failed to create new object', { error: error.message });
         return null;
       }
     }
@@ -83,12 +83,12 @@ class ObjectPool {
    */
   release(obj) {
     if (!obj) {
-      Logger.warn('ObjectPool: Attempted to release null/undefined object');
+      Logger.scope('ObjectPool').warn('ObjectPool: Attempted to release null/undefined object');
       return false;
     }
 
     if (!this.activeObjects.has(obj)) {
-      Logger.warn('ObjectPool: Attempted to release object not from this pool');
+      Logger.scope('ObjectPool').warn('ObjectPool: Attempted to release object not from this pool');
       return false;
     }
 
@@ -99,17 +99,17 @@ class ObjectPool {
       try {
         this.resetFunction(obj);
         this.pool.push(obj);
-        Logger.debug('ObjectPool: Object released to pool', {
+        Logger.scope('ObjectPool').debug('ObjectPool: Object released to pool', {
           poolSize: this.pool.length,
           activeCount: this.activeObjects.size,
         });
         return true;
       } catch (error) {
-        Logger.error('ObjectPool: Failed to reset object', { error: error.message });
+        Logger.scope('ObjectPool').error('ObjectPool: Failed to reset object', { error: error.message });
         return false;
       }
     } else {
-      Logger.debug('ObjectPool: Object discarded (max size reached)', {
+      Logger.scope('ObjectPool').debug('ObjectPool: Object discarded (max size reached)', {
         poolSize: this.pool.length,
         activeCount: this.activeObjects.size,
       });
@@ -140,7 +140,7 @@ class ObjectPool {
     this.pool.length = 0;
     this.activeObjects.clear();
 
-    Logger.debug('ObjectPool: Cleared all objects', { totalCleared: totalObjects });
+    Logger.scope('ObjectPool').debug('ObjectPool: Cleared all objects', { totalCleared: totalObjects });
   }
 
   /**
@@ -157,7 +157,7 @@ class ObjectPool {
       this.pool.splice(this.maxSize, excess);
     }
 
-    Logger.debug('ObjectPool: Resized', {
+    Logger.scope('ObjectPool').debug('ObjectPool: Resized', {
       oldMaxSize,
       newMaxSize: this.maxSize,
       currentPoolSize: this.pool.length,
@@ -180,7 +180,7 @@ class ObjectPool {
     const leakedCount = this.activeObjects.size;
     this.activeObjects.clear();
 
-    Logger.warn('ObjectPool: Force cleanup performed', {
+    Logger.scope('ObjectPool').warn('ObjectPool: Force cleanup performed', {
       leakedObjects: leakedCount,
       poolSize: this.pool.length,
     });

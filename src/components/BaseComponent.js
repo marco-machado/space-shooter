@@ -17,7 +17,7 @@ export default class BaseComponent {
     /** @type {string} Unique component identifier */
     this.componentId = BaseComponent.generateId();
 
-    Logger.debug(
+    Logger.scope('BaseComponent').debug(
       `[BaseComponent] Component created: ${this.constructor.name} (${this.componentId})`
     );
   }
@@ -43,7 +43,7 @@ export default class BaseComponent {
     }
     
     // Override in subclasses
-    Logger.debug(`[BaseComponent] Component initialized: ${this.constructor.name}`, data);
+    Logger.scope('BaseComponent').debug(`[BaseComponent] Component initialized: ${this.constructor.name}`, data);
   }
 
   /**
@@ -54,12 +54,12 @@ export default class BaseComponent {
   validate() {
     // Base validation checks
     if (!this.componentId || typeof this.componentId !== 'string') {
-      Logger.warn(`[BaseComponent] Invalid componentId for ${this.constructor.name}:`, this.componentId);
+      Logger.scope('BaseComponent').warn(`[BaseComponent] Invalid componentId for ${this.constructor.name}:`, this.componentId);
       return false;
     }
     
     if (typeof this.active !== 'boolean') {
-      Logger.warn(`[BaseComponent] Invalid active state for ${this.constructor.name}:`, this.active);
+      Logger.scope('BaseComponent').warn(`[BaseComponent] Invalid active state for ${this.constructor.name}:`, this.active);
       return false;
     }
     
@@ -88,7 +88,7 @@ export default class BaseComponent {
       
       return serializedData;
     } catch (error) {
-      Logger.error(`[BaseComponent] Serialization error for ${this.constructor.name}:`, error.message);
+      Logger.scope('BaseComponent').error(`[BaseComponent] Serialization error for ${this.constructor.name}:`, error.message);
       throw error;
     }
   }
@@ -117,9 +117,9 @@ export default class BaseComponent {
       
       this.componentId = data.componentId || this.componentId;
       this.active = data.active !== undefined ? data.active : true;
-      Logger.debug(`[BaseComponent] Component deserialized: ${this.constructor.name}`, data);
+      Logger.scope('BaseComponent').debug(`[BaseComponent] Component deserialized: ${this.constructor.name}`, data);
     } catch (error) {
-      Logger.error(`[BaseComponent] Deserialization error for ${this.constructor.name}:`, error.message);
+      Logger.scope('BaseComponent').error(`[BaseComponent] Deserialization error for ${this.constructor.name}:`, error.message);
       throw error;
     }
   }
@@ -132,12 +132,12 @@ export default class BaseComponent {
   destroy() {
     // Validate state before destruction
     if (!this.validate()) {
-      Logger.warn(`[BaseComponent] Destroying component with invalid state: ${this.constructor.name} (${this.componentId})`);
+      Logger.scope('BaseComponent').warn(`[BaseComponent] Destroying component with invalid state: ${this.constructor.name} (${this.componentId})`);
     }
     
     this.entity = null;
     this.active = false;
-    Logger.debug(
+    Logger.scope('BaseComponent').debug(
       `[BaseComponent] Component destroyed: ${this.constructor.name} (${this.componentId})`
     );
   }

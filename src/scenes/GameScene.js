@@ -6,6 +6,17 @@ import GameStateManager from '@/utils/GameStateManager.js';
 import Logger from '@/utils/Logger.js';
 import { initializeWorld, updateWorldTime } from '@/ecs/index.js';
 
+// ECS Systems Pipeline
+import { runSystemPipeline, debugSystemPipeline, PIPELINE_MODES } from '@/ecs/systems/pipeline.js';
+
+// BaseEntity Systems (manage ECS entities)
+import EnemySpawnSystem from '@/systems/EnemySpawnSystem.js';
+
+// ECS collision bridge utilities
+import { getEntityFromSprite, deactivateEntity, getEnemyConfig } from '@/ecs/entities/index.js';
+import { Health } from '@/ecs/components/index.js';
+import { hasComponent } from 'bitecs';
+
 export default class GameScene extends Phaser.Scene {
   constructor() {
     super({ key: 'GameScene' });
@@ -33,6 +44,7 @@ export default class GameScene extends Phaser.Scene {
    * @return {void} Does not return a value.
    */
   create() {
+    console.log('[DEBUG] GameScene.create() called - Game scene starting');
     this.logger.debug('Creating game scene');
 
     // Initialize bitECS world
@@ -50,10 +62,20 @@ export default class GameScene extends Phaser.Scene {
 
     this.player = new Player(this);
 
+    // Initialize ECS enemy spawn system (manages ECS entities)
+    this.enemySpawnSystem = new EnemySpawnSystem(this, this.world);
+    this.systems.enemySpawn = this.enemySpawnSystem;
+
+    // Determine ECS pipeline mode
+    const config = ConfigManager.getConfig();
+    this.pipelineMode = config.debugMode ? PIPELINE_MODES.DEBUG : PIPELINE_MODES.PRODUCTION;
+    this.systemsPipeline = this.pipelineMode === PIPELINE_MODES.DEBUG ? debugSystemPipeline : runSystemPipeline;
+
     this.scene.launch('UIScene');
 
     this.fireKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
     this.pauseKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
+    this.debugSpawnKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E); // DEBUG: E to force spawn enemy
 
     this.startBackgroundMusic();
 
@@ -61,6 +83,14 @@ export default class GameScene extends Phaser.Scene {
 
     // Start the game
     this.gameStateManager.startGame();
+    
+    // DEBUG: Check game state immediately after starting
+    const debugGameState = this.gameStateManager.getGameState();
+    console.log('[DEBUG] GameScene.create - Game state after startGame():', {
+      isPlaying: debugGameState.isPlaying,
+      isPaused: debugGameState.isPaused,
+      gameStateManagerExists: !!this.gameStateManager
+    });
   }
 
   onPauseToggle(data) {
@@ -86,10 +116,38 @@ export default class GameScene extends Phaser.Scene {
       this.gameStateManager.togglePause();
       return;
     }
+    
+    // DEBUG: Force spawn enemy with E key
+    if (Phaser.Input.Keyboard.JustDown(this.debugSpawnKey)) {
+      console.log('[DEBUG] Manual enemy spawn triggered (E key)');
+      if (this.enemySpawnSystem) {
+        this.enemySpawnSystem.spawnIndividualEnemy('scout');
+        console.log('[DEBUG] Forced enemy spawn completed');
+      } else {
+        console.warn('[DEBUG] No enemy spawn system found for manual spawn');
+      }
+    }
 
     const gameState = this.gameStateManager.getGameState();
+    
+    // Debug game state periodically (reduced frequency)
+    if (Date.now() % 10000 < delta) {
+      console.log('[DEBUG] GameScene.update - Game State:', {
+        isPlaying: gameState.isPlaying,
+        isPaused: gameState.isPaused,
+        currentWave: gameState.currentWave,
+        score: gameState.score,
+        hasEnemySpawnSystem: !!this.enemySpawnSystem
+      });
+    }
 
     if (!gameState.isPlaying || gameState.isPaused) {
+      if (Date.now() % 2000 < delta) {
+        console.log('[DEBUG] GameScene.update - Early return due to game state', {
+          isPlaying: gameState.isPlaying,
+          isPaused: gameState.isPaused
+        });
+      }
       return;
     }
 
@@ -101,8 +159,20 @@ export default class GameScene extends Phaser.Scene {
 
     this.updateBackground();
 
-    // Future: ECS systems pipeline will run here
-    // this.runSystemsPipeline(this.world);
+    // Run ECS systems pipeline for enemy entities (Movement, AI, Weapon, Render, Time systems)
+    this.systemsPipeline(this.world);
+
+    // Run BaseEntity systems that manage ECS entities
+    if (this.enemySpawnSystem) {
+      console.log('[DEBUG] GameScene.update - Calling enemySpawnSystem.update', {
+        delta,
+        systemExists: !!this.enemySpawnSystem,
+        entitiesArrayLength: this.entities?.length || 0
+      });
+      this.enemySpawnSystem.update(this.entities, delta);
+    } else {
+      console.warn('[DEBUG] GameScene.update - No enemySpawnSystem found!');
+    }
   }
 
   createBackground() {
@@ -202,25 +272,150 @@ export default class GameScene extends Phaser.Scene {
     });
   }
 
-  // Collision callback functions (placeholders)
-  handleProjectileEnemyCollision(projectile, enemy) {
-    this.logger.debug('Projectile-Enemy collision detected', {
-      projectileId: projectile.entityId || 'unknown',
-      enemyId: enemy.entityId || 'unknown',
+  // Collision callback functions
+  handleProjectileEnemyCollision(projectile, enemySprite) {
+    // Get ECS enemy entity ID from sprite
+    const enemyEid = getEntityFromSprite(enemySprite);
+    
+    if (enemyEid === null) {
+      this.logger.warn('Enemy sprite has no associated ECS entity', { sprite: enemySprite });
+      return;
+    }
+
+    // Get projectile damage (supports ECS projectile sprites)
+    const projectileDamage = projectile?.damage || 25; // Default damage
+
+    // Apply damage to ECS enemy via Health component
+    if (hasComponent(this.world, Health, enemyEid)) {
+      const currentHealth = Health.current[enemyEid];
+      const newHealth = Math.max(0, currentHealth - projectileDamage);
+      Health.current[enemyEid] = newHealth;
+
+      this.logger.debug('ECS Enemy hit by BaseEntity projectile', {
+        enemyEid,
+        damage: projectileDamage,
+        healthBefore: currentHealth,
+        healthAfter: newHealth
+      });
+
+      // Handle enemy death
+      if (newHealth <= 0) {
+        this.handleEnemyDeath(enemyEid, enemySprite);
+      }
+    }
+
+    // Deactivate ECS projectile if applicable; else destroy legacy projectile
+    if (projectile && projectile.entityType === 'projectile' && projectile.entityId != null) {
+      // dynamic import to avoid cyclic deps in tests
+      import('@/ecs/entities/createProjectile.js').then(({ deactivateProjectile }) => {
+        deactivateProjectile(this.world, projectile.entityId);
+        if (this.playerProjectileGroup) this.playerProjectileGroup.remove(projectile);
+      });
+    } else if (projectile?.destroy) {
+      projectile.destroy();
+    } else if (projectile?.setActive) {
+      projectile.setActive(false);
+      projectile.setVisible(false);
+    }
+  }
+
+  /**
+   * Handle ECS enemy death - deactivate entity and emit events
+   */
+  handleEnemyDeath(enemyEid, enemySprite) {
+    this.logger.debug('ECS Enemy death', { enemyEid });
+
+    // Get enemy type and score value
+    const enemyType = enemySprite?.enemyType || 'scout';
+    const enemyConfig = getEnemyConfig(enemyType);
+    
+    // Deactivate the ECS entity (returns to pool)
+    deactivateEntity(this.world, enemyEid);
+
+    // Remove sprite from enemy group
+    if (enemySprite && this.enemyGroup) {
+      this.enemyGroup.remove(enemySprite);
+    }
+
+    // Emit enemy death event for score/effects
+    this.eventBus.emit('enemyDestroyed', {
+      enemyId: enemyEid,
+      enemyType,
+      position: { x: enemySprite?.x || 0, y: enemySprite?.y || 0 },
+      scoreValue: enemyConfig.scoreValue
+    });
+
+    this.logger.debug('ECS Enemy destroyed', {
+      enemyEid,
+      enemyType,
+      scoreValue: enemyConfig.scoreValue
     });
   }
 
   handleEnemyProjectilePlayerCollision(projectile, player) {
-    this.logger.debug('Enemy Projectile-Player collision detected', {
+    const damage = projectile?.damage || 15;
+
+    // Apply damage to BaseEntity player
+    if (player.takeDamage) {
+      player.takeDamage(damage);
+    } else {
+      const playerHealthComponent = player.getComponent ? player.getComponent('HealthComponent') : null;
+      if (playerHealthComponent && playerHealthComponent.takeDamage) {
+        playerHealthComponent.takeDamage(damage, 'projectile');
+      }
+    }
+
+    // Deactivate ECS projectile if applicable; else destroy legacy projectile
+    if (projectile && projectile.entityType === 'projectile' && projectile.entityId != null) {
+      import('@/ecs/entities/createProjectile.js').then(({ deactivateProjectile }) => {
+        deactivateProjectile(this.world, projectile.entityId);
+        if (this.enemyProjectileGroup) this.enemyProjectileGroup.remove(projectile);
+      });
+    } else if (projectile?.destroy) {
+      projectile.destroy();
+    } else if (projectile?.setActive) {
+      projectile.setActive(false);
+      projectile.setVisible(false);
+    }
+
+    this.logger.debug('Enemy Projectile-Player collision handled', {
       projectileId: projectile.entityId || 'unknown',
-      playerId: player.entityId || 'unknown',
+      damage
     });
   }
 
-  handlePlayerEnemyCollision(player, enemy) {
-    this.logger.debug('Player-Enemy collision detected', {
+  handlePlayerEnemyCollision(player, enemySprite) {
+    // Get ECS enemy entity ID from sprite
+    const enemyEid = getEntityFromSprite(enemySprite);
+    
+    if (enemyEid === null) {
+      this.logger.warn('Enemy sprite has no associated ECS entity in player collision', { sprite: enemySprite });
+      return;
+    }
+
+    this.logger.debug('BaseEntity Player-ECS Enemy collision detected', {
       playerId: player.entityId || 'unknown',
-      enemyId: enemy.entityId || 'unknown',
+      enemyEid
+    });
+
+    // Apply collision damage to BaseEntity player
+    // TODO: Get enemy collision damage from ECS enemy config or component
+    const enemyCollisionDamage = 15; // Default collision damage
+
+    // Assuming player has a takeDamage method or HealthComponent
+    if (player.takeDamage) {
+      player.takeDamage(enemyCollisionDamage);
+    } else {
+      // Try to get player's health component
+      const playerHealthComponent = player.getComponent ? player.getComponent('HealthComponent') : null;
+      if (playerHealthComponent && playerHealthComponent.takeDamage) {
+        playerHealthComponent.takeDamage(enemyCollisionDamage, 'collision');
+      }
+    }
+
+    this.logger.debug('Player took collision damage from ECS enemy', {
+      damage: enemyCollisionDamage,
+      enemyEid
     });
   }
 

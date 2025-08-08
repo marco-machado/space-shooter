@@ -14,17 +14,17 @@ class SaveManager {
    */
   static save(key, data) {
     if (!key || typeof key !== 'string') {
-      Logger.error('SaveManager: Invalid key provided', { key });
+      Logger.scope('SaveManager').error('SaveManager: Invalid key provided', { key });
       return false;
     }
 
     try {
       const jsonData = JSON.stringify(data);
       localStorage.setItem(key, jsonData);
-      Logger.debug('SaveManager: Data saved successfully', { key, size: jsonData.length });
+      Logger.scope('SaveManager').debug('SaveManager: Data saved successfully', { key, size: jsonData.length });
       return true;
     } catch (error) {
-      Logger.error('SaveManager: Failed to save data', { key, error: error.message });
+      Logger.scope('SaveManager').error('SaveManager: Failed to save data', { key, error: error.message });
       return false;
     }
   }
@@ -37,22 +37,22 @@ class SaveManager {
    */
   static load(key, defaultValue = null) {
     if (!key || typeof key !== 'string') {
-      Logger.error('SaveManager: Invalid key provided', { key });
+      Logger.scope('SaveManager').error('SaveManager: Invalid key provided', { key });
       return defaultValue;
     }
 
     try {
       const jsonData = localStorage.getItem(key);
       if (jsonData === null) {
-        Logger.debug('SaveManager: No data found for key', { key });
+        Logger.scope('SaveManager').debug('SaveManager: No data found for key', { key });
         return defaultValue;
       }
 
       const data = JSON.parse(jsonData);
-      Logger.debug('SaveManager: Data loaded successfully', { key, hasData: data !== null });
+      Logger.scope('SaveManager').debug('SaveManager: Data loaded successfully', { key, hasData: data !== null });
       return data;
     } catch (error) {
-      Logger.error('SaveManager: Failed to load data', { key, error: error.message });
+      Logger.scope('SaveManager').error('SaveManager: Failed to load data', { key, error: error.message });
       return defaultValue;
     }
   }
@@ -64,16 +64,16 @@ class SaveManager {
    */
   static remove(key) {
     if (!key || typeof key !== 'string') {
-      Logger.error('SaveManager: Invalid key provided', { key });
+      Logger.scope('SaveManager').error('SaveManager: Invalid key provided', { key });
       return false;
     }
 
     try {
       localStorage.removeItem(key);
-      Logger.debug('SaveManager: Data removed successfully', { key });
+      Logger.scope('SaveManager').debug('SaveManager: Data removed successfully', { key });
       return true;
     } catch (error) {
-      Logger.error('SaveManager: Failed to remove data', { key, error: error.message });
+      Logger.scope('SaveManager').error('SaveManager: Failed to remove data', { key, error: error.message });
       return false;
     }
   }
@@ -85,10 +85,10 @@ class SaveManager {
   static clear() {
     try {
       localStorage.clear();
-      Logger.debug('SaveManager: All data cleared successfully');
+      Logger.scope('SaveManager').debug('SaveManager: All data cleared successfully');
       return true;
     } catch (error) {
-      Logger.error('SaveManager: Failed to clear data', { error: error.message });
+      Logger.scope('SaveManager').error('SaveManager: Failed to clear data', { error: error.message });
       return false;
     }
   }
@@ -106,7 +106,7 @@ class SaveManager {
     try {
       return localStorage.getItem(key) !== null;
     } catch (error) {
-      Logger.error('SaveManager: Failed to check key existence', { key, error: error.message });
+      Logger.scope('SaveManager').error('SaveManager: Failed to check key existence', { key, error: error.message });
       return false;
     }
   }
@@ -125,10 +125,10 @@ class SaveManager {
           keys.push(key);
         }
       }
-      Logger.debug('SaveManager: Retrieved keys', { count: keys.length, prefix });
+      Logger.scope('SaveManager').debug('SaveManager: Retrieved keys', { count: keys.length, prefix });
       return keys;
     } catch (error) {
-      Logger.error('SaveManager: Failed to get keys', { prefix, error: error.message });
+      Logger.scope('SaveManager').error('SaveManager: Failed to get keys', { prefix, error: error.message });
       return [];
     }
   }
@@ -159,10 +159,10 @@ class SaveManager {
         available: this.isStorageAvailable(),
       };
 
-      Logger.debug('SaveManager: Storage info retrieved', info);
+      Logger.scope('SaveManager').debug('SaveManager: Storage info retrieved', info);
       return info;
     } catch (error) {
-      Logger.error('SaveManager: Failed to get storage info', { error: error.message });
+      Logger.scope('SaveManager').error('SaveManager: Failed to get storage info', { error: error.message });
       return {
         totalKeys: 0,
         totalSize: 0,
@@ -183,7 +183,7 @@ class SaveManager {
       localStorage.removeItem(testKey);
       return true;
     } catch (error) {
-      Logger.warn('SaveManager: localStorage not available', { error: error.message });
+      Logger.scope('SaveManager').warn('SaveManager: localStorage not available', { error: error.message });
       return false;
     }
   }

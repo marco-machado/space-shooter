@@ -42,7 +42,7 @@ export default class BaseEntity {
     // Register with scene's entity scopeName
     this._registerWithScene(scene);
 
-    Logger.debug(`[BaseEntity] Entity created: ${this.entityId}`, {
+    Logger.scope('BaseEntity').debug(` Entity created: ${this.entityId}`, {
       type: this.config.type,
       position: { x: this.config.x, y: this.config.y },
       hasGameObject: !!this.gameObject,
@@ -237,7 +237,7 @@ export default class BaseEntity {
           return this._createRectangle();
       }
     } catch (error) {
-      Logger.error(`[BaseEntity] Failed to create GameObject of type ${this.config.type}:`, error);
+      Logger.scope('BaseEntity').error(` Failed to create GameObject of type ${this.config.type}:`, error);
       return this._createRectangle();
     }
   }
@@ -350,16 +350,14 @@ export default class BaseEntity {
 
     // Check if recreation is needed
     if (this.gameObject) {
-      Logger.debug(
-        `[BaseEntity] Entity ${this.entityId}: GameObject already exists, skipping recreation`
+      Logger.scope('BaseEntity').debug(` Entity ${this.entityId}: GameObject already exists, skipping recreation`
       );
       return this;
     }
 
     // Validate scene state before recreation
     if (!this.scene || this.scene.sys.isDestroyed) {
-      Logger.error(
-        `[BaseEntity] Entity ${this.entityId}: Cannot recreate GameObject - scene is destroyed`
+      Logger.scope('BaseEntity').error(` Entity ${this.entityId}: Cannot recreate GameObject - scene is destroyed`
       );
       return this;
     }
@@ -385,16 +383,16 @@ export default class BaseEntity {
         this.gameObject.visible = true;
         this.gameObject.active = true;
 
-        Logger.debug(`[BaseEntity] Entity ${this.entityId}: GameObject successfully recreated`, {
+        Logger.scope('BaseEntity').debug(` Entity ${this.entityId}: GameObject successfully recreated`, {
           type: this.config.type,
           position: { x: this.config.x, y: this.config.y },
           hasPhysics: !!this.body,
         });
       } else {
-        Logger.error(`[BaseEntity] Entity ${this.entityId}: Failed to recreate GameObject`);
+        Logger.scope('BaseEntity').error(` Entity ${this.entityId}: Failed to recreate GameObject`);
       }
     } catch (error) {
-      Logger.error(`[BaseEntity] Entity ${this.entityId}: GameObject recreation failed`, {
+      Logger.scope('BaseEntity').error(` Entity ${this.entityId}: GameObject recreation failed`, {
         error: error.message,
         config: this.config,
       });
@@ -547,7 +545,7 @@ export default class BaseEntity {
       }
     });
 
-    Logger.debug(`[BaseEntity] Entity deactivated for pooling: ${this.entityId}`);
+    Logger.scope('BaseEntity').debug(` Entity deactivated for pooling: ${this.entityId}`);
   }
 
   /**
@@ -584,7 +582,7 @@ export default class BaseEntity {
       this.gameObject.destroy();
     }
 
-    Logger.debug(`[BaseEntity] Entity destroyed: ${this.entityId}`);
+    Logger.scope('BaseEntity').debug(` Entity destroyed: ${this.entityId}`);
   }
 
   /**
@@ -598,12 +596,12 @@ export default class BaseEntity {
    */
   enablePhysics(bodyType = 'dynamic', collisionGroup = null, options = {}) {
     if (!this.gameObject) {
-      Logger.warn(`[BaseEntity] Entity ${this.entityId}: Cannot enable physics - no GameObject`);
+      Logger.scope('BaseEntity').warn(` Entity ${this.entityId}: Cannot enable physics - no GameObject`);
       return this;
     }
 
     if (!this.scene.physics || !this.scene.physics.world) {
-      Logger.warn(`[BaseEntity] Entity ${this.entityId}: Scene has no physics world`);
+      Logger.scope('BaseEntity').warn(` Entity ${this.entityId}: Scene has no physics world`);
       return this;
     }
 
@@ -620,7 +618,7 @@ export default class BaseEntity {
       this.config.physicsOptions = { ...options };
       this.config.requiresPhysics = true;
 
-      Logger.debug(`[BaseEntity] Physics enabled for ${this.entityId}`, {
+      Logger.scope('BaseEntity').debug(` Physics enabled for ${this.entityId}`, {
         bodyType,
         collisionGroup,
         bodySize: { width: this.body.width, height: this.body.height },
@@ -661,7 +659,7 @@ export default class BaseEntity {
       this.setCollisionGroup(collisionGroup);
     }
 
-    Logger.debug(`[BaseEntity] Physics configuration applied for ${this.entityId}`);
+    Logger.scope('BaseEntity').debug(` Physics configuration applied for ${this.entityId}`);
   }
 
   /**
@@ -686,7 +684,7 @@ export default class BaseEntity {
     this.body.setSize(physicsWidth, physicsHeight);
     this.body.setOffset(offsetX, offsetY);
 
-    Logger.debug(`[BaseEntity] Physics body sized for ${this.entityId}`, {
+    Logger.scope('BaseEntity').debug(` Physics body sized for ${this.entityId}`, {
       visual: { width: visualWidth, height: visualHeight },
       physics: { width: physicsWidth, height: physicsHeight },
       offset: { x: offsetX, y: offsetY },
@@ -700,8 +698,7 @@ export default class BaseEntity {
    */
   setCollisionGroup(groupName) {
     if (!this.body) {
-      Logger.warn(
-        `[BaseEntity] Entity ${this.entityId}: Cannot set collision group - no physics body`
+      Logger.scope('BaseEntity').warn(` Entity ${this.entityId}: Cannot set collision group - no physics body`
       );
       return this;
     }
@@ -709,7 +706,7 @@ export default class BaseEntity {
     const constants = ConfigManager.getConstants();
 
     if (!constants.COLLISION_GROUPS[groupName.toUpperCase()]) {
-      Logger.warn(`[BaseEntity] Entity ${this.entityId}: Unknown collision group: ${groupName}`);
+      Logger.scope('BaseEntity').warn(` Entity ${this.entityId}: Unknown collision group: ${groupName}`);
       return this;
     }
 
@@ -723,7 +720,7 @@ export default class BaseEntity {
       this.body.collisionCategory = constants.COLLISION_CATEGORIES[categoryKey];
     }
 
-    Logger.debug(`[BaseEntity] Collision group set for ${this.entityId}: ${groupName}`);
+    Logger.scope('BaseEntity').debug(` Collision group set for ${this.entityId}: ${groupName}`);
     return this;
   }
 
@@ -734,8 +731,7 @@ export default class BaseEntity {
    */
   onCollision(callback) {
     if (!this.body) {
-      Logger.warn(
-        `[BaseEntity] Entity ${this.entityId}: Cannot add collision callback - no physics body`
+      Logger.scope('BaseEntity').warn(` Entity ${this.entityId}: Cannot add collision callback - no physics body`
       );
       return this;
     }
@@ -746,7 +742,7 @@ export default class BaseEntity {
     }
     this._collisionCallbacks.push(callback);
 
-    Logger.debug(`[BaseEntity] Collision callback added for ${this.entityId}`);
+    Logger.scope('BaseEntity').debug(` Collision callback added for ${this.entityId}`);
     return this;
   }
 
@@ -757,8 +753,7 @@ export default class BaseEntity {
    */
   onOverlap(callback) {
     if (!this.body) {
-      Logger.warn(
-        `[BaseEntity] Entity ${this.entityId}: Cannot add overlap callback - no physics body`
+      Logger.scope('BaseEntity').warn(` Entity ${this.entityId}: Cannot add overlap callback - no physics body`
       );
       return this;
     }
@@ -769,7 +764,7 @@ export default class BaseEntity {
     }
     this._overlapCallbacks.push(callback);
 
-    Logger.debug(`[BaseEntity] Overlap callback added for ${this.entityId}`);
+    Logger.scope('BaseEntity').debug(` Overlap callback added for ${this.entityId}`);
     return this;
   }
 
@@ -783,7 +778,7 @@ export default class BaseEntity {
         try {
           callback(this, otherEntity);
         } catch (error) {
-          Logger.error(`[BaseEntity] Error in collision callback for ${this.entityId}:`, error);
+          Logger.scope('BaseEntity').error(` Error in collision callback for ${this.entityId}:`, error);
         }
       });
     }
@@ -799,7 +794,7 @@ export default class BaseEntity {
         try {
           callback(this, otherEntity);
         } catch (error) {
-          Logger.error(`[BaseEntity] Error in overlap callback for ${this.entityId}:`, error);
+          Logger.scope('BaseEntity').error(` Error in overlap callback for ${this.entityId}:`, error);
         }
       });
     }
@@ -819,7 +814,7 @@ export default class BaseEntity {
       this.gameObject.setPosition(x, y);
     }
 
-    Logger.debug(`[BaseEntity] Entity ${this.entityId} moved to (${x}, ${y})`);
+    Logger.scope('BaseEntity').debug(` Entity ${this.entityId} moved to (${x}, ${y})`);
     return this;
   }
 
@@ -833,7 +828,7 @@ export default class BaseEntity {
     try {
       // Validate parameters
       if (typeof width !== 'number' || typeof height !== 'number' || width <= 0 || height <= 0) {
-        Logger.error(`[BaseEntity] Entity ${this.entityId}: Invalid size parameters`, {
+        Logger.scope('BaseEntity').error(` Entity ${this.entityId}: Invalid size parameters`, {
           width,
           height,
         });
@@ -841,7 +836,7 @@ export default class BaseEntity {
       }
 
       if (this.config.width === width || this.config.height === height) {
-        Logger.debug(`[BaseEntity] Entity ${this.entityId} has correct size already`);
+        Logger.scope('BaseEntity').debug(` Entity ${this.entityId} has correct size already`);
         return this;
       }
 
@@ -853,22 +848,21 @@ export default class BaseEntity {
       if (this.gameObject && typeof this.gameObject.setSize === 'function') {
         // Validate entity state before calling setSize
         if (!this.scene || this.scene.sys.isDestroyed) {
-          Logger.error(`[BaseEntity] Entity ${this.entityId}: Cannot setSize - scene is destroyed`);
+          Logger.scope('BaseEntity').error(` Entity ${this.entityId}: Cannot setSize - scene is destroyed`);
           return this;
         }
 
         // Check if gameObject is in valid state
         if (!this.gameObject.active) {
-          Logger.error(
-            `[BaseEntity] Entity ${this.entityId}: GameObject appears to be corrupted or destroyed`
+          Logger.scope('BaseEntity').error(` Entity ${this.entityId}: GameObject appears to be corrupted or destroyed`
           );
           return this;
         }
 
         // Call gameObject's setSize with error handling
-        Logger.debug('[BaseEntity] GameObject has size parameters', this.gameObject);
+        Logger.scope('BaseEntity').debug('[BaseEntity] GameObject has size parameters', this.gameObject);
         this.gameObject.setSize(width, height);
-        Logger.debug(`[BaseEntity] GameObject has been resized`);
+        Logger.scope('BaseEntity').debug(` GameObject has been resized`);
 
         // Update physics body size if it exists
         if (this.body && this.body.setSize) {
@@ -877,9 +871,9 @@ export default class BaseEntity {
         }
       }
 
-      Logger.debug(`[BaseEntity] Entity ${this.entityId} resized to ${width}x${height}`);
+      Logger.scope('BaseEntity').debug(` Entity ${this.entityId} resized to ${width}x${height}`);
     } catch (error) {
-      Logger.error(`[BaseEntity] Entity ${this.entityId}: setSize failed`, {
+      Logger.scope('BaseEntity').error(` Entity ${this.entityId}: setSize failed`, {
         error: error.message,
         width,
         height,
@@ -980,7 +974,7 @@ export default class BaseEntity {
           try {
             callback(...args);
           } catch (error) {
-            Logger.error(`[BaseEntity] Event handler error for event '${event}':`, error);
+            Logger.scope('BaseEntity').error(` Event handler error for event '${event}':`, error);
           }
         });
       }

@@ -149,7 +149,7 @@ describe('Logger', () => {
 
       expect(mockConsole.info).toHaveBeenCalledWith(
         'ℹ️',
-        expect.stringMatching(/\d{2}:\d{2}:\d{2} \[INFO\]\[TESTSCOPE\]/),
+        expect.stringMatching(/\d{2}:\d{2}:\d{2} \[INFO\]\[TestScope\]/),
         'test message',
         'extra arg'
       );
@@ -208,8 +208,8 @@ describe('Logger', () => {
 
       // Both should use same cached scope label
       expect(mockConsole.log).toHaveBeenCalledTimes(2);
-      expect(mockConsole.log.mock.calls[0][1]).toContain('[CACHEDSCOPE]');
-      expect(mockConsole.log.mock.calls[1][1]).toContain('[CACHEDSCOPE]');
+      expect(mockConsole.log.mock.calls[0][1]).toContain('[CachedScope]');
+      expect(mockConsole.log.mock.calls[1][1]).toContain('[CachedScope]');
     });
 
     it('should early return when logging disabled', () => {

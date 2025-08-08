@@ -26,7 +26,7 @@ export default class MovementSystem extends BaseSystem {
       weaponFiring: false,
     };
 
-    Logger.debug(`[MovementSystem] Movement system created with EventBus integration`);
+    Logger.scope('MovementSystem').debug(` Movement system created with EventBus integration`);
   }
 
   /**
@@ -44,8 +44,7 @@ export default class MovementSystem extends BaseSystem {
       EventPriority.HIGH
     );
 
-    Logger.debug(
-      `[MovementSystem] Movement system initialized with input listener: ${this.inputListenerId}`
+    Logger.scope('MovementSystem').debug(` Movement system initialized with input listener: ${this.inputListenerId}`
     );
   }
 
@@ -73,18 +72,17 @@ export default class MovementSystem extends BaseSystem {
     switch (action) {
       case 'movement':
         this.playerInputState.movement = direction || { x: 0, y: 0 };
-        Logger.debug(
-          `[MovementSystem] Player movement input: x=${direction.x.toFixed(2)}, y=${direction.y.toFixed(2)}`
+        Logger.scope('MovementSystem').debug(` Player movement input: x=${direction.x.toFixed(2)}, y=${direction.y.toFixed(2)}`
         );
         break;
 
       case 'weapon_fire':
         this.playerInputState.weaponFiring = state === 'start';
-        Logger.debug(`[MovementSystem] Player weapon input: ${state}`);
+        Logger.scope('MovementSystem').debug(` Player weapon input: ${state}`);
         break;
 
       default:
-        Logger.debug(`[MovementSystem] Unknown player input action: ${action}`);
+        Logger.scope('MovementSystem').debug(` Unknown player input action: ${action}`);
     }
   }
 
@@ -161,8 +159,7 @@ export default class MovementSystem extends BaseSystem {
 
     // Log player movement (only when there's actual movement to reduce log spam)
     if (Math.abs(input.x) > 0.01 || Math.abs(input.y) > 0.01) {
-      Logger.debug(
-        `[MovementSystem] Applied player input to entity: vx=${targetVelocityX.toFixed(1)}, vy=${targetVelocityY.toFixed(1)}`
+      Logger.scope('MovementSystem').debug(` Applied player input to entity: vx=${targetVelocityX.toFixed(1)}, vy=${targetVelocityY.toFixed(1)}`
       );
     }
   }
@@ -545,7 +542,7 @@ export default class MovementSystem extends BaseSystem {
         const shouldPool = this.isPoolableEntity(entity);
         
         if (shouldPool) {
-          Logger.debug('MovementSystem: Entity deactivated for pooling by boundary behavior', {
+          Logger.scope('MovementSystem').debug('MovementSystem: Entity deactivated for pooling by boundary behavior', {
             entityType: entity.entityType,
             entityId: entity.entityId,
             boundaryBehavior: movement.boundaryBehavior
@@ -558,7 +555,7 @@ export default class MovementSystem extends BaseSystem {
             }
           });
         } else {
-          Logger.debug('MovementSystem: Entity permanently destroyed by boundary behavior', {
+          Logger.scope('MovementSystem').debug('MovementSystem: Entity permanently destroyed by boundary behavior', {
             entityType: entity.entityType,
             entityId: entity.entityId,
             boundaryBehavior: movement.boundaryBehavior
@@ -607,7 +604,7 @@ export default class MovementSystem extends BaseSystem {
   onAddedToScene(scene) {
     super.onAddedToScene(scene);
     this.scene = scene;
-    Logger.debug(`[MovementSystem] Movement system added to scene: ${scene.scene.key}`);
+    Logger.scope('MovementSystem').debug(` Movement system added to scene: ${scene.scene.key}`);
   }
 
   /**
@@ -638,7 +635,7 @@ export default class MovementSystem extends BaseSystem {
     // Clean up EventBus listener
     if (this.inputListenerId && this.eventBus) {
       // Note: EventBus.off() is not implemented yet, but we set up the cleanup structure
-      Logger.debug(`[MovementSystem] Would remove input listener: ${this.inputListenerId}`);
+      Logger.scope('MovementSystem').debug(` Would remove input listener: ${this.inputListenerId}`);
       this.inputListenerId = null;
     }
 
@@ -651,6 +648,6 @@ export default class MovementSystem extends BaseSystem {
     this.eventBus = null;
     this.scene = null;
     super.destroy();
-    Logger.debug(`[MovementSystem] Movement system destroyed and cleaned up`);
+    Logger.scope('MovementSystem').debug(` Movement system destroyed and cleaned up`);
   }
 }

@@ -23,7 +23,7 @@ export default class HealthComponent extends BaseComponent {
     this.regeneration = 0; // Health per second
     this.lastRegenTime = 0;
 
-    Logger.debug(`[HealthComponent] Created: ${this.maxHealth} max health`);
+    Logger.scope('HealthComponent').debug(`[HealthComponent] Created: ${this.maxHealth} max health`);
   }
 
   /**
@@ -66,7 +66,7 @@ export default class HealthComponent extends BaseComponent {
     this.currentHealth = Math.max(0, this.currentHealth - actualDamage);
     this.lastDamageTime = Date.now();
 
-    Logger.debug(
+    Logger.scope('HealthComponent').debug(
       `[HealthComponent] damage: ${amount} -> ${actualDamage} (${previousHealth} -> ${this.currentHealth})`
     );
 
@@ -98,7 +98,7 @@ export default class HealthComponent extends BaseComponent {
     this.currentHealth = Math.min(this.maxHealth, this.currentHealth + amount);
     const actualHealing = this.currentHealth - previousHealth;
 
-    Logger.debug(
+    Logger.scope('HealthComponent').debug(
       `[HealthComponent] heal: ${amount} -> ${actualHealing} (${previousHealth} -> ${this.currentHealth})`
     );
 
@@ -129,7 +129,7 @@ export default class HealthComponent extends BaseComponent {
       }, duration);
     }
 
-    Logger.debug(`[HealthComponent] invulnerability: ${duration}ms`);
+    Logger.scope('HealthComponent').debug(`[HealthComponent] invulnerability: ${duration}ms`);
   }
 
   /**

@@ -43,7 +43,7 @@ export default class MovementComponent extends BaseComponent {
     this.patternStartTime = Date.now();
     this.patternPhase = 0;
 
-    Logger.debug(`[MovementComponent] created: max speed ${this.maxSpeed}`);
+    Logger.scope('MovementComponent').debug(`[MovementComponent] created: max speed ${this.maxSpeed}`);
   }
 
   /**
@@ -272,7 +272,7 @@ export default class MovementComponent extends BaseComponent {
     this.aiPatternData = patternData;
     this.aiTarget = target;
     this.initializeAIPattern();
-    Logger.debug(`MovementComponent: Set AI pattern to ${pattern}`);
+    Logger.scope('MovementComponent').debug(`MovementComponent: Set AI pattern to ${pattern}`);
   }
 
   /**

@@ -49,7 +49,7 @@ class DevShapes {
     // Add subtle border for visibility
     player.setStrokeStyle(2, 0xffffff, 0.5);
 
-    Logger.debug('DevShapes: Created player rectangle at', x, y);
+    Logger.scope('DevShapes').debug('DevShapes: Created player rectangle at', x, y);
     return player;
   }
 
@@ -99,7 +99,7 @@ class DevShapes {
       enemy.setStrokeStyle(1, 0xffffff, 0.3);
     }
 
-    Logger.debug('DevShapes: Created enemy rectangle', type, 'at', x, y);
+    Logger.scope('DevShapes').debug('DevShapes: Created enemy rectangle', type, 'at', x, y);
     return enemy;
   }
 
@@ -142,7 +142,7 @@ class DevShapes {
         break;
     }
 
-    Logger.debug('DevShapes: Created projectile', type, size, 'at', x, y);
+    Logger.scope('DevShapes').debug('DevShapes: Created projectile', type, size, 'at', x, y);
     return projectile;
   }
 
@@ -197,7 +197,7 @@ class DevShapes {
       ease: 'Sine.easeInOut',
     });
 
-    Logger.debug('DevShapes: Created power-up', type, 'at', x, y);
+    Logger.scope('DevShapes').debug('DevShapes: Created power-up', type, 'at', x, y);
     return powerup;
   }
 
@@ -250,7 +250,7 @@ class DevShapes {
       particles.push(particle);
     }
 
-    Logger.debug('DevShapes: Created explosion effect', size, 'at', x, y);
+    Logger.scope('DevShapes').debug('DevShapes: Created explosion effect', size, 'at', x, y);
     return { explosion, particles };
   }
 
@@ -296,7 +296,7 @@ class DevShapes {
       buttonText.setColor('#ffffff');
     });
 
-    Logger.debug('DevShapes: Created UI button', text, 'at', x, y);
+    Logger.scope('DevShapes').debug('DevShapes: Created UI button', text, 'at', x, y);
     return { container: button, background, text: buttonText };
   }
 
@@ -336,7 +336,7 @@ class DevShapes {
       }
     };
 
-    Logger.debug('DevShapes: Created health bar at', x, y);
+    Logger.scope('DevShapes').debug('DevShapes: Created health bar at', x, y);
     return { background, fill, updateHealth };
   }
 
@@ -382,7 +382,7 @@ class DevShapes {
       particles.push(particle);
     }
 
-    Logger.debug('DevShapes: Created particle scopeName with', settings.count, 'particles at', x, y);
+    Logger.scope('DevShapes').debug('DevShapes: Created particle scopeName with', settings.count, 'particles at', x, y);
     return particles;
   }
 
