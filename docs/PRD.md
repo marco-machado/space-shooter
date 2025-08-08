@@ -308,37 +308,166 @@ Create an engaging top-down space shooter game using Phaser.js 3.x with Vite bui
 - **Collision System**: ✅ Damage and destruction mechanics with ECS bridge
 - **Wave Spawning**: ✅ Enemy wave generation with formation flying
 
-### Phase 3: Game Systems & Progression — PARTIALLY COMPLETED 🔄
+### Phase 3: Game Systems & Progression — FOUNDATION COMPLETED 🔄
 
-- **Power-up System**: ✅ Green/purple colored shapes with effects
-- **XP and Leveling**: ✅ Progression system with localStorage persistence
-- **Weapon Upgrades**: ✅ Enhanced firing patterns and damage
+- **Power-up System**: ✅ Basic green/purple colored shapes with effects (foundation only)
+- **XP and Leveling**: ✅ Basic progression system with localStorage persistence (foundation only)
+- **Weapon Upgrades**: ✅ Basic enhanced firing patterns and damage (foundation only)
 - **Audio Integration**: ✅ Web Audio API with spatial positioning
 - **UI System**: ✅ Text-based HUD and menus
 
-### Phase 4: Current Development — IN PROGRESS 🔄
+**Note**: Core foundations implemented but full-featured systems require dedicated implementation tasks in Phase 4.
 
-- **Performance Optimization**: Object pooling and efficient collision detection (no performance tests)
-- **Mobile Compatibility**: Touch controls and responsive design (manual testing only)
-- **Audio Polish**: Dynamic music and complete SFX implementation
-- **Gameplay Balance**: Difficulty curves and progression tuning (manual balancing)
-- **Debug Tools**: Visual debugging overlays and performance monitoring
-- **Code Quality**: ESLint compliance and Prettier formatting (no test coverage requirements)
+### Phase 4: Core Gameplay & Polish — IN PROGRESS 🔄
+
+#### Task 4.1: Multiple Weapon Types System
+**Deliverable**: Complete 3-weapon system with switching and upgrades
+- Implement Laser Cannon, Plasma Gun (level 3), Missile Launcher (level 7) with distinct mechanics
+- Add weapon switching with number keys (1/2/3) and UI indicators
+- Implement overheating system with visual feedback and cooldown mechanics
+- Create weapon upgrade trees with meaningful progression paths
+- Add visual ammo/energy indicators to HUD
+- **Game State**: Players can unlock, switch between, and upgrade 3 distinct weapons
+
+#### Task 4.2: Complete Powerup System
+**Deliverable**: Full temporary and permanent powerup mechanics
+- Implement 4 temporary powerups: Shield Boost, Rapid Fire, Invincibility, Multi-Shot (10-15s duration)
+- Implement 4 permanent powerups: Weapon Upgrades, Hull Reinforcement, Engine Boost, Shield Generator
+- Add 15% enemy drop rate and guaranteed boss drops
+- Create magnetic collection system with visual attraction effects
+- Add clear visual distinction and feedback for powerup effects
+- **Game State**: Dynamic powerup collection enhances gameplay variety and progression
+
+#### Task 4.3: Advanced Player Progression System
+**Deliverable**: Full upgrade point allocation and weapon unlocking
+- Implement upgrade point earning and spending system
+- Create UI for 4 upgrade categories: Weapons, Defense, Mobility, Special
+- Add weapon unlocking at levels 3 and 7 with progression gates
+- Implement meaningful stat improvements with visible gameplay impact
+- Add achievement tracking and milestone rewards
+- **Game State**: Deep progression system with meaningful player choices and unlocks
+
+#### Task 4.4: Complete ECS Projectile System
+**Deliverable**: Fully functional ECS projectile system with pooling
+- Wire player firing events to create ECS projectiles (not BaseEntity bullets)
+- Implement projectile object pooling for performance
+- Complete projectile-enemy collision detection in ECS
+- Remove BaseEntity bullet/projectile dependencies
+- **Game State**: All projectiles managed by ECS, improved performance
+
+#### Task 4.5: Enhanced Audio System Integration
+**Deliverable**: Complete spatial audio with dynamic music
+- Implement all weapon firing sounds with spatial positioning
+- Add dynamic combat music that scales with wave intensity
+- Complete enemy destruction audio with 3D positioning
+- Add UI interaction sounds and power-up collection audio
+- **Game State**: Full audio experience with spatial effects
+
+#### Task 4.6: Mobile Touch Controls & Responsive Design
+**Deliverable**: Complete mobile compatibility
+- Implement touch controls for movement and firing
+- Add responsive UI scaling for different screen sizes
+- Optimize performance for mobile browsers
+- Add mobile-specific UI elements (virtual joystick, fire button)
+- **Game State**: Game fully playable on mobile devices
+
+#### Task 4.7: Visual Debug Tools & Performance Monitoring
+**Deliverable**: Comprehensive debug overlay system
+- Implement visual ECS entity debugging (component states, queries)
+- Add performance monitoring overlay (FPS, entity counts, memory)
+- Create collision detection visualization
+- Add wave/spawn system debug information
+- **Game State**: Developer tools for optimization and debugging
+
+#### Task 4.8: Gameplay Balance & Difficulty Tuning
+**Deliverable**: Balanced progression and difficulty curves
+- Implement dynamic difficulty scaling based on player performance
+- Balance weapon upgrade costs and effectiveness
+- Tune enemy health/damage progression across waves
+- Optimize power-up drop rates and effects
+- **Game State**: Well-balanced gameplay with proper progression
+
+#### Task 4.9: Code Quality & ESLint Compliance
+**Deliverable**: Clean, maintainable codebase
+- Achieve full ESLint compliance across all files
+- Implement Prettier formatting consistency
+- Add comprehensive JSDoc documentation
+- Remove unused code and optimize imports
+- **Game State**: Production-ready code quality
 
 ### Phase 5: Production Preparation — PLANNED 📋
 
-- **Asset Pipeline**: Prepare for transition from dev graphics to final assets
-- **Build Optimization**: Production builds with asset optimization
-- **SVG Integration**: Implement SVG loading for scalable UI elements
-- **Cross-browser Testing**: Ensure compatibility across target browsers
-- **Documentation**: Complete technical and user documentation
+#### Task 5.1: Build Optimization & Asset Pipeline
+**Deliverable**: Optimized production build system
+- Configure Vite for production optimization (minification, chunking)
+- Set up asset optimization pipeline
+- Implement lazy loading for non-critical assets
+- Add build performance monitoring
+- **Game State**: Fast-loading production builds
+
+#### Task 5.2: SVG UI System Integration
+**Deliverable**: Scalable vector UI elements
+- Replace text-based UI with SVG elements
+- Implement scalable HUD components (health bars, weapon indicators)
+- Add vector-based menu system
+- Create responsive SVG icon set
+- **Game State**: Professional, scalable UI system
+
+#### Task 5.3: Cross-Browser Testing & Compatibility
+**Deliverable**: Verified multi-browser support
+- Test and fix issues across Chrome, Firefox, Safari, Edge
+- Implement WebGL fallbacks for older browsers
+- Optimize for mobile Safari and Chrome Mobile
+- Add browser-specific performance optimizations
+- **Game State**: Reliable cross-platform compatibility
+
+#### Task 5.4: Advanced Performance Profiling
+**Deliverable**: Optimized game performance
+- Implement advanced ECS query optimization
+- Add memory usage monitoring and optimization
+- Optimize collision detection algorithms
+- Profile and optimize critical game loops
+- **Game State**: Smooth 60fps gameplay on target hardware
+
+#### Task 5.5: Complete Technical Documentation
+**Deliverable**: Comprehensive project documentation
+- Update architecture documentation for ECS implementation
+- Create developer API documentation
+- Write deployment and maintenance guides
+- Document performance optimization techniques
+- **Game State**: Fully documented, maintainable codebase
+
+## Task Dependencies & Delivery Order
+
+### Phase 4 Execution Order:
+**Core Gameplay Systems** (Complete First):
+**Task 4.1** → **Task 4.2** → **Task 4.3**
+
+**Technical Implementation**:
+**Task 4.4** → **Task 4.5**
+
+**Polish & Optimization**:
+**Task 4.6** → **Task 4.7** → **Task 4.8** → **Task 4.9**
+
+**Dependencies**:
+- Tasks 4.1-4.3 (gameplay systems) must complete before technical tasks 4.4-4.5
+- Tasks 4.4-4.5 (technical) must complete before polish tasks 4.6-4.9
+- Within each group, tasks can run in parallel but recommended order shown
+- Each task maintains game playability throughout development
+
+### Phase 5 Execution Order:
+**Task 5.1** → **Task 5.2** → **Task 5.3** → **Task 5.4** → **Task 5.5**
+
+- Task 5.1 provides foundation for production-ready builds
+- Tasks 5.2-5.4 can run in parallel after 5.1
+- Task 5.5 should complete last to document all implemented features
 
 ### Phase 6: Enhancement & Polish — FUTURE 🚀
 
 - **Final Graphics Integration**: Replace placeholder graphics with production assets
 - **Advanced Audio**: Implement audio sprites and advanced spatial effects
 - **Achievement System**: Player accomplishments and unlocks
-- **Performance Profiling**: Advanced optimization and monitoring
+- **Advanced Performance Profiling**: Deep optimization and monitoring
 - **Deployment**: Production deployment and distribution setup
 
 ## Success Metrics
