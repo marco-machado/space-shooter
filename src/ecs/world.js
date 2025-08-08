@@ -6,12 +6,16 @@ const logger = Logger.scope('ECSWorld');
 /**
  * Initialize a new bitECS world with time management and sprite mapping.
  * 
+ * @param {Phaser.Scene} scene - The Phaser scene instance
  * @returns {Object} Initialized bitECS world instance
  */
-export const initializeWorld = () => {
+export const initializeWorld = (scene) => {
   logger.debug('Creating bitECS world');
   
   const world = createWorld();
+  
+  // Store scene reference for sprite creation
+  world.scene = scene;
   
   // Initialize time management
   world.time = {
@@ -26,7 +30,7 @@ export const initializeWorld = () => {
   // World metadata
   world.name = 'SpaceShooterWorld';
   
-  logger.debug('bitECS world initialized', { name: world.name });
+  logger.debug('bitECS world initialized', { name: world.name, hasScene: !!scene });
   
   return world;
 };

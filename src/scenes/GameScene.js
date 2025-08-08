@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import ConfigManager from '@/config/ConfigManager.js';
 import Player from '@/entities/Player.js';
 import { getEventBus } from '@/event-bus/EventBus.js';
@@ -17,7 +16,7 @@ import EnemySpawnSystem from '@/systems/EnemySpawnSystem.js';
 import { getEntityFromSprite, deactivateEntity, getEnemyConfig } from '@/ecs/entities/index.js';
 import { Health } from '@/ecs/components/index.js';
 import { hasComponent } from 'bitecs';
-import { createProjectile } from '@/ecs/entities/createProjectile.js';
+import { createProjectile, initializeProjectilePool } from '@/ecs/entities/createProjectile.js';
 
 export default class GameScene extends Phaser.Scene {
   constructor() {
@@ -58,6 +57,9 @@ export default class GameScene extends Phaser.Scene {
     this.createBackground();
     this.createCollisionGroups();
     this.setupCollisionDetection();
+
+    // Initialize projectile pool after scene setup is complete
+    initializeProjectilePool(this.world);
 
     this.eventBus.on(EventTypes.GAME_PAUSE_TOGGLE, this.onPauseToggle, this);
 
@@ -134,6 +136,11 @@ export default class GameScene extends Phaser.Scene {
     this.gameStateManager.update(delta);
 
     this.updateBackground();
+
+    // Update player ECS position for AI targeting
+    if (this.player && this.player.updateECSPosition) {
+      this.player.updateECSPosition();
+    }
 
     // Handle player weapon firing
     const now = this.time.now;

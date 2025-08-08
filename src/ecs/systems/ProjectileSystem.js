@@ -1,6 +1,6 @@
 import { defineQuery, hasComponent } from 'bitecs';
 import Logger from '@/utils/Logger.js';
-import { Position, Render, Projectile, ProjectileData, Enemy, Player } from '@/ecs/components/index.js';
+import { Position, Render, Projectile, ProjectileData, Enemy } from '@/ecs/components/index.js';
 import { createProjectile, deactivateProjectile } from '@/ecs/entities/createProjectile.js';
 
 const logger = Logger.scope('ECS:ProjectileSystem');
@@ -31,8 +31,8 @@ export const projectileSystem = (world) => {
         owner,
         speed: evt.projectileSpeed || 450,
         damage: evt.damage || 20,
-        // Direction: if enemy, shoot downward; player upward
-        direction: owner === 'enemy' ? { x: 0, y: 1 } : { x: 0, y: -1 }
+        // Allow events to specify direction; fallback based on owner
+        direction: evt.direction || (owner === 'enemy' ? { x: 0, y: 1 } : { x: 0, y: -1 })
       });
     }
   }

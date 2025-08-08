@@ -31,7 +31,7 @@ export { default as EnemyCreator } from './createEnemy.js';
 export { default as EnemyConfig } from './enemyConfig.js';
 
 // Projectiles
-export { createProjectile, deactivateProjectile } from './createProjectile.js';
+export { createProjectile, deactivateProjectile, initializeProjectilePool } from './createProjectile.js';
 
 const logger = Logger.scope('ECS:Entities');
 logger.debug('ECS entity system exports initialized');

@@ -1,5 +1,6 @@
 import { defineQuery, enterQuery, exitQuery } from 'bitecs';
 import { Position, Velocity } from '@/ecs/components/index.js';
+import { deactivateEntity } from '@/ecs/entities/index.js';
 import Logger from '@/utils/Logger.js';
 
 const logger = Logger.scope('ECS:MovementSystem');
@@ -56,21 +57,11 @@ export const movementSystem = (world) => {
     // Simple boundary check - deactivate enemies that move too far off-screen
     // This prevents them from staying "active" forever and blocking wave completion
     if (Position.y[eid] > 900) { // Screen height is 800, give 100px buffer
-      // Move entity to pooled position (deactivate)
-      Position.x[eid] = -1000;
-      Position.y[eid] = -1000;
-      Velocity.x[eid] = 0;
-      Velocity.y[eid] = 0;
-      
-      // Hide sprite if it exists
-      if (world.spriteMap && world.spriteMap.get(eid)) {
-        const sprite = world.spriteMap.get(eid);
-        sprite.setVisible(false);
-        sprite.setPosition(-1000, -1000);
-      }
+      // Properly deactivate entity and return to pool
+      deactivateEntity(world, eid);
       
       // Log deactivation for debugging
-      logger.debug('MovementSystem - Enemy moved off-screen, deactivated', { eid });
+      logger.debug('MovementSystem - Enemy moved off-screen, properly deactivated and returned to pool', { eid });
     }
   }
   
