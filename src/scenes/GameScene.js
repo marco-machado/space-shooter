@@ -17,7 +17,7 @@ import EnemySpawnSystem from '@/systems/EnemySpawnSystem.js';
 import { getEntityFromSprite, deactivateEntity, getEnemyConfig } from '@/ecs/entities/index.js';
 import { Health } from '@/ecs/components/index.js';
 import { hasComponent } from 'bitecs';
-import { createProjectile } from '@/ecs/entities/createProjectile.js';
+import { createProjectile, initializeProjectilePool } from '@/ecs/entities/createProjectile.js';
 
 export default class GameScene extends Phaser.Scene {
   constructor() {
@@ -51,6 +51,8 @@ export default class GameScene extends Phaser.Scene {
 
     // Initialize bitECS world
     this.world = initializeWorld();
+    this.world.scene = this;
+    initializeProjectilePool(this.world);
 
     // Initialize game state manager (now that event scopeName is ready)
     this.gameStateManager = new GameStateManager(this);

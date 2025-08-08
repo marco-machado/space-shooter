@@ -574,19 +574,17 @@ export const Enemy = defineComponent(); // Tag component
 6. ✅ Phaser integration via DevShapes and sprite mapping
 7. ✅ Performance optimizations with preallocated pools
 
-### Phase 4: Current Work — IN PROGRESS 🔄
+### Phase 4: Current Work — COMPLETED ✅
 
 **Projectile System**
 - ECS projectile path implemented with `ProjectileData` component
 - `createProjectile` entity factory and `projectileSystem` processing
 - Pipeline integration: projectileSystem runs after weaponSystem
 - Collision handling: ECS projectiles damage ECS enemies and BaseEntity player
-
-**Integration Tasks**
-- Wire player firing into ECS projectile creation
-- Replace remaining BaseEntity projectile spawns
-- Improve projectile targeting and direction inheritance
-- Add ECS projectile pooling for performance
+- Player firing wired into ECS projectile creation
+- Remaining BaseEntity projectile spawns replaced
+- Projectile direction inheritance improved
+- ECS projectile pooling implemented for performance
 
 ### Phase 5: Future Work — PLANNED 📋
 
