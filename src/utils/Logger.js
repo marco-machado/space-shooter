@@ -312,7 +312,7 @@ const defaultSanitizer = {
    * @param {*} value - The value to sanitize
    * @returns {*} The sanitized value
    */
-  sanitize(value) {
+  sanitize(value, visited = new WeakSet()) {
     if (value === null || value === undefined) return value;
 
     if (typeof value === 'string') {
@@ -320,7 +320,7 @@ const defaultSanitizer = {
     }
 
     if (typeof value === 'object') {
-      return this.sanitizeObject(value);
+      return this.sanitizeObject(value, visited);
     }
 
     return value;
@@ -347,9 +347,15 @@ const defaultSanitizer = {
    * @param {Object} obj - The object to sanitize
    * @returns {Object} The sanitized object
    */
-  sanitizeObject(obj) {
+  sanitizeObject(obj, visited = new WeakSet()) {
+    // Handle circular references
+    if (visited.has(obj)) {
+      return '[Circular Reference]';
+    }
+    visited.add(obj);
+
     if (Array.isArray(obj)) {
-      return obj.map(item => this.sanitize(item));
+      return obj.map(item => this.sanitize(item, visited));
     }
 
     const result = {};
@@ -357,7 +363,7 @@ const defaultSanitizer = {
       if (this.sensitivePatterns.some(pattern => pattern.test(key))) {
         result[key] = '[REDACTED]';
       } else {
-        result[key] = this.sanitize(value);
+        result[key] = this.sanitize(value, visited);
       }
     }
     return result;
