@@ -71,16 +71,6 @@ export default class EnemySpawnSystem extends BaseSystem {
     this.initializeEnemyPools();
     this.generateWave();
 
-    console.log('[DEBUG] EnemySpawnSystem constructor completed', {
-      currentWave: this.currentWave,
-      betweenWaves: this.betweenWaves,
-      enemiesInWave: this.enemiesInWave,
-      enemiesSpawned: this.enemiesSpawned,
-      baseSpawnDelay: this.baseSpawnDelay,
-      poolSize: this.poolSize,
-      worldExists: !!this.world,
-      sceneExists: !!this.scene
-    });
 
     Logger.scope('EnemySpawnSystem').info('EnemySpawnSystem initialized', {
       currentWave: this.currentWave,
@@ -179,32 +169,6 @@ export default class EnemySpawnSystem extends BaseSystem {
     // Update enemy count using ECS world
     this.updateEnemyCount();
     
-    // DEBUG: Log spawn system state every few seconds
-    const currentTime = Date.now();
-    if (currentTime % 5000 < delta) { // Log every 5 seconds
-      console.log('[DEBUG] EnemySpawnSystem.update - State check:', {
-        currentWave: this.currentWave,
-        betweenWaves: this.betweenWaves,
-        enemiesInWave: this.enemiesInWave,
-        enemiesSpawned: this.enemiesSpawned,
-        enemiesRemaining: this.enemiesRemaining,
-        lastSpawnTime: new Date(this.lastSpawnTime).toLocaleTimeString(),
-        currentSpawnDelay: this.currentSpawnDelay,
-        timeUntilNextSpawn: Math.max(0, this.currentSpawnDelay - (currentTime - this.lastSpawnTime))
-      });
-    }
-
-    // Debug logging for spawn system state (reduced frequency) - reuse currentTime
-    if (currentTime % 2000 < delta) { // Log every 2 seconds
-      console.log('[DEBUG] EnemySpawnSystem.update - State', {
-        currentWave: this.currentWave,
-        betweenWaves: this.betweenWaves,
-        enemiesInWave: this.enemiesInWave,
-        enemiesSpawned: this.enemiesSpawned,
-        enemiesRemaining: this.enemiesRemaining,
-        timeSinceLastSpawn: currentTime - this.lastSpawnTime
-      });
-    }
 
     // Handle wave management
     if (this.betweenWaves) {
@@ -250,14 +214,6 @@ export default class EnemySpawnSystem extends BaseSystem {
       });
     });
 
-    // Debug active enemies every few seconds
-    const now = Date.now();
-    if (now % 3000 < 50 && activeCount > 0) { // Every 3 seconds if enemies exist
-      console.log('[DEBUG] Active enemies:', {
-        activeCount,
-        enemyPositions: enemyPositions.slice(0, 5) // Show first 5 for readability
-      });
-    }
 
     this.enemiesRemaining = activeCount;
   }
@@ -450,19 +406,13 @@ export default class EnemySpawnSystem extends BaseSystem {
    * @param {string} enemyType - Type of enemy to spawn
    */
   spawnIndividualEnemy(enemyType) {
-    console.log('[DEBUG] spawnIndividualEnemy called', { enemyType });
-
     const spawnZone = this.getAvailableSpawnZone();
-    console.log('[DEBUG] spawnIndividualEnemy - spawn zone', spawnZone);
     if (!spawnZone) {
-      console.warn('[DEBUG] spawnIndividualEnemy - No available spawn zone!');
       return;
     }
 
     const enemyEid = this.getEnemyFromPool(enemyType);
-    console.log('[DEBUG] spawnIndividualEnemy - enemy from pool', { enemyEid, enemyType });
     if (enemyEid === null) {
-      console.warn('[DEBUG] spawnIndividualEnemy - No enemy available from pool!');
       return;
     }
 
@@ -477,19 +427,11 @@ export default class EnemySpawnSystem extends BaseSystem {
 
     const spawnY = spawnZone.y + Math.random() * spawnZone.height;
 
-    console.log('[DEBUG] spawnIndividualEnemy - spawn position calculated', { spawnX, spawnY });
-
     // Reactivate ECS entity at spawn position
-    console.log('[DEBUG] spawnIndividualEnemy - calling reactivateEntity');
     reactivateEntity(this.world, enemyEid, spawnX, spawnY, enemyType);
 
     // Get sprite for group management
     const sprite = this.world.spriteMap.get(enemyEid);
-    console.log('[DEBUG] spawnIndividualEnemy - sprite from world', { 
-      sprite: !!sprite, 
-      enemyGroup: !!this.scene.enemyGroup,
-      spritePosition: sprite ? { x: sprite.x, y: sprite.y, visible: sprite.visible } : null
-    });
     if (sprite && this.scene.enemyGroup) {
       this.scene.enemyGroup.add(sprite);
     }
@@ -499,15 +441,6 @@ export default class EnemySpawnSystem extends BaseSystem {
 
     this.enemiesSpawned++;
     this.stats.totalEnemiesSpawned++;
-
-    console.log('[DEBUG] spawnIndividualEnemy - Enemy spawned successfully!', {
-      enemyType,
-      enemyEid,
-      spawnX: spawnX.toFixed(0),
-      spawnY: spawnY.toFixed(0),
-      enemiesSpawned: this.enemiesSpawned,
-      totalSpawned: this.stats.totalEnemiesSpawned
-    });
 
     Logger.scope('EnemySpawnSystem').debug(`ECS Enemy spawned: ${enemyType} entity ${enemyEid} at (${spawnX.toFixed(0)}, ${spawnY.toFixed(0)})`);
   }
@@ -735,14 +668,6 @@ export default class EnemySpawnSystem extends BaseSystem {
     this.baseSpawnDelay = Math.max(500, 1500 - this.currentWave * 50);
     this.currentSpawnDelay = this.baseSpawnDelay;
 
-    console.log('[DEBUG] generateWave completed', {
-      currentWave: this.currentWave,
-      waveConfig,
-      enemiesInWave: this.enemiesInWave,
-      enemiesSpawned: this.enemiesSpawned,
-      baseSpawnDelay: this.baseSpawnDelay,
-      currentSpawnDelay: this.currentSpawnDelay
-    });
 
     Logger.scope('EnemySpawnSystem').info(`Wave ${this.currentWave} generated`, {
       enemies: this.enemiesInWave,

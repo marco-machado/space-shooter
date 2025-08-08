@@ -116,12 +116,8 @@ export default class GameScene extends Phaser.Scene {
     
     // DEBUG: Force spawn enemy with E key
     if (Phaser.Input.Keyboard.JustDown(this.debugSpawnKey)) {
-      console.log('[DEBUG] Manual enemy spawn triggered (E key)');
       if (this.enemySpawnSystem) {
         this.enemySpawnSystem.spawnIndividualEnemy('scout');
-        console.log('[DEBUG] Forced enemy spawn completed');
-      } else {
-        console.warn('[DEBUG] No enemy spawn system found for manual spawn');
       }
     }
 
