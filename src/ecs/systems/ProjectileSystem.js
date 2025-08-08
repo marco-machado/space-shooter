@@ -1,7 +1,7 @@
 import { defineQuery, hasComponent } from 'bitecs';
 import Logger from '@/utils/Logger.js';
-import { Position, Render, Projectile, ProjectileData, Enemy, Player } from '@/ecs/components/index.js';
-import { createProjectile, deactivateProjectile } from '@/ecs/entities/createProjectile.js';
+import { Position, Render, Projectile, ProjectileData, Enemy } from '@/ecs/components/index.js';
+import { activateProjectile, deactivateProjectile } from '@/ecs/entities/projectilePool.js';
 
 const logger = Logger.scope('ECS:ProjectileSystem');
 
@@ -27,7 +27,7 @@ export const projectileSystem = (world) => {
         owner = 'enemy';
       }
 
-      createProjectile(world, evt.x, evt.y, {
+      activateProjectile(world, evt.x, evt.y, {
         owner,
         speed: evt.projectileSpeed || 450,
         damage: evt.damage || 20,
