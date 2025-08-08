@@ -60,6 +60,11 @@ const configureProjectile = (world, eid, x, y, opts) => {
 
   // Create or update sprite
   const scene = world.scene;
+  if (!scene) {
+    logger.error('configureProjectile: world.scene is not defined', { worldKeys: Object.keys(world) });
+    throw new Error('configureProjectile requires world.scene to be defined');
+  }
+  
   let sprite = world.spriteMap.get(eid);
   if (!sprite) {
     sprite = DevShapes.createProjectile(scene, x, y, visualType, size);

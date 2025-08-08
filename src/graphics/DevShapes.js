@@ -113,6 +113,11 @@ class DevShapes {
    * @returns {Phaser.GameObjects.Shape} Projectile shape
    */
   static createProjectile(scene, x, y, type = 'player', size = 'small') {
+    // Defensive check for scene object
+    if (!scene || !scene.add) {
+      Logger.scope('DevShapes').error('Invalid scene object passed to createProjectile', { scene, hasAdd: !!(scene && scene.add) });
+      throw new Error('DevShapes.createProjectile requires a valid Phaser scene with scene.add');
+    }
     const sizeData =
       DevShapes.SIZES[`PROJECTILE_${size.toUpperCase()}`] || DevShapes.SIZES.PROJECTILE_SMALL;
     const color =

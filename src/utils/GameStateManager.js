@@ -275,7 +275,7 @@ class GameStateManager {
       // Note: GameStateManager doesn't listen to its own pause events to avoid circular dependencies
       // It only emits GAME_PAUSED, GAME_RESUMED, and GAME_PAUSE_TOGGLE events
     } catch (error) {
-      this.logger.error('Failed to setup EventBus listeners:', error);
+      this.#logger.error('Failed to setup EventBus listeners:', error);
     }
   }
 
@@ -284,7 +284,7 @@ class GameStateManager {
    * @returns {void}
    */
   startGame() {
-    this.logger.debug('Starting Game');
+    this.#logger.debug('Starting Game');
 
     this.isPlaying = true;
     this.isPaused = false;
@@ -425,7 +425,7 @@ class GameStateManager {
     // Increase score multiplier slightly each wave
     this.scoreMultiplier = 1.0 + (this.currentWave - 1) * 0.05;
 
-    this.logger.info(`Wave ${this.currentWave} started`, {
+    this.#logger.info(`Wave ${this.currentWave} started`, {
       scoreMultiplier: this.scoreMultiplier.toFixed(2),
     });
   }
@@ -447,7 +447,7 @@ class GameStateManager {
     const expBonus = Math.floor(200 * this.currentWave);
     this.addExperience(expBonus);
 
-    this.logger.info(`Wave ${this.currentWave} completed`, {
+    this.#logger.info(`Wave ${this.currentWave} completed`, {
       waveBonus,
       expBonus,
       totalScore: this.score,
@@ -464,7 +464,7 @@ class GameStateManager {
     // Reset consecutive hits on taking damage
     this.consecutiveHits = 0;
 
-    this.logger.debug('Player took damage', { damage: eventData.damage });
+    this.#logger.debug('Player took damage', { damage: eventData.damage });
   }
 
   /**
@@ -478,7 +478,7 @@ class GameStateManager {
     if (this.lives <= 0) {
       this.endGame('no_lives');
     } else {
-      this.logger.info(`Player died, ${this.lives} lives remaining`);
+      this.#logger.info(`Player died, ${this.lives} lives remaining`);
 
       // Brief invulnerability bonus score
       this.addScore(100);
@@ -509,7 +509,7 @@ class GameStateManager {
    */
   onWeaponUnlocked(eventData) {
     this.weaponsUnlocked.add(eventData.weaponType);
-    this.logger.info(`Weapon unlocked: ${eventData.weaponName}`);
+    this.#logger.info(`Weapon unlocked: ${eventData.weaponName}`);
   }
 
   /**
@@ -525,7 +525,7 @@ class GameStateManager {
     // Power-up collection bonus
     this.addScore(250);
 
-    this.logger.debug(`Power-up collected: ${powerUpType}`);
+    this.#logger.debug(`Power-up collected: ${powerUpType}`);
   }
 
   /**
@@ -534,7 +534,7 @@ class GameStateManager {
    * @returns {void}
    */
   onGameStart(eventData) {
-    this.logger.debug('received game start event', eventData);
+    this.#logger.debug('received game start event', eventData);
   }
 
   /**
@@ -556,7 +556,7 @@ class GameStateManager {
 
     if (currentThreshold > previousThreshold && this.lives < this.maxLives) {
       this.addLife();
-      this.logger.info(`Extra life earned at ${this.score} points!`);
+      this.#logger.info(`Extra life earned at ${this.score} points!`);
     }
   }
 
@@ -594,7 +594,7 @@ class GameStateManager {
     // Check for weapon unlocks
     this.checkWeaponUnlocks();
 
-    this.logger.info(`Level up! Now level ${this.currentLevel}`, {
+    this.#logger.info(`Level up! Now level ${this.currentLevel}`, {
       nextLevelXP: this.experienceToNextLevel,
       currentXP: this.experience,
     });
@@ -712,7 +712,7 @@ class GameStateManager {
         break;
     }
 
-    this.logger.info(`Achievement unlocked: ${name}`, {
+    this.#logger.info(`Achievement unlocked: ${name}`, {
       reward: milestone.reward,
       value: milestone.value,
     });
@@ -876,9 +876,9 @@ class GameStateManager {
     }
     try {
       localStorage.setItem(this.saveKey, JSON.stringify(data));
-      this.logger.debug('Game saved successfully');
+      this.#logger.debug('Game saved successfully');
     } catch (error) {
-      this.logger.error('Failed to save game:', error);
+      this.#logger.error('Failed to save game:', error);
     }
   }
 
@@ -903,7 +903,7 @@ class GameStateManager {
         return data;
       }
     } catch (error) {
-      this.logger.error('Failed to load game:', error);
+      this.#logger.error('Failed to load game:', error);
     }
 
     return {};
@@ -926,7 +926,7 @@ class GameStateManager {
 
     this.initializeMilestones();
 
-    this.logger.info('All progress reset');
+    this.#logger.info('All progress reset');
   }
 
   /**
@@ -953,7 +953,7 @@ class GameStateManager {
   destroy() {
     // Clean up all EventBus listeners
     if (this.eventBus && this.eventListenerIds.size > 0) {
-      this.logger.debug('Cleaning up EventBus listeners', {
+      this.#logger.debug('Cleaning up EventBus listeners', {
         listenerCount: this.eventListenerIds.size,
       });
 
@@ -961,10 +961,10 @@ class GameStateManager {
         try {
           const removed = this.eventBus.off(listenerId);
           if (!removed) {
-            this.logger.warn(`Failed to remove listener for ${eventName}: ${listenerId}`);
+            this.#logger.warn(`Failed to remove listener for ${eventName}: ${listenerId}`);
           }
         } catch (error) {
-          this.logger.error(`Error removing listener for ${eventName}:`, error);
+          this.#logger.error(`Error removing listener for ${eventName}:`, error);
         }
       }
 
@@ -978,7 +978,7 @@ class GameStateManager {
     this.eventBus = null;
     this.scene = null;
 
-    this.logger.info('GameStateManager destroyed');
+    this.#logger.info('GameStateManager destroyed');
   }
 }
 

@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import ConfigManager from '@/config/ConfigManager.js';
 import Player from '@/entities/Player.js';
 import { getEventBus } from '@/event-bus/EventBus.js';
@@ -50,7 +49,6 @@ export default class GameScene extends Phaser.Scene {
 
     // Initialize bitECS world with scene reference
     this.world = initializeWorld(this);
-    initializeProjectilePool(this.world);
 
     // Initialize game state manager (now that event scopeName is ready)
     this.gameStateManager = new GameStateManager(this);
@@ -59,6 +57,9 @@ export default class GameScene extends Phaser.Scene {
     this.createBackground();
     this.createCollisionGroups();
     this.setupCollisionDetection();
+
+    // Initialize projectile pool after scene setup is complete
+    initializeProjectilePool(this.world);
 
     this.eventBus.on(EventTypes.GAME_PAUSE_TOGGLE, this.onPauseToggle, this);
 
@@ -135,6 +136,11 @@ export default class GameScene extends Phaser.Scene {
     this.gameStateManager.update(delta);
 
     this.updateBackground();
+
+    // Update player ECS position for AI targeting
+    if (this.player && this.player.updateECSPosition) {
+      this.player.updateECSPosition();
+    }
 
     // Handle player weapon firing
     const now = this.time.now;

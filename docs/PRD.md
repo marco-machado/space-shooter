@@ -485,6 +485,15 @@ Create an engaging top-down space shooter game using Phaser.js 3.x with Vite bui
 - Zero critical bugs in core gameplay loop
 - <5% crash rate across supported browsers
 
+### ECS System Performance:
+
+- Zero enemy pool exhaustion warnings during gameplay
+- AI targeting system 100% functional (no "player not found" errors)
+- Enemy spawning system fully operational (automatic waves + debug controls)
+- Proper entity lifecycle management with memory recycling
+- Stable frame rates with optimized pool management
+- Clean console logs without system warning messages
+
 ### Feature Adoption:
 
 - 80% of players try all weapon types
@@ -574,7 +583,7 @@ export const Enemy = defineComponent(); // Tag component
 6. ✅ Phaser integration via DevShapes and sprite mapping
 7. ✅ Performance optimizations with preallocated pools
 
-### Phase 4: Current Work — COMPLETED ✅
+### Phase 4: Core ECS Implementation — COMPLETED ✅
 
 **Projectile System**
 - ECS projectile path implemented with `ProjectileData` component
@@ -585,6 +594,36 @@ export const Enemy = defineComponent(); // Tag component
 - Remaining BaseEntity projectile spawns replaced
 - Projectile direction inheritance improved
 - ECS projectile pooling implemented for performance
+
+### Phase 4.1: System Integration & Debugging — COMPLETED ✅
+
+**Critical System Fixes**
+- **GameStateManager Logger Bug**: Fixed private field access (`#logger`) preventing game initialization
+- **Enemy Pool Exhaustion**: Replaced manual cleanup in MovementSystem with proper `deactivateEntity()` calls
+- **AI Targeting Integration**: Added ECS Player entity creation to enable enemy AI targeting
+- **Entity Lifecycle Management**: Proper enemy recycling and collision group cleanup
+
+**Technical Achievements**
+- Zero enemy pool exhaustion warnings during gameplay
+- AI system successfully targets player entity (eliminated "No player found" warnings)
+- Smooth automatic enemy spawning with wave progression
+- Debug enemy spawning (E-key) fully functional
+- Proper memory management through entity pooling and recycling
+
+**Validation Results**
+1. ✅ Game initializes without GameStateManager errors
+2. ✅ Enemy spawning system works automatically and via debug controls
+3. ✅ Enemy entities properly recycle when moving off-screen
+4. ✅ AI system finds and targets player entity successfully
+5. ✅ No memory leaks or pool exhaustion issues during extended play
+6. ✅ Player ECS entity synchronizes position for AI targeting
+7. ✅ Collision detection bridge between ECS enemies and BaseEntity player works correctly
+
+**Performance Optimizations**
+- Eliminated entity accumulation through proper pool recycling
+- Reduced memory pressure via correct entity deactivation
+- Improved frame rate stability with proper cleanup cycles
+- Enhanced AI responsiveness through player entity targeting
 
 ### Phase 5: Future Work — PLANNED 📋
 
@@ -599,3 +638,54 @@ export const Enemy = defineComponent(); // Tag component
 - Advanced pooling optimizations
 - Performance profiling and monitoring
 - Complete BaseEntity code removal
+
+## ECS Development Troubleshooting
+
+### Common Issues & Solutions
+
+**Logger Private Field Access**
+```javascript
+// ❌ Incorrect - causes runtime errors
+this.logger.debug('message');
+
+// ✅ Correct - use private field syntax
+this.#logger.debug('message');
+```
+
+**Enemy Pool Management**
+```javascript
+// ❌ Manual cleanup - causes pool exhaustion
+Position.x[eid] = -1000;
+Velocity.x[eid] = 0;
+
+// ✅ Proper pool recycling
+deactivateEntity(world, eid);
+```
+
+**Player-AI Integration**
+```javascript
+// ❌ AI can't find player - BaseEntity only
+class Player extends Phaser.GameObjects.Rectangle { }
+
+// ✅ ECS integration - AI targeting works
+this.entityId = addEntity(world);
+addComponent(world, PlayerTag, this.entityId);
+```
+
+**Entity Lifecycle Patterns**
+- Use `isEntityActive()` to check entity state
+- Call `deactivateEntity()` for proper pool recycling  
+- Sync Player position with `updateECSPosition()` for AI targeting
+- Always remove entities from collision groups during deactivation
+
+### Debugging Commands
+
+**Enemy System Debugging**
+- Press `E` key in-game to force spawn enemies
+- Check console for enemy spawn system logs
+- Monitor pool utilization in ECS statistics
+
+**Performance Monitoring**
+- Enable debug mode via `VITE_DEBUG_MODE=true`
+- Use debug pipeline for detailed system logging
+- Monitor entity counts and pool sizes
