@@ -129,6 +129,21 @@ export const createEnemy = (world, scene, x, y, enemyType = 'scout') => {
  * @returns {void}
  */
 export const deactivateEntity = (world, eid) => {
+  // Get sprite first
+  const sprite = world.spriteMap.get(eid);
+  
+  // CRITICAL: Remove sprite from collision groups IMMEDIATELY to prevent further collisions
+  if (sprite && world.scene && world.scene.enemyGroup) {
+    world.scene.enemyGroup.remove(sprite);
+  }
+  
+  // Break entity-sprite link to prevent collision handler warnings
+  if (sprite) {
+    sprite.entityId = null;
+    sprite.setVisible(false);
+    sprite.setPosition(-1000, -1000);
+  }
+  
   // Move entity off-screen
   Position.x[eid] = -1000;
   Position.y[eid] = -1000;
@@ -140,13 +155,6 @@ export const deactivateEntity = (world, eid) => {
   // Make invisible 
   if (hasComponent(world, Render, eid)) {
     Render.visible[eid] = 0;
-  }
-  
-  // Get and hide sprite
-  const sprite = world.spriteMap.get(eid);
-  if (sprite) {
-    sprite.setVisible(false);
-    sprite.setPosition(-1000, -1000);
   }
   
   logger.debug(`Entity ${eid} deactivated`);
@@ -204,8 +212,15 @@ export const reactivateEntity = (world, eid, x, y, enemyType = 'scout') => {
   // Show and reposition sprite
   const sprite = world.spriteMap.get(eid);
   if (sprite) {
+    // Restore entity-sprite link
+    sprite.entityId = eid;
     sprite.setVisible(true);
     sprite.setPosition(x, y);
+    
+    // Add sprite back to collision groups
+    if (world.scene && world.scene.enemyGroup) {
+      world.scene.enemyGroup.add(sprite);
+    }
   }
   
   logger.debug(`Entity ${eid} reactivated as ${enemyType} at (${x}, ${y})`);
@@ -250,7 +265,7 @@ export const destroyEnemyEntity = (world, eid, scene) => {
  * @returns {number|null} Entity ID or null if not found
  */
 export const getEntityFromSprite = (sprite) => {
-  return sprite.entityId || null;
+  return sprite.entityId != null ? sprite.entityId : null;
 };
 
 /**
