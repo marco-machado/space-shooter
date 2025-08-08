@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import ConfigManager from '@/config/ConfigManager.js';
 import Player from '@/entities/Player.js';
 import { getEventBus } from '@/event-bus/EventBus.js';
@@ -16,6 +17,7 @@ import EnemySpawnSystem from '@/systems/EnemySpawnSystem.js';
 import { getEntityFromSprite, deactivateEntity, getEnemyConfig } from '@/ecs/entities/index.js';
 import { Health } from '@/ecs/components/index.js';
 import { hasComponent } from 'bitecs';
+import { createProjectile } from '@/ecs/entities/createProjectile.js';
 
 export default class GameScene extends Phaser.Scene {
   constructor() {
@@ -76,6 +78,9 @@ export default class GameScene extends Phaser.Scene {
     this.fireKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
     this.pauseKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
     this.debugSpawnKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E); // DEBUG: E to force spawn enemy
+
+    this.playerFireCooldown = config.playerFireCooldown ?? 200;
+    this.lastPlayerShotTime = 0;
 
     this.startBackgroundMusic();
 
@@ -158,6 +163,21 @@ export default class GameScene extends Phaser.Scene {
     this.gameStateManager.update(delta);
 
     this.updateBackground();
+
+    // Handle player weapon firing
+    const now = this.time.now;
+    if (
+      this.fireKey.isDown &&
+      now - this.lastPlayerShotTime >= this.playerFireCooldown
+    ) {
+      createProjectile(
+        this.world,
+        this.player.x,
+        this.player.y - this.player.height / 2,
+        { owner: 'player' }
+      );
+      this.lastPlayerShotTime = now;
+    }
 
     // Run ECS systems pipeline for enemy entities (Movement, AI, Weapon, Render, Time systems)
     this.systemsPipeline(this.world);
