@@ -14,7 +14,7 @@ Successfully created complete documentation suite for Sprint 1 completion, refle
   - Quick start guide with installation steps
   - Game controls and debug features
   - Development commands and environment configuration
-  - Architecture explanation (ECS, Logger, Scene management)
+  - Architecture explanation (component, Logger, Scene management)
   - Project structure with implementation status
   - Performance metrics and targets
   - Troubleshooting basics
@@ -65,7 +65,7 @@ Successfully created complete documentation suite for Sprint 1 completion, refle
 - **Status**: ✅ Complete - 500+ lines
 - **Content**: Architectural Decision Records for all major technical choices
 - **Key ADRs Documented**:
-  - ADR-001: ECS Architecture decision and rationale
+  - ADR-001: component Architecture decision and rationale
   - ADR-002: Development Graphics Strategy
   - ADR-003: Environment-Aware Logger BaseSystem
   - ADR-004: Scene Management Architecture
@@ -78,7 +78,7 @@ Successfully created complete documentation suite for Sprint 1 completion, refle
 #### Completeness Coverage
 - ✅ **Setup & Installation**: Complete instructions for new developers
 - ✅ **API Reference**: All implemented classes and methods documented
-- ✅ **Architecture**: ECS patterns and design decisions explained
+- ✅ **Architecture**: component patterns and design decisions explained
 - ✅ **Development Process**: Workflow, testing, and quality standards
 - ✅ **Troubleshooting**: Common issues with detailed solutions
 - ✅ **Code Examples**: Practical usage examples throughout
@@ -100,7 +100,7 @@ Successfully created complete documentation suite for Sprint 1 completion, refle
 ### Sprint 1 Status Accurately Reflected
 
 #### Implementation Status
-- **Foundation**: ECS architecture fully implemented and functional
+- **Foundation**: component architecture fully implemented and functional
 - **Player BaseSystem**: Movement, health, input handling complete
 - **Scene Management**: Boot → Preloader → MainMenu → GameScene working
 - **Logger BaseSystem**: Environment-aware logging throughout codebase

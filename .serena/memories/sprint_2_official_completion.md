@@ -1,4 +1,4 @@
-# Sprint 2 Complete - Core ECS & Gameplay
+# Sprint 2 Complete - Core Architecture & Gameplay
 
 ## 🎯 Sprint 2 Success Summary
 
@@ -50,7 +50,7 @@ Sprint 2 has been **successfully completed** with all objectives met and exceede
 ✅ Save/load scopeName with localStorage persistence  
 
 ### Advanced Systems
-✅ ECS architecture with component composition  
+✅ component architecture with component composition  
 ✅ AI state machines for enemy behavior  
 ✅ Formation flight patterns for enemy groups  
 ✅ Object pooling for performance optimization  
@@ -61,7 +61,7 @@ Sprint 2 has been **successfully completed** with all objectives met and exceede
 
 ## 🏗️ Technical Architecture
 
-- **Clean ECS Implementation**: BaseEntity-BaseComponent-BaseSystem architecture with proper separation of concerns
+- **Clean component Implementation**: BaseEntity-BaseComponent-BaseSystem architecture with proper separation of concerns
 - **Performance Optimized**: Object pooling, spatial grid collision detection, and efficient update loops
 - **Modular Design**: All systems are independent and can be easily extended
 - **Code Quality**: 100% ESLint/Prettier compliance with comprehensive logging

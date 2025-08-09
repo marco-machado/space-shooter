@@ -284,7 +284,6 @@ class GameStateManager {
    * @returns {void}
    */
   startGame() {
-    this.#logger.debug('Starting Game');
 
     this.isPlaying = true;
     this.isPaused = false;
@@ -464,7 +463,7 @@ class GameStateManager {
     // Reset consecutive hits on taking damage
     this.consecutiveHits = 0;
 
-    this.#logger.debug('Player took damage', { damage: eventData.damage });
+
   }
 
   /**
@@ -525,7 +524,7 @@ class GameStateManager {
     // Power-up collection bonus
     this.addScore(250);
 
-    this.#logger.debug(`Power-up collected: ${powerUpType}`);
+
   }
 
   /**
@@ -534,7 +533,6 @@ class GameStateManager {
    * @returns {void}
    */
   onGameStart(eventData) {
-    this.#logger.debug('received game start event', eventData);
   }
 
   /**
@@ -876,7 +874,7 @@ class GameStateManager {
     }
     try {
       localStorage.setItem(this.saveKey, JSON.stringify(data));
-      this.#logger.debug('Game saved successfully');
+
     } catch (error) {
       this.#logger.error('Failed to save game:', error);
     }
@@ -953,9 +951,7 @@ class GameStateManager {
   destroy() {
     // Clean up all EventBus listeners
     if (this.eventBus && this.eventListenerIds.size > 0) {
-      this.#logger.debug('Cleaning up EventBus listeners', {
-        listenerCount: this.eventListenerIds.size,
-      });
+
 
       for (const [eventName, listenerId] of this.eventListenerIds) {
         try {

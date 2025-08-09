@@ -2,54 +2,114 @@ import ConfigManager from '@/config/ConfigManager.js';
 import Logger from '@/utils/Logger.js';
 
 /**
- * Main Menu Scene - Game entry point and navigation
- * Displays game title, menu options, and handles navigation
+ * Main Menu Scene - Game entry point and navigation.
+ * Displays game title, menu options, and handles navigation.
+ * @class
+ * @classdesc Provides the main menu interface for the space shooter game with keyboard and mouse navigation.
+ * @extends Phaser.Scene
  */
 export default class MainMenuScene extends Phaser.Scene {
+  /**
+   * Menu items array containing background, text, and action data.
+   * @private
+   * @type {Array<Object>}
+   */
+  #menuItems = [];
+
+  /**
+   * Currently selected menu item index.
+   * @private
+   * @type {number}
+   */
+  #selectedIndex = 0;
+
+  /**
+   * Whether menu is currently active for input.
+   * @private
+   * @type {boolean}
+   */
+  #menuActive = true;
+
+  /**
+   * Logger instance for this scene.
+   * @private
+   * @type {Object}
+   */
+  #logger;
+
+  /**
+   * Array of star objects for background animation.
+   * @private
+   * @type {Array<Phaser.GameObjects.Arc>}
+   */
+  #stars = [];
+
+  /**
+   * Main title text object.
+   * @private
+   * @type {Phaser.GameObjects.Text}
+   */
+  #titleText;
+
+  /**
+   * Subtitle text object.
+   * @private
+   * @type {Phaser.GameObjects.Text}
+   */
+  #subtitleText;
+
+  /**
+   * Create a new MainMenuScene.
+   */
   constructor() {
     super({ key: 'MainMenuScene' });
-
-    this.menuItems = [];
-    this.selectedIndex = 0;
-    this.menuActive = true;
-
-    this.logger = Logger.scope('MainMenuScene');
+    this.#logger = Logger.scope('MainMenuScene');
   }
 
+  /**
+   * Initialize the scene.
+   * @returns {void}
+   */
   init() {
-    this.logger.debug('Init MainMenuScene');
-
-    this.selectedIndex = 0;
-    this.menuActive = true;
+this.#selectedIndex = 0;
+    this.#menuActive = true;
   }
 
+  /**
+   * Create scene elements and setup.
+   * @returns {void}
+   */
   create() {
-    this.logger.debug('Create MainMenuScene');
 
-    this.createBackground();
-    this.createTitle();
-    this.createMenu();
-    this.createInfoPanels();
+    this.#createBackground();
+    this.#createTitle();
+    this.#createMenu();
+    this.#createInfoPanels();
 
-    this.setupInput();
+    this.#setupInput();
 
-    this.animateEntrance();
+    this.#animateEntrance();
 
     // Fade in from black
     this.cameras.main.fadeIn(500, 0, 0, 0);
   }
 
   /**
-   * Update main menu scene
-   * @param {number} time - Current time
-   * @param {number} delta - Time delta
+   * Update main menu scene.
+   * @param {number} _time - Current time (unused)
+   * @param {number} _delta - Time delta (unused)
+   * @returns {void}
    */
-  update(time, delta) {
+  update(_time, _delta) {
     // Update star animation or other background effects
   }
 
-  createBackground() {
-    this.logger.debug('Create Background');
+  /**
+   * Create animated background with stars.
+   * @private
+   * @returns {void}
+   */
+  #createBackground() {
 
     const centerX = this.scale.width / 2;
     const centerY = this.scale.height / 2;
@@ -58,7 +118,7 @@ export default class MainMenuScene extends Phaser.Scene {
     this.add.rectangle(centerX, centerY, this.scale.width, this.scale.height, 0x000011);
 
     // Add some animated stars (simple white dots)
-    this.stars = [];
+    this.#stars = [];
     for (let i = 0; i < 50; i++) {
       const star = this.add.circle(
         Math.random() * this.scale.width,
@@ -78,15 +138,20 @@ export default class MainMenuScene extends Phaser.Scene {
         ease: 'Sine.easeInOut',
       });
 
-      this.stars.push(star);
+      this.#stars.push(star);
     }
   }
 
-  createTitle() {
+  /**
+   * Create title and subtitle text elements.
+   * @private
+   * @returns {void}
+   */
+  #createTitle() {
     const centerX = this.scale.width / 2;
 
     // Main title
-    this.titleText = this.add
+    this.#titleText = this.add
       .text(centerX, 120, 'SPACE SHOOTER', {
         fontSize: '32px',
         color: '#ffffff',
@@ -97,7 +162,7 @@ export default class MainMenuScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     // Subtitle
-    this.subtitleText = this.add
+    this.#subtitleText = this.add
       .text(centerX, 180, 'Defend the Galaxy', {
         fontSize: '20px',
         color: '#888888',
@@ -118,7 +183,12 @@ export default class MainMenuScene extends Phaser.Scene {
     }
   }
 
-  createMenu() {
+  /**
+   * Create interactive menu items with hover and click handlers.
+   * @private
+   * @returns {void}
+   */
+  #createMenu() {
     const centerX = this.scale.width / 2;
     const startY = 280;
     const itemSpacing = 60;
@@ -129,7 +199,7 @@ export default class MainMenuScene extends Phaser.Scene {
       { text: 'SETTINGS', action: 'showSettings' },
     ];
 
-    this.menuItems = [];
+    this.#menuItems = [];
 
     menuOptions.forEach((option, index) => {
       const y = startY + index * itemSpacing;
@@ -155,28 +225,33 @@ export default class MainMenuScene extends Phaser.Scene {
         index,
       };
 
-      this.menuItems.push(menuItem);
+      this.#menuItems.push(menuItem);
 
       // Add hover effects for mouse
       text
         .setInteractive({ useHandCursor: true })
         .on('pointerover', () => {
-          if (this.menuActive) {
-            this.selectMenuItem(index);
+          if (this.#menuActive) {
+            this.#selectMenuItem(index);
           }
         })
         .on('pointerdown', () => {
-          if (this.menuActive) {
-            this.activateMenuItem(index);
+          if (this.#menuActive) {
+            this.#activateMenuItem(index);
           }
         });
     });
 
     // Set initial selection
-    this.updateMenuSelection();
+    this.#updateMenuSelection();
   }
 
-  createInfoPanels() {
+  /**
+   * Create informational panels showing controls, objectives, and debug info.
+   * @private
+   * @returns {void}
+   */
+  #createInfoPanels() {
     // Controls info
     const controlsText = [
       'CONTROLS:',
@@ -226,62 +301,92 @@ export default class MainMenuScene extends Phaser.Scene {
     }
   }
 
-  setupInput() {
+  /**
+   * Setup keyboard and mouse input handlers.
+   * @private
+   * @returns {void}
+   */
+  #setupInput() {
     // Keyboard navigation
     this.input.keyboard.on('keydown-UP', () => {
-      if (this.menuActive) {
-        this.navigateMenu(-1);
+      if (this.#menuActive) {
+        this.#navigateMenu(-1);
       }
     });
 
     this.input.keyboard.on('keydown-DOWN', () => {
-      if (this.menuActive) {
-        this.navigateMenu(1);
+      if (this.#menuActive) {
+        this.#navigateMenu(1);
       }
     });
 
     this.input.keyboard.on('keydown-ENTER', () => {
-      if (this.menuActive) {
-        this.activateMenuItem(this.selectedIndex);
+      if (this.#menuActive) {
+        this.#activateMenuItem(this.#selectedIndex);
       }
     });
 
     this.input.keyboard.on('keydown-SPACE', () => {
-      if (this.menuActive) {
-        this.activateMenuItem(this.selectedIndex);
+      if (this.#menuActive) {
+        this.#activateMenuItem(this.#selectedIndex);
       }
     });
 
     // Quick start for development
     if (ConfigManager.getConfig().debugMode) {
       this.input.keyboard.on('keydown-F1', () => {
-        this.startGame();
+        this.#startGame();
       });
     }
   }
 
-  navigateMenu(direction) {
-    this.selectedIndex += direction;
-
-    if (this.selectedIndex < 0) {
-      this.selectedIndex = this.menuItems.length - 1;
-    } else if (this.selectedIndex >= this.menuItems.length) {
-      this.selectedIndex = 0;
+  /**
+   * Navigate menu selection up or down with wrapping.
+   * @private
+   * @param {number} direction - Direction to navigate (-1 for up, 1 for down)
+   * @returns {void}
+   */
+  #navigateMenu(direction) {
+    if (typeof direction !== 'number') {
+      this.#logger.warn('Invalid direction provided to navigateMenu:', direction);
+      return;
     }
 
-    this.updateMenuSelection();
-  }
+    this.#selectedIndex += direction;
 
-  selectMenuItem(index) {
-    if (index >= 0 && index < this.menuItems.length) {
-      this.selectedIndex = index;
-      this.updateMenuSelection();
+    if (this.#selectedIndex < 0) {
+      this.#selectedIndex = this.#menuItems.length - 1;
+    } else if (this.#selectedIndex >= this.#menuItems.length) {
+      this.#selectedIndex = 0;
     }
+
+    this.#updateMenuSelection();
   }
 
-  updateMenuSelection() {
-    this.menuItems.forEach((item, index) => {
-      const isSelected = index === this.selectedIndex;
+  /**
+   * Select a specific menu item by index.
+   * @private
+   * @param {number} index - Index of menu item to select
+   * @returns {void}
+   */
+  #selectMenuItem(index) {
+    if (typeof index !== 'number' || index < 0 || index >= this.#menuItems.length) {
+      this.#logger.warn('Invalid menu item index:', index);
+      return;
+    }
+
+    this.#selectedIndex = index;
+    this.#updateMenuSelection();
+  }
+
+  /**
+   * Update visual appearance of menu items based on current selection.
+   * @private
+   * @returns {void}
+   */
+  #updateMenuSelection() {
+    this.#menuItems.forEach((item, index) => {
+      const isSelected = index === this.#selectedIndex;
 
       // Update background
       item.background.setAlpha(isSelected ? 0.3 : 0);
@@ -293,13 +398,20 @@ export default class MainMenuScene extends Phaser.Scene {
     });
   }
 
-  activateMenuItem(index) {
-    if (!this.menuActive || index < 0 || index >= this.menuItems.length) {
+  /**
+   * Activate a menu item with animation and execute its action.
+   * @private
+   * @param {number} index - Index of menu item to activate
+   * @returns {void}
+   */
+  #activateMenuItem(index) {
+    if (!this.#menuActive || typeof index !== 'number' || index < 0 || index >= this.#menuItems.length) {
+      this.#logger.warn('Cannot activate menu item:', { active: this.#menuActive, index, length: this.#menuItems.length });
       return;
     }
 
-    this.menuActive = false;
-    const item = this.menuItems[index];
+    this.#menuActive = false;
+    const item = this.#menuItems[index];
 
     // Add activation animation
     this.tweens.add({
@@ -309,32 +421,50 @@ export default class MainMenuScene extends Phaser.Scene {
       duration: 100,
       yoyo: true,
       onComplete: () => {
-        this.executeMenuAction(item.action);
+        this.#executeMenuAction(item.action);
       },
     });
   }
 
-  executeMenuAction(action) {
+  /**
+   * Execute the action associated with a menu item.
+   * @private
+   * @param {string} action - Action to execute
+   * @returns {void}
+   */
+  #executeMenuAction(action) {
+    if (typeof action !== 'string') {
+      this.#logger.warn('Invalid action provided:', action);
+      this.#menuActive = true;
+      return;
+    }
+
     switch (action) {
       case 'startGame':
-        this.startGame();
+        this.#startGame();
         break;
 
       case 'showInstructions':
-        this.showInstructions();
+        this.#showInstructions();
         break;
 
       case 'showSettings':
-        this.showSettings();
+        this.#showSettings();
         break;
 
       default:
-        this.menuActive = true;
+        this.#logger.warn('Unknown menu action:', action);
+        this.#menuActive = true;
         break;
     }
   }
 
-  startGame() {
+  /**
+   * Start the game by transitioning to GameScene.
+   * @private
+   * @returns {void}
+   */
+  #startGame() {
     this.cameras.main.fadeOut(500, 0, 0, 0);
 
     this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
@@ -342,7 +472,12 @@ export default class MainMenuScene extends Phaser.Scene {
     });
   }
 
-  showInstructions() {
+  /**
+   * Display game instructions overlay.
+   * @private
+   * @returns {void}
+   */
+  #showInstructions() {
     // For now, just show a simple message and return to menu
     const centerX = this.scale.width / 2;
     const centerY = this.scale.height / 2;
@@ -370,16 +505,21 @@ export default class MainMenuScene extends Phaser.Scene {
 
     this.input.keyboard.once('keydown', () => {
       instructionsText.destroy();
-      this.menuActive = true;
+      this.#menuActive = true;
     });
 
     this.input.once('pointerdown', () => {
       instructionsText.destroy();
-      this.menuActive = true;
+      this.#menuActive = true;
     });
   }
 
-  showSettings() {
+  /**
+   * Display settings overlay.
+   * @private
+   * @returns {void}
+   */
+  #showSettings() {
     // Simple settings display - will be expanded later
     const centerX = this.scale.width / 2;
     const centerY = this.scale.height / 2;
@@ -407,20 +547,25 @@ export default class MainMenuScene extends Phaser.Scene {
 
     this.input.keyboard.once('keydown', () => {
       settingsText.destroy();
-      this.menuActive = true;
+      this.#menuActive = true;
     });
 
     this.input.once('pointerdown', () => {
       settingsText.destroy();
-      this.menuActive = true;
+      this.#menuActive = true;
     });
   }
 
-  animateEntrance() {
+  /**
+   * Animate the entrance of title, subtitle, and menu items.
+   * @private
+   * @returns {void}
+   */
+  #animateEntrance() {
     // Title entrance
-    this.titleText.setAlpha(0).setScale(0.5);
+    this.#titleText.setAlpha(0).setScale(0.5);
     this.tweens.add({
-      targets: this.titleText,
+      targets: this.#titleText,
       alpha: 1,
       scale: 1,
       duration: 1000,
@@ -428,16 +573,16 @@ export default class MainMenuScene extends Phaser.Scene {
     });
 
     // Subtitle entrance
-    this.subtitleText.setAlpha(0);
+    this.#subtitleText.setAlpha(0);
     this.tweens.add({
-      targets: this.subtitleText,
+      targets: this.#subtitleText,
       alpha: 1,
       duration: 800,
       delay: 500,
     });
 
     // Menu items entrance
-    this.menuItems.forEach((item, index) => {
+    this.#menuItems.forEach((item, index) => {
       item.text.setAlpha(0).setX(item.text.x - 100);
       item.background.setAlpha(0);
 

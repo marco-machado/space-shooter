@@ -4,20 +4,54 @@ import Logger from '@/utils/Logger.js';
 /**
  * Preloader Scene - Asset loading with development graphics
  * Handles loading of all game assets and displays progress
+ * @class
+ * @classdesc Manages asset loading with visual progress indicators and development graphics simulation
+ * @extends Phaser.Scene
  */
 export default class PreloaderScene extends Phaser.Scene {
+  /**
+   * Loading progress bar graphic element
+   * @private
+   * @type {Phaser.GameObjects.Rectangle|null}
+   */
+  #loadingBar = null;
+  
+  /**
+   * Loading status text element
+   * @private
+   * @type {Phaser.GameObjects.Text|null}
+   */
+  #loadingText = null;
+  
+  /**
+   * Progress percentage text element
+   * @private
+   * @type {Phaser.GameObjects.Text|null}
+   */
+  #progressText = null;
+
+  /**
+   * Logger instance for this scene
+   * @private
+   * @type {Logger}
+   */
+  #logger = Logger.scope('PreloaderScene');
+
+  /**
+   * Create a new PreloaderScene instance.
+   * Initializes the scene with loading UI components and logger.
+   */
   constructor() {
     super({ key: 'PreloaderScene' });
 
-    this.loadingBar = null;
-    this.loadingText = null;
-    this.progressText = null;
-
-    this.logger = Logger.scope('PreloaderScene');
   }
 
+  /**
+   * Phaser scene preload lifecycle method.
+   * Sets up loading UI, events, and initiates asset loading.
+   * @returns {void}
+   */
   preload() {
-    this.logger.debug('Preload PreloaderScene');
 
     this.createLoadingUI();
     this.setupLoadingEvents();
@@ -35,6 +69,12 @@ export default class PreloaderScene extends Phaser.Scene {
     }
   }
 
+  /**
+   * Creates the loading screen user interface.
+   * Sets up progress bar, text elements, and loading tips.
+   * @private
+   * @returns {void}
+   */
   createLoadingUI() {
     const centerX = this.scale.width / 2;
     const centerY = this.scale.height / 2;
@@ -52,7 +92,7 @@ export default class PreloaderScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     // Loading text
-    this.loadingText = this.add
+    this.#loadingText = this.add
       .text(centerX, centerY - 50, 'LOADING ASSETS...', {
         fontSize: '24px',
         color: '#ffffff',
@@ -61,7 +101,7 @@ export default class PreloaderScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     // Progress text
-    this.progressText = this.add
+    this.#progressText = this.add
       .text(centerX, centerY + 50, '0%', {
         fontSize: '18px',
         color: '#888888',
@@ -75,7 +115,7 @@ export default class PreloaderScene extends Phaser.Scene {
     this.add.rectangle(centerX, centerY, barWidth, barHeight, 0x333333).setStrokeStyle(2, 0x666666);
 
     // Loading bar fill
-    this.loadingBar = this.add
+    this.#loadingBar = this.add
       .rectangle(centerX - barWidth / 2, centerY, 0, barHeight - 4, 0x00ff00)
       .setOrigin(0, 0.5);
 
@@ -106,35 +146,43 @@ export default class PreloaderScene extends Phaser.Scene {
       .setOrigin(0.5);
   }
 
+  /**
+   * Sets up event listeners for asset loading progress.
+   * Handles progress updates, file loading, completion, and errors.
+   * @private
+   * @returns {void}
+   */
   setupLoadingEvents() {
     // Update progress bar
     this.load.on('progress', progress => {
       const barWidth = 400;
-      this.loadingBar.width = barWidth * progress;
-      this.progressText.setText(`${Math.round(progress * 100)}%`);
+      this.#loadingBar.width = barWidth * progress;
+      this.#progressText.setText(`${Math.round(progress * 100)}%`);
 
-      Logger.scope('PreloaderScene').debug(
-        `PreloaderScene: Loading progress: ${Math.round(progress * 100)}%`,
-      );
+
     });
 
     // Handle individual file loading
     this.load.on('fileprogress', file => {
-      Logger.scope('PreloaderScene').debug(`PreloaderScene: Loading file: ${file.key}`);
     });
 
     // Handle loading completion
     this.load.on('complete', () => {
-      Logger.scope('PreloaderScene').debug('PreloaderScene: All assets loaded successfully');
       this.onLoadComplete();
     });
 
     // Handle loading errors
     this.load.on('loaderror', file => {
-      Logger.scope('PreloaderScene').error(`PreloaderScene: Failed to load asset: ${file.key}`);
+      this.#logger.error(`PreloaderScene: Failed to load asset: ${file.key}`);
     });
   }
 
+  /**
+   * Loads simulated development assets.
+   * Creates fake loading progress for development graphics.
+   * @private
+   * @returns {void}
+   */
   loadDevelopmentAssets() {
     // Simulate loading various asset types
     const simulatedAssets = [
@@ -162,14 +210,26 @@ export default class PreloaderScene extends Phaser.Scene {
     });
   }
 
+  /**
+   * Loads audio assets if enabled in configuration.
+   * Currently simulates audio loading for development.
+   * @private
+   * @returns {void}
+   */
   loadAudioAssets() {
     // Audio loading will be implemented when we add actual audio files
     // For now, we'll simulate audio loading
   }
 
+  /**
+   * Handles loading completion.
+   * Updates UI, enables input, and sets up game start transitions.
+   * @private
+   * @returns {void}
+   */
   onLoadComplete() {
-    this.loadingText.setText('LOADING COMPLETE!');
-    this.progressText.setText('100%');
+    this.#loadingText.setText('LOADING COMPLETE!');
+    this.#progressText.setText('100%');
 
     // Add completion indicator
     this.add
@@ -182,7 +242,7 @@ export default class PreloaderScene extends Phaser.Scene {
 
     // Animate the completion text
     this.tweens.add({
-      targets: this.loadingText,
+      targets: this.#loadingText,
       alpha: { from: 1, to: 0.5 },
       duration: 1000,
       yoyo: true,
@@ -206,6 +266,12 @@ export default class PreloaderScene extends Phaser.Scene {
     }
   }
 
+  /**
+   * Starts the game transition to main menu.
+   * Performs fade out transition and scene change.
+   * @private
+   * @returns {void}
+   */
   startGame() {
     // Fade out transition
     this.cameras.main.fadeOut(500, 0, 0, 0);

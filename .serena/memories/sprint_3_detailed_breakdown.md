@@ -337,7 +337,7 @@ class WeaponUpgradeComponent extends BaseComponent {
 ## Sprint 3 Dependencies & Prerequisites
 
 ### From Sprint 2 (✅ Complete)
-- ECS architecture established
+- component architecture established
 - Object pooling patterns implemented
 - Collision detection scopeName operational
 - Game state management functional

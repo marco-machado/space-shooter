@@ -4,9 +4,9 @@
 Critical TypeError: `movement.update is not a function` at `Projectile.js:135:16` that was breaking the WeaponSystem and preventing projectiles from functioning properly.
 
 ## Root Cause Analysis
-The error was caused by incorrect usage of the ECS (Entity Component System) architecture:
+The error was caused by incorrect usage of the component-based architecture:
 
-1. **Movement Component Nature**: MovementComponent is a data-only component following ECS principles - it stores movement data but doesn't have logic methods like `update()`
+1. **Movement Component Nature**: MovementComponent is a data-only component following component principles - it stores movement data but doesn't have logic methods like `update()`
 2. **System Responsibility**: MovementSystem is responsible for processing all movement logic and updating entity positions
 3. **Incorrect Method Calls**: Projectile.js was directly calling:
    - `movement.update(delta / 1000)` - MovementComponent doesn't have an update method
@@ -27,11 +27,11 @@ The error was caused by incorrect usage of the ECS (Entity Component System) arc
 ### 3. Code Quality Improvements
 - Cleaned up duplicate JSDoc comments
 - Improved error handling and logging
-- Maintained proper ECS separation of concerns
+- Maintained proper component separation of concerns
 
 ## Technical Details
 
-### ECS Architecture Compliance
+### component Architecture Compliance
 - **Components**: Pure data containers (MovementComponent stores velocities, speeds, etc.)
 - **Systems**: Handle all logic and updates (MovementSystem processes movement for all entities)
 - **Entities**: Composition of components, minimal logic
@@ -55,7 +55,7 @@ movement.moveInDirection(angle, projectileSpeed); // Uses existing MovementCompo
 - Development server starts successfully without errors
 - Projectiles should now move correctly when fired
 - WeaponSystem can process projectiles without throwing errors
-- ECS architecture properly maintained
+- component architecture properly maintained
 
 ## Files Modified
 - `src/entities/Projectile.js` - Fixed movement method calls and cleaned up code
@@ -63,5 +63,5 @@ movement.moveInDirection(angle, projectileSpeed); // Uses existing MovementCompo
 ## Impact
 - ✅ Resolved critical TypeError preventing projectile movement
 - ✅ Restored proper weapon firing functionality
-- ✅ Maintained clean ECS architecture separation
+- ✅ Maintained clean component architecture separation
 - ✅ Improved code quality and documentation

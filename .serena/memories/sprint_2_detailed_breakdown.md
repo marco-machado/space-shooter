@@ -1,4 +1,4 @@
-# Sprint 2 Detailed Task Breakdown - Core ECS & Gameplay
+# Sprint 2 Detailed Task Breakdown - Core Architecture & Gameplay
 
 ## Sprint 2 Overview
 **Goal**: Implement core game mechanics and entity systems  
@@ -10,7 +10,7 @@
 1. **Playable Game Loop**: Player can shoot, enemies appear, collisions work
 2. **Performance Target**: Maintain 60+ FPS with multiple entities
 3. **Code Quality**: All new code passes ESLint, uses Logger scopeName
-4. **Architecture**: ECS patterns maintained and expanded
+4. **Architecture**: component patterns maintained and expanded
 5. **Testing**: Core utility functions covered with unit tests
 
 ## Task Breakdown with Dependencies
@@ -49,7 +49,7 @@
 - **Testing**: Unit tests for movement calculations
 
 ### Phase B: BaseEntity Systems (Day 2-3)
-**Core entity types with ECS integration**
+**Core entity types with component integration**
 
 #### B1: Projectile BaseEntity Implementation
 - **Effort**: 5 hours
@@ -181,7 +181,7 @@
    - **Mitigation**: Phaser physics engine optimization
    - **Alternative**: Spatial partitioning if needed
 
-3. **ECS Complexity**: BaseComponent dependencies becoming complex  
+3. **component Complexity**: BaseComponent dependencies becoming complex  
    - **Mitigation**: Keep components focused and minimal
    - **Review**: Daily architecture review
 
@@ -195,7 +195,7 @@
    - **Target**: Stay under 50MB total usage
 
 ## Sprint 2 Dependencies & Prerequisites
-- ✅ **Sprint 1 Complete**: ECS foundation, Player entity, Scene management
+- ✅ **Sprint 1 Complete**: component foundation, Player entity, Scene management
 - ✅ **Performance Baseline**: 120+ FPS with current simple entities
 - ✅ **Code Quality Tools**: ESLint, Prettier, Logger scopeName operational
 - ✅ **Development Graphics**: Color scheme and shape patterns established
@@ -205,7 +205,7 @@
 - **Performance**: 60+ FPS with 20+ enemies, 50+ projectiles
 - **Code Quality**: 100% ESLint pass, Logger scopeName usage
 - **Memory Usage**: <50MB total (50% of target)
-- **Architecture**: ECS patterns maintained and enhanced
+- **Architecture**: component patterns maintained and enhanced
 
 ## Sprint 2 Deliverable Timeline
 - **Day 1**: Components (A1-A3) - Foundation ready

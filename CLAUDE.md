@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a space shooter game built with Phaser.js 3.x and Vite build tooling. The game features multiple weapon types, enemy varieties, player progression, and power-up systems using an enhanced ECS (Entity Component System) architecture with bitECS, sophisticated enemy spawning system with object pooling, unified ConfigManager scopeName, auto-initializing Logger scopeName, and event-driven input management. All game data is persisted using browser localStorage. The development phase uses simple colored rectangles for rapid prototyping before final graphics are implemented.
+This is a space shooter game built with Phaser.js 3.x and Vite build tooling. The game features multiple weapon types, enemy varieties, player progression, and power-up systems using a sophisticated enemy spawning system with object pooling, unified ConfigManager scopeName, auto-initializing Logger scopeName, and event-driven input management. All game data is persisted using browser localStorage. The development phase uses simple colored rectangles for rapid prototyping before final graphics are implemented.
 
 ## Quick Start Commands
 
@@ -48,7 +48,7 @@ cp .env.example .env
 
 - **Logger**: `Logger.debug('message')` works immediately - no setup needed
 - **ConfigManager**: `ConfigManager.getConfig()` auto-initializes with validation
-- **ECS World**: BitECS entity-component system with performance optimizations
+- **Game Systems**: Optimized game object management with performance enhancements
 
 ### Enemy Spawning System
 
@@ -68,7 +68,7 @@ cp .env.example .env
 
 ### Core Patterns
 
-- **ECS Architecture**: BitECS + Components (data) + Systems (logic) 
+- **Component Architecture**: Modular game design with data components and logic systems 
 - **Event-Driven Input**: Normalized movement, structured events
 - **Unified Configuration**: Single source for all settings and constants
 - **Object Pooling**: Memory-efficient enemy/projectile management
@@ -83,7 +83,7 @@ cp .env.example .env
 
 ### Debug Features
 - **E Key**: Force spawn enemy for immediate testing
-- **Console Logs**: Comprehensive ECS and spawn system debugging
+- **Console Logs**: Comprehensive game system and spawn debugging
 - **Performance Monitoring**: FPS tracking and memory usage metrics
 
 ## Usage Examples

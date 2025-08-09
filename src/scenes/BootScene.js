@@ -4,17 +4,31 @@ import Phaser from 'phaser';
 
 /**
  * Boot Scene - Initial setup and environment loading
- * Handles environment initialization and transitions to preloader
+ * @class
+ * @classdesc Handles environment initialization and transitions to preloader. 
+ * This is the first scene to load and sets up the basic environment before
+ * transitioning to the PreloaderScene for asset loading.
+ * @extends Phaser.Scene
  */
 export default class BootScene extends Phaser.Scene {
+  #logger;
+
+  /**
+   * Create a new BootScene instance.
+   * @constructor
+   */
   constructor() {
     super({ key: 'BootScene' });
 
-    this.logger = Logger.scope('BootScene');
+    this.#logger = Logger.scope('BootScene');
   }
 
+  /**
+   * Preload minimal assets needed for the boot scene.
+   * Sets up the asset loading path and prepares for transition to PreloaderScene.
+   * @returns {void}
+   */
   preload() {
-    this.logger.debug('Preload BootScene');
 
     // Set loading path for assets
     this.load.path = 'assets/';
@@ -23,8 +37,12 @@ export default class BootScene extends Phaser.Scene {
     // (In development phase, we'll use colored rectangles)
   }
 
+  /**
+   * Create the boot scene and initialize loading indicator.
+   * Sets up the initial UI elements and starts the transition process.
+   * @returns {void}
+   */
   create() {
-    this.logger.debug('Create BootScene');
 
     // Create loading indicator
     this.createLoadingIndicator();
@@ -35,6 +53,12 @@ export default class BootScene extends Phaser.Scene {
     });
   }
 
+  /**
+   * Create the loading indicator UI elements.
+   * Sets up animated loading text and debug information displays.
+   * @private
+   * @returns {void}
+   */
   createLoadingIndicator() {
     const centerX = this.scale.width / 2;
     const centerY = this.scale.height / 2;
@@ -94,6 +118,12 @@ export default class BootScene extends Phaser.Scene {
     }
   }
 
+  /**
+   * Transition from boot scene to preloader scene with fade effect.
+   * Handles the smooth transition between scenes using camera fade.
+   * @private
+   * @returns {void}
+   */
   transitionToPreloader() {
     // Fade out effect
     this.cameras.main.fadeOut(300, 0, 0, 0);

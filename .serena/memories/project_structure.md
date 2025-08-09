@@ -31,9 +31,9 @@ space-shooter/
 │   ├── config/           # Game configuration
 │   ├── core/             # Core systems (Logger, AssetManager)
 │   ├── scenes/           # Phaser scenes
-│   ├── entities/         # Game entities (ECS-based)
-│   ├── components/       # ECS components (data classes)
-│   ├── systems/          # ECS systems (game logic)
+│   ├── entities/         # Game entities (game-based)
+│   ├── components/       # game components (data classes)
+│   ├── systems/          # game systems (game logic)
 │   ├── graphics/         # Development graphics generators
 │   └── utils/            # Utility functions
 ├── tests/                # Basic test files (minimal coverage)

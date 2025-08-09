@@ -1,6 +1,6 @@
 import ConfigManager from '@/config/ConfigManager.js';
-import Logger from '@/utils/Logger.js';
 import SpaceShooterGame from '@/core/SpaceShooterGame.js';
+import Logger from '@/utils/Logger.js';
 
 const spaceShooterGame = new SpaceShooterGame();
 
@@ -21,5 +21,5 @@ if (document.readyState === 'loading') {
 if (ConfigManager.getConfig().debugMode) {
   window.spaceShooterGame = spaceShooterGame;
   window.phaser = Phaser;
-  Logger.scope('Main').debug('Game instance available as window.spaceShooterGame');
+
 }

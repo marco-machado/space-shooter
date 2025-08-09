@@ -27,7 +27,7 @@
 - **Controls**: Both WASD and Arrow keys equally responsive
 
 ### Code Performance Optimizations
-- **ECS Architecture**: Efficient component lookups with Map-based storage
+- **component Architecture**: Efficient component lookups with Map-based storage
 - **Object Creation**: Minimal garbage collection pressure
 - **Update Loops**: Optimized entity processing in GameScene
 - **Physics**: Efficient boundary collision without complex physics

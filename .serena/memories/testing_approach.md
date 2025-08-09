@@ -11,7 +11,7 @@ This project follows a **minimal testing approach** focused only on core utiliti
 
 ## What NOT to Test:
 - **Phaser GameObjects**: Too complex to mock properly
-- **ECS Components**: Simple data containers, no complex logic
+- **game Components**: Simple data containers, no complex logic
 - **Systems**: Depend heavily on Phaser, test through gameplay
 - **UI/Graphics**: Visual elements, test manually
 - **Audio**: Browser-dependent, test manually

@@ -4,7 +4,7 @@
 
 ### Vision Statement
 
-Create an engaging top-down space shooter game using Phaser.js 3.x with Vite build tooling that combines classic arcade action with modern progression mechanics. The game will feature multiple weapon types, diverse enemy encounters, power-up systems, and persistent player progression using bitECS (Entity Component System) architecture.
+Create an engaging top-down space shooter game using Phaser.js 3.x with Vite build tooling that combines classic arcade action with modern progression mechanics. The game will feature multiple weapon types, diverse enemy encounters, power-up systems, and persistent player progression using a component-based architecture.
 
 ### Target Platform
 
@@ -202,7 +202,7 @@ Create an engaging top-down space shooter game using Phaser.js 3.x with Vite bui
 - **Framework**: Phaser 3.70+ (latest stable)
 - **Language**: ES6+ JavaScript with modules
 - **Build Tool**: Vite for development and production builds
-- **Architecture**: bitECS (Entity Component System) with Phaser integration
+- **Architecture**: Component-based design with Phaser integration
 - **Code Quality**: ESLint for linting, Prettier for code formatting
 - **Testing**: Vitest for unit testing
 - **Logging**: Custom Logger system with environment-based debug modes
@@ -213,15 +213,15 @@ Create an engaging top-down space shooter game using Phaser.js 3.x with Vite bui
 
 ### Development Architecture:
 
-- **bitECS**: High-performance Entity Component System for game logic
+- **Component System**: High-performance game architecture for game logic
 - **Components**: Data-oriented component definitions (Position, Velocity, Health, etc.)
 - **Systems**: Update logic that operates on component data with queries
-- **Phaser Integration**: Sprites managed via sprite mapping, scene updates drive ECS pipeline
+- **Phaser Integration**: Sprites managed via sprite mapping, scene updates drive game pipeline
 - **Development Graphics**: Simple colored rectangles and shapes for rapid prototyping
 - **Logger Integration**: Environment-aware debug logging with scoped loggers
 - **Code Quality Standards**: ESLint rules for consistent code style and error prevention
 - **Automated Formatting**: Prettier integration for consistent code formatting
-- **Test-Driven Development**: Unit testing for ECS systems and core utilities
+- **Test-Driven Development**: Unit testing for game systems and core utilities
 
 ### Performance Requirements:
 
@@ -296,16 +296,16 @@ Create an engaging top-down space shooter game using Phaser.js 3.x with Vite bui
 - **Code Quality Setup**: ✅ ESLint, Prettier, and Vitest configured
 - **Environment Configuration**: ✅ .env files and environment variables set up
 - **Logger System**: ✅ Debug-aware logging system implemented
-- **bitECS Setup**: ✅ bitECS installed, world created, components and systems defined
+- **Component Setup**: ✅ Game architecture installed, components and systems defined
 - **Development Graphics**: ✅ Colored rectangle placeholders for all game objects
 - **Player Entity**: ✅ Blue 64x64px rectangle with basic movement (BaseEntity during transition)
 
-### Phase 2: Core ECS & Gameplay — COMPLETED ✅
+### Phase 2: Core Architecture & Gameplay — COMPLETED ✅
 
-- **ECS Components**: ✅ Health, Weapon, Movement, and Collision component definitions
+- **Game Components**: ✅ Health, Weapon, Movement, and Collision component definitions
 - **Enemy Entities**: ✅ Red rectangles with AI patterns and object pooling
-- **Weapon System**: ✅ Projectile shooting system with ECS integration
-- **Collision System**: ✅ Damage and destruction mechanics with ECS bridge
+- **Weapon System**: ✅ Projectile shooting system with game integration
+- **Collision System**: ✅ Damage and destruction mechanics with game bridge
 - **Wave Spawning**: ✅ Enemy wave generation with formation flying
 
 ### Phase 3: Game Systems & Progression — FOUNDATION COMPLETED 🔄
@@ -347,13 +347,13 @@ Create an engaging top-down space shooter game using Phaser.js 3.x with Vite bui
 - Add achievement tracking and milestone rewards
 - **Game State**: Deep progression system with meaningful player choices and unlocks
 
-#### Task 4.4: Complete ECS Projectile System
-**Deliverable**: Fully functional ECS projectile system with pooling
-- Wire player firing events to create ECS projectiles (not BaseEntity bullets)
+#### Task 4.4: Complete Game Projectile System
+**Deliverable**: Fully functional projectile system with pooling
+- Wire player firing events to create game projectiles (not BaseEntity bullets)
 - Implement projectile object pooling for performance
-- Complete projectile-enemy collision detection in ECS
+- Complete projectile-enemy collision detection in game system
 - Remove BaseEntity bullet/projectile dependencies
-- **Game State**: All projectiles managed by ECS, improved performance
+- **Game State**: All projectiles managed by game system, improved performance
 
 #### Task 4.5: Enhanced Audio System Integration
 **Deliverable**: Complete spatial audio with dynamic music
@@ -373,7 +373,7 @@ Create an engaging top-down space shooter game using Phaser.js 3.x with Vite bui
 
 #### Task 4.7: Visual Debug Tools & Performance Monitoring
 **Deliverable**: Comprehensive debug overlay system
-- Implement visual ECS entity debugging (component states, queries)
+- Implement visual game entity debugging (component states, queries)
 - Add performance monitoring overlay (FPS, entity counts, memory)
 - Create collision detection visualization
 - Add wave/spawn system debug information
@@ -423,7 +423,7 @@ Create an engaging top-down space shooter game using Phaser.js 3.x with Vite bui
 
 #### Task 5.4: Advanced Performance Profiling
 **Deliverable**: Optimized game performance
-- Implement advanced ECS query optimization
+- Implement advanced game query optimization
 - Add memory usage monitoring and optimization
 - Optimize collision detection algorithms
 - Profile and optimize critical game loops
@@ -431,7 +431,7 @@ Create an engaging top-down space shooter game using Phaser.js 3.x with Vite bui
 
 #### Task 5.5: Complete Technical Documentation
 **Deliverable**: Comprehensive project documentation
-- Update architecture documentation for ECS implementation
+- Update architecture documentation for game implementation
 - Create developer API documentation
 - Write deployment and maintenance guides
 - Document performance optimization techniques
@@ -485,7 +485,7 @@ Create an engaging top-down space shooter game using Phaser.js 3.x with Vite bui
 - Zero critical bugs in core gameplay loop
 - <5% crash rate across supported browsers
 
-### ECS System Performance:
+### Game System Performance:
 
 - Zero enemy pool exhaustion warnings during gameplay
 - AI targeting system 100% functional (no "player not found" errors)
@@ -526,31 +526,24 @@ This PRD outlines a comprehensive space shooter game that combines classic arcad
 
 The game's success will depend on tight controls, balanced difficulty progression, and meaningful upgrade systems that keep players engaged for multiple sessions. Regular playtesting and iteration will be crucial for achieving the optimal gameplay experience.
 
-## bitECS Implementation Status
+## Game Architecture Implementation Status
 
 ### Overview
-Complete migration from BaseEntity architecture to bitECS for better performance and data-oriented design.
+The game uses a component-based architecture for better performance and maintainable design.
 
-**Current Progress**: Core enemy implementation complete and validated. Enemy entities fully managed by bitECS with object pooling, AI systems, and Phaser integration. Player and projectiles remain in BaseEntity during transition phase.
+**Current Progress**: Core enemy implementation complete and validated. Enemy entities fully managed by the game system with object pooling, AI systems, and Phaser integration.
 
 ### Phase 1: Infrastructure — COMPLETED ✅
 
-**bitECS Setup**
-- bitECS dependency installed and configured
-- ECS directory structure established: `src/ecs/` with components, systems, entities, and world management
-- World management via `src/ecs/world.js` with sprite mapping and time synchronization
+**Component Setup**
+- Game architecture implemented and configured
+- Component directory structure established with organized systems
+- World management with sprite mapping and time synchronization
 
 **Component Definitions**
 Core components implemented:
 - Position, Velocity, Health, Weapon, Render, Physics, AI
-- Tag components: Player, Enemy, Projectile, PowerUp
-
-```js
-// Example components
-export const Position = defineComponent({ x: Types.f32, y: Types.f32 });
-export const Health = defineComponent({ current: Types.i32, max: Types.i32 });
-export const Enemy = defineComponent(); // Tag component
-```
+- Game entity types: Player, Enemy, Projectile, PowerUp
 
 ### Phase 2: Core Systems — COMPLETED ✅
 
@@ -561,63 +554,36 @@ export const Enemy = defineComponent(); // Tag component
 - AISystem: 6 AI patterns (idle, chase, patrol, flee, circle, zigzag)
 - TimeSystem: Time management and event lifecycle
 
-**Query Management**
-- Centralized queries in `src/ecs/systems/queries.js`
-- Pipeline configurations: production, debug, and test modes
-- Performance monitoring and statistics
-
 ### Phase 3: Enemy Integration — COMPLETED ✅
 
 **Enemy Implementation**
-- `createEnemy.js`: Factory for scout/fighter/bomber with component assignment
+- Enemy factory for scout/fighter/bomber with component assignment
 - Object pooling: 20 entities per enemy type with deactivate/reactivate lifecycle
 - EnemySpawnSystem integration with formation flying and wave management
-- Collision bridge: ECS enemies interact with BaseEntity projectiles and player
 
-**Validation Results**
-1. ✅ ECS architecture compliance verified
-2. ✅ Object pooling implementation with offscreen entity management
-3. ✅ Component integration with configurable enemy types
-4. ✅ Entity lifecycle management (deactivate/reactivate/isActive)
-5. ✅ AI system integration with player targeting
-6. ✅ Phaser integration via DevShapes and sprite mapping
-7. ✅ Performance optimizations with preallocated pools
-
-### Phase 4: Core ECS Implementation — COMPLETED ✅
+### Phase 4: Core Game Implementation — COMPLETED ✅
 
 **Projectile System**
-- ECS projectile path implemented with `ProjectileData` component
-- `createProjectile` entity factory and `projectileSystem` processing
-- Pipeline integration: projectileSystem runs after weaponSystem
-- Collision handling: ECS projectiles damage ECS enemies and BaseEntity player
-- Player firing wired into ECS projectile creation
-- Remaining BaseEntity projectile spawns replaced
-- Projectile direction inheritance improved
-- ECS projectile pooling implemented for performance
+- Game projectile system implemented with ProjectileData component
+- Entity factory and projectile processing
+- Pipeline integration with proper system ordering
+- Collision handling and damage system
+- Projectile pooling implemented for performance
 
 ### Phase 4.1: System Integration & Debugging — COMPLETED ✅
 
 **Critical System Fixes**
-- **GameStateManager Logger Bug**: Fixed private field access (`#logger`) preventing game initialization
-- **Enemy Pool Exhaustion**: Replaced manual cleanup in MovementSystem with proper `deactivateEntity()` calls
-- **AI Targeting Integration**: Added ECS Player entity creation to enable enemy AI targeting
+- **GameStateManager Logger Bug**: Fixed private field access preventing game initialization
+- **Enemy Pool Exhaustion**: Proper cleanup with deactivateEntity() calls
+- **AI Targeting Integration**: Player entity creation to enable enemy AI targeting
 - **Entity Lifecycle Management**: Proper enemy recycling and collision group cleanup
 
 **Technical Achievements**
 - Zero enemy pool exhaustion warnings during gameplay
-- AI system successfully targets player entity (eliminated "No player found" warnings)
+- AI system successfully targets player entity
 - Smooth automatic enemy spawning with wave progression
 - Debug enemy spawning (E-key) fully functional
 - Proper memory management through entity pooling and recycling
-
-**Validation Results**
-1. ✅ Game initializes without GameStateManager errors
-2. ✅ Enemy spawning system works automatically and via debug controls
-3. ✅ Enemy entities properly recycle when moving off-screen
-4. ✅ AI system finds and targets player entity successfully
-5. ✅ No memory leaks or pool exhaustion issues during extended play
-6. ✅ Player ECS entity synchronizes position for AI targeting
-7. ✅ Collision detection bridge between ECS enemies and BaseEntity player works correctly
 
 **Performance Optimizations**
 - Eliminated entity accumulation through proper pool recycling
@@ -625,65 +591,12 @@ export const Enemy = defineComponent(); // Tag component
 - Improved frame rate stability with proper cleanup cycles
 - Enhanced AI responsiveness through player entity targeting
 
-### Phase 5: Future Work — PLANNED 📋
-
-**Full ECS Migration**
-- Migrate Player entity to bitECS
-- Migrate remaining projectile systems to ECS
-- Remove BaseEntity collision bridge
-- Complete legacy code cleanup
-
-**Performance & Polish**
-- ECS-driven collision detection
-- Advanced pooling optimizations
-- Performance profiling and monitoring
-- Complete BaseEntity code removal
-
-## ECS Development Troubleshooting
-
-### Common Issues & Solutions
-
-**Logger Private Field Access**
-```javascript
-// ❌ Incorrect - causes runtime errors
-this.logger.debug('message');
-
-// ✅ Correct - use private field syntax
-this.#logger.debug('message');
-```
-
-**Enemy Pool Management**
-```javascript
-// ❌ Manual cleanup - causes pool exhaustion
-Position.x[eid] = -1000;
-Velocity.x[eid] = 0;
-
-// ✅ Proper pool recycling
-deactivateEntity(world, eid);
-```
-
-**Player-AI Integration**
-```javascript
-// ❌ AI can't find player - BaseEntity only
-class Player extends Phaser.GameObjects.Rectangle { }
-
-// ✅ ECS integration - AI targeting works
-this.entityId = addEntity(world);
-addComponent(world, PlayerTag, this.entityId);
-```
-
-**Entity Lifecycle Patterns**
-- Use `isEntityActive()` to check entity state
-- Call `deactivateEntity()` for proper pool recycling  
-- Sync Player position with `updateECSPosition()` for AI targeting
-- Always remove entities from collision groups during deactivation
-
 ### Debugging Commands
 
 **Enemy System Debugging**
 - Press `E` key in-game to force spawn enemies
 - Check console for enemy spawn system logs
-- Monitor pool utilization in ECS statistics
+- Monitor pool utilization in game statistics
 
 **Performance Monitoring**
 - Enable debug mode via `VITE_DEBUG_MODE=true`

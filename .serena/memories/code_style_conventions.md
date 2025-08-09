@@ -38,7 +38,7 @@ Logger.warn('Low health warning');
 Logger.error('Failed to save data');
 ```
 
-## ECS Patterns:
+## Component Patterns:
 - **Entities**: Extend Phaser.GameObjects.Rectangle/Sprite
 - **Components**: Pure data containers (no methods)
 - **Systems**: Handle all logic and updates

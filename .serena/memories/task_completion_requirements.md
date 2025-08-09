@@ -14,7 +14,7 @@ npm run test               # Basic unit tests must pass
 - Code follows the project's style conventions
 - No `console.log()` statements (use Logger scopeName instead)
 - ES6+ conventions followed (const/let, arrow functions, modules)
-- ECS patterns properly implemented
+- component patterns properly implemented
 
 ### 3. Development Workflow:
 - Use Logger scopeName for all debugging output

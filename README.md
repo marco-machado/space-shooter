@@ -1,6 +1,6 @@
 # Space Shooter Game
 
-A modern space shooter game built with **Phaser.js 3.x** and **Vite**, featuring an BaseEntity BaseComponent BaseSystem (ECS) architecture, environment-aware logging, and professional development practices.
+A modern space shooter game built with **Phaser.js 3.x** and **Vite**, featuring a component-based architecture, environment-aware logging, and professional development practices.
 
 ## ⚠️ CRITICAL DEVELOPMENT POLICIES
 
@@ -30,7 +30,7 @@ A modern space shooter game built with **Phaser.js 3.x** and **Vite**, featuring
 - ✅ **Flexible BaseEntity Architecture**: Support for all Phaser GameObject types or pure logical entities
 - ✅ **KeyboardInputAdapter**: Event-driven input scopeName with normalized movement and state management
 - ✅ **Comprehensive Unit Testing**: 36+ test cases with strategic Phaser mocking (Logger, BaseEntity, ObjectPool)
-- ✅ **Enhanced ECS Architecture**: BaseAdapter pattern, EventBus integration, and runtime GameObject switching
+- ✅ **Enhanced Game Architecture**: BaseAdapter pattern, EventBus integration, and runtime GameObject switching
 - ✅ **Developer Experience**: Eliminated initialization errors, improved debugging, enhanced maintainability
 
 ### Sprint 2 Achievements
@@ -56,7 +56,7 @@ A modern space shooter game built with **Phaser.js 3.x** and **Vite**, featuring
 ### Technical Achievements
 
 #### **Architecture Excellence**
-- ✅ **Enhanced ECS**: Flexible BaseEntity with 6 GameObject types + null logical entities
+- ✅ **Enhanced Game Objects**: Flexible BaseEntity with 6 GameObject types + null logical entities
 - ✅ **Auto-Initialization**: Logger scopeName with zero manual setup, dual environment support
 - ✅ **Event-Driven Input**: KeyboardInputAdapter with normalized movement and state tracking
 - ✅ **Adapter Pattern**: BaseAdapter architecture for extensible input management
@@ -240,7 +240,7 @@ VITE_SHOW_DEBUG_INFO=true    # Show debug information overlay
 #### **Protected Files (NO AUTOMATED CHANGES)**
 - **GameScene.js** - Critical gameplay scene (manual changes only)
 - **All scenes/** - Game scenes protected from automation
-- **All systems/** - ECS systems protected from automation  
+- **All systems/** - Game systems protected from automation  
 - **All entities/** - Game entities protected from automation
 
 #### **Safe Files for Automation**
@@ -249,9 +249,9 @@ VITE_SHOW_DEBUG_INFO=true    # Show debug information overlay
 
 ## 🏗️ Architecture
 
-### Enhanced ECS Architecture with Flexible GameObjects
+### Enhanced Game Architecture with Flexible GameObjects
 
-**NEW**: The game features an advanced ECS architecture with flexible GameObject support:
+**NEW**: The game features an advanced component-based architecture with flexible GameObject support:
 
 ```javascript
 // ✨ NEW: Flexible BaseEntity - Multiple GameObject types or pure logical entities
@@ -427,21 +427,21 @@ space-shooter/
 │   │   ├── BootScene.js    # Environment setup and initialization
 │   │   ├── PreloaderScene.js # Asset loading (dev graphics)
 │   │   ├── MainMenuScene.js  # Main menu interface
-│   │   └── GameScene.js    # Primary gameplay scene with full ECS integration
+│   │   └── GameScene.js    # Primary gameplay scene with full game integration
 │   │
-│   ├── entities/           # ✅ Enhanced game entities (ECS-based)
+│   ├── entities/           # ✅ Enhanced game entities (component-based)
 │   │   ├── BaseEntity.js   # ✨ NEW: Flexible GameObject support (6 types + null)
 │   │   ├── Projectile.js   # ✅ Projectile entities with object pooling
 │   │   └── Enemy.js        # ✅ AI-driven enemy entities with state machines
 │   │
-│   ├── components/         # ✅ Enhanced ECS components (data containers)
+│   ├── components/         # ✅ Enhanced game components (data containers)
 │   │   ├── BaseComponent.js    # ✨ NEW: Enhanced base with serialization & entity refs
 │   │   ├── HealthComponent.js    # Health and damage management
 │   │   ├── MovementComponent.js  # Movement with AI patterns
 │   │   ├── WeaponComponent.js    # ✅ Weapon stats, fire rates, upgrades
 │   │   └── CollisionComponent.js # ✅ Collision layers and response behaviors
 │   │
-│   ├── systems/            # ✅ ECS systems (game logic)
+│   ├── systems/            # ✅ Game systems (game logic)
 │   │   ├── BaseSystem.js       # ✨ NEW: Enhanced base with error handling
 │   │   ├── WeaponSystem.js # ✅ Weapon firing and projectile creation
 │   │   ├── CollisionSystem.js # ✅ Spatial grid collision detection
@@ -491,7 +491,7 @@ The project follows a **pragmatic testing approach** focused on core utilities:
 **❌ What We Don't Test:**
 
 - **Phaser GameObjects**: Too complex to mock effectively
-- **ECS Components**: Simple data containers with minimal logic
+- **Game Components**: Simple data containers with minimal logic
 - **Systems**: Heavily dependent on Phaser, tested through gameplay
 - **UI/Graphics**: Visual elements tested manually
 - **Audio**: Browser-dependent, verified through user testing
@@ -650,7 +650,7 @@ npm run build -- --mode production
 **Achievements:**
 
 - ✅ Complete development environment setup
-- ✅ ECS architecture foundation implemented
+- ✅ Component architecture foundation implemented
 - ✅ Environment-aware Logger scopeName functional
 - ✅ Scene management scopeName working
 - ✅ Player entity with smooth movement controls
@@ -662,12 +662,12 @@ npm run build -- --mode production
 **Key Technical Decisions:**
 
 - **Development Graphics**: Using colored rectangles for rapid prototyping
-- **ECS Pattern**: Components are data containers, Systems handle logic
+- **Component Pattern**: Components are data containers, Systems handle logic
 - **Logger Integration**: Zero console.log statements, environment-aware output
 - **Scene Architecture**: Boot → Preloader → MainMenu → GameScene flow
 - **Input Handling**: Support for both WASD and Arrow keys
 
-### Sprint 2: Core ECS & Gameplay ✅ COMPLETE
+### Sprint 2: Core Architecture & Gameplay ✅ COMPLETE
 
 **Duration**: 1 week | **Status**: Successfully Delivered
 
@@ -684,7 +684,7 @@ npm run build -- --mode production
 - **8 New Systems**: WeaponSystem, CollisionSystem, EnemySpawnSystem, GameStateManager
 - **5 Enhanced Components**: WeaponComponent, CollisionComponent, MovementComponent upgrades
 - **2 New BaseEntity Types**: Projectile (pooled), Enemy (AI-driven)
-- **Architecture**: Clean ECS with proper separation of concerns
+- **Architecture**: Clean component design with proper separation of concerns
 - **Code Quality**: 100% ESLint compliance, comprehensive logging
 
 ### Sprint 3: Game Systems & Progression 🔄 READY TO BEGIN

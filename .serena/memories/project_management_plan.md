@@ -10,7 +10,7 @@
 - Phaser.js integration with Vite
 - Code quality tools (ESLint, Prettier, Vitest) 
 - Environment configuration scopeName
-- Basic ECS architecture
+- Basic component architecture
 - Development graphics scopeName
 - Basic player entity with controls
 - Initial scene structure
@@ -21,7 +21,7 @@
 - Code quality tools pass
 - Logger scopeName functional
 
-### Sprint 2: Core ECS & Gameplay (Week 2)
+### Sprint 2: Core component & Gameplay (Week 2)
 **Goal**: Implement core game mechanics and entity systems
 **Dependencies**: Sprint 1 complete
 

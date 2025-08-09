@@ -51,7 +51,7 @@ Successfully implemented minimal test suite following project's testing philosop
 
 ## Architecture Compliance
 - **Follows CLAUDE.md Guidelines**: Only tests pure utility functions
-- **Avoids Complex Testing**: No Phaser, ECS, or UI component testing
+- **Avoids Complex Testing**: No Phaser, game system, or UI component testing
 - **Minimal Philosophy**: Focus on core utilities with clear inputs/outputs
 - **TDD Approach**: Simple, focused tests for essential functionality
 

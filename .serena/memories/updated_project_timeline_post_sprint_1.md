@@ -16,7 +16,7 @@
 - Code Quality: 100% clean
 - Documentation: Comprehensive suite
 
-### Sprint 2: Core ECS & Gameplay 🎯 CURRENT
+### Sprint 2: Core Architecture & Gameplay 🎯 CURRENT
 **Timeline**: Week 2  
 **Confidence**: HIGH - Strong foundation from Sprint 1  
 **Key Goals**: Weapons, Enemies, Core Game Loop  
@@ -104,7 +104,7 @@
 
 ### Project Risks - SIGNIFICANTLY REDUCED
 1. **Technical Architecture Risk**: LOW (was HIGH)
-   - ECS architecture proven effective
+   - component architecture proven effective
    - Phaser integration working perfectly
    - Performance targets exceeded with headroom
 
@@ -140,7 +140,7 @@
 
 ### Completed Milestones ✅
 - **M1 - Technical Foundation**: Sprint 1 - COMPLETE with excellence
-- **M1.1 - ECS Architecture**: Proven scalable and maintainable
+- **M1.1 - component Architecture**: Proven scalable and maintainable
 - **M1.2 - Performance Baseline**: 120+ FPS established
 - **M1.3 - Code Quality Standards**: Automated and enforced
 

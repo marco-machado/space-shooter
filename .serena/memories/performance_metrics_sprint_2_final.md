@@ -113,7 +113,7 @@
 - **Performance Gain**: From 15ms to <1ms per frame
 - **Scalability**: Linear performance with entity count
 
-#### ECS BaseSystem Optimization
+#### component BaseSystem Optimization
 - **BaseComponent Lookup**: Hash map O(1) access
 - **BaseSystem Updates**: Only active entities processed
 - **Memory Layout**: BaseComponent data locality optimized
@@ -149,7 +149,7 @@
 1. **Early Optimization**: Performance-first design decisions
 2. **Object Pooling**: Eliminated runtime allocations
 3. **Spatial Data Structures**: Efficient collision detection
-4. **ECS Architecture**: Clean scopeName separation
+4. **component Architecture**: Clean scopeName separation
 5. **Phaser Integration**: Leveraged engine optimizations
 
 ### Performance Maintenance Strategy
