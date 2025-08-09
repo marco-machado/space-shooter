@@ -15,14 +15,14 @@ export default class PreloaderScene extends Phaser.Scene {
    * @type {Phaser.GameObjects.Rectangle|null}
    */
   #loadingBar = null;
-  
+
   /**
    * Loading status text element
    * @private
    * @type {Phaser.GameObjects.Text|null}
    */
   #loadingText = null;
-  
+
   /**
    * Progress percentage text element
    * @private
@@ -43,7 +43,6 @@ export default class PreloaderScene extends Phaser.Scene {
    */
   constructor() {
     super({ key: 'PreloaderScene' });
-
   }
 
   /**
@@ -52,7 +51,6 @@ export default class PreloaderScene extends Phaser.Scene {
    * @returns {void}
    */
   preload() {
-
     this.createLoadingUI();
     this.setupLoadingEvents();
 
@@ -158,13 +156,10 @@ export default class PreloaderScene extends Phaser.Scene {
       const barWidth = 400;
       this.#loadingBar.width = barWidth * progress;
       this.#progressText.setText(`${Math.round(progress * 100)}%`);
-
-
     });
 
     // Handle individual file loading
-    this.load.on('fileprogress', file => {
-    });
+    this.load.on('fileprogress', file => {});
 
     // Handle loading completion
     this.load.on('complete', () => {

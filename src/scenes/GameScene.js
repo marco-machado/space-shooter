@@ -11,16 +11,6 @@ import Logger from '@/utils/Logger.js';
  * @extends Phaser.Scene
  */
 export default class GameScene extends Phaser.Scene {
-  /**
-   * Create a new GameScene instance.
-   */
-  constructor() {
-    super({ key: 'GameScene' });
-
-    this.#eventBus = getEventBus();
-    this.#logger = Logger.scope('GameScene');
-  }
-
   // Private fields
   #eventBus;
   #logger;
@@ -33,6 +23,16 @@ export default class GameScene extends Phaser.Scene {
   #powerupGroup;
   #pauseKey;
   #debugSpawnKey;
+
+  /**
+   * Create a new GameScene instance.
+   */
+  constructor() {
+    super({ key: 'GameScene' });
+
+    this.#eventBus = getEventBus();
+    this.#logger = Logger.scope('GameScene');
+  }
 
   /**
    * Initialize the game scene and set up all systems.

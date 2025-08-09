@@ -5,7 +5,7 @@ import Phaser from 'phaser';
 /**
  * Boot Scene - Initial setup and environment loading
  * @class
- * @classdesc Handles environment initialization and transitions to preloader. 
+ * @classdesc Handles environment initialization and transitions to preloader.
  * This is the first scene to load and sets up the basic environment before
  * transitioning to the PreloaderScene for asset loading.
  * @extends Phaser.Scene
@@ -29,7 +29,6 @@ export default class BootScene extends Phaser.Scene {
    * @returns {void}
    */
   preload() {
-
     // Set loading path for assets
     this.load.path = 'assets/';
 
@@ -43,7 +42,6 @@ export default class BootScene extends Phaser.Scene {
    * @returns {void}
    */
   create() {
-
     // Create loading indicator
     this.createLoadingIndicator();
 

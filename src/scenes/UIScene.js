@@ -112,7 +112,6 @@ export default class UIScene extends Phaser.Scene {
       .setOrigin(0, 0.5);
     this.#uiElements.healthBar.setScrollFactor(0);
 
-
     // Debug info (if enabled)
     if (ConfigManager.getConfig().showDebugInfo) {
       this.#uiElements.debugText = this.add.text(10, this.scale.height - 100, '', {
@@ -201,8 +200,6 @@ export default class UIScene extends Phaser.Scene {
       this,
     );
     this.#listenerIds.push(pauseListenerId);
-
-
   }
 
   /**

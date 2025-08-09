@@ -71,7 +71,7 @@ export default class MainMenuScene extends Phaser.Scene {
    * @returns {void}
    */
   init() {
-this.#selectedIndex = 0;
+    this.#selectedIndex = 0;
     this.#menuActive = true;
   }
 
@@ -80,7 +80,6 @@ this.#selectedIndex = 0;
    * @returns {void}
    */
   create() {
-
     this.#createBackground();
     this.#createTitle();
     this.#createMenu();
@@ -110,7 +109,6 @@ this.#selectedIndex = 0;
    * @returns {void}
    */
   #createBackground() {
-
     const centerX = this.scale.width / 2;
     const centerY = this.scale.height / 2;
 
@@ -405,8 +403,17 @@ this.#selectedIndex = 0;
    * @returns {void}
    */
   #activateMenuItem(index) {
-    if (!this.#menuActive || typeof index !== 'number' || index < 0 || index >= this.#menuItems.length) {
-      this.#logger.warn('Cannot activate menu item:', { active: this.#menuActive, index, length: this.#menuItems.length });
+    if (
+      !this.#menuActive ||
+      typeof index !== 'number' ||
+      index < 0 ||
+      index >= this.#menuItems.length
+    ) {
+      this.#logger.warn('Cannot activate menu item:', {
+        active: this.#menuActive,
+        index,
+        length: this.#menuItems.length,
+      });
       return;
     }
 

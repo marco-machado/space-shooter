@@ -54,8 +54,6 @@ export default class SpaceShooterGame {
       this.#setupGameEvents();
 
       this.#isInitialized = true;
-
-
     } catch (error) {
       this.#logger.error('Game failed to initialize:', error.message);
       this.#showErrorMessage(error.message);
