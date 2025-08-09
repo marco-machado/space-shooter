@@ -10,6 +10,7 @@ import weaponSystemDefault from './WeaponSystem.js';
 import aiSystemDefault from './AISystem.js';
 import timeSystemDefault from './TimeSystem.js';
 import projectileSystemDefault from './ProjectileSystem.js';
+import playerInputSystemDefault from './PlayerInputSystem.js';
 
 // Import queries for registry
 import {
@@ -21,7 +22,9 @@ import {
   powerUpQuery,
   weaponQuery,
   aiQuery,
-  physicsQuery
+  physicsQuery,
+  playerInputQuery,
+  playerControlQuery
 } from './queries.js';
 
 // Import pipeline constants
@@ -34,6 +37,7 @@ export { default as weaponSystem, triggerWeaponFire, setWeaponConfig, getWeaponC
 export { default as aiSystem, AI_PATTERNS, setAIPattern, setAITarget, getAIState } from './AISystem.js';
 export { default as timeSystem, getCurrentFPS, getElapsedSeconds, getDeltaSeconds, hasTimeElapsed, getTimeRemaining, createTimer, performanceMonitor, interpolation } from './TimeSystem.js';
 export { default as projectileSystem } from './ProjectileSystem.js';
+export { default as playerInputSystem, setPlayerInput, getPlayerInput, setPlayerFireCooldown } from './PlayerInputSystem.js';
 
 // System Pipeline
 export { 
@@ -104,7 +108,8 @@ export const SYSTEM_REGISTRY = {
   render: renderSystemDefault,
   weapon: weaponSystemDefault,
   ai: aiSystemDefault,
-  time: timeSystemDefault
+  time: timeSystemDefault,
+  playerInput: playerInputSystemDefault
 };
 
 // Query Registry for Dynamic Access
@@ -117,7 +122,9 @@ export const QUERY_REGISTRY = {
   powerUp: powerUpQuery,
   weapon: weaponQuery,
   ai: aiQuery,
-  physics: physicsQuery
+  physics: physicsQuery,
+  playerInput: playerInputQuery,
+  playerControl: playerControlQuery
 };
 
 /**

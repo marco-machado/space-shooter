@@ -278,8 +278,8 @@ describe('BaseSystem', () => {
 
       testSystem.process([], 16.67);
 
-      expect(Logger.warn).toHaveBeenCalledWith(
-        '[BaseSystem] Slow scopeName update: TestSystem took 20.00ms'
+      expect(Logger.scope('BaseSystem').warn).toHaveBeenCalledWith(
+        '[BaseSystem] Slow system update: TestSystem took 20.00ms'
       );
     });
 
@@ -299,8 +299,8 @@ describe('BaseSystem', () => {
 
       testSystem.process([], 16.67);
 
-      expect(Logger.error).toHaveBeenCalledWith(
-        '[BaseSystem] Error processing scopeName TestSystem:',
+      expect(Logger.scope('BaseSystem').error).toHaveBeenCalledWith(
+        '[BaseSystem] Error processing system TestSystem:',
         expect.any(Error)
       );
       expect(testSystem.updateCount).toBe(0); // Should not increment on error
@@ -812,8 +812,8 @@ describe('BaseSystem', () => {
 
       expect(testSystem.totalUpdateTime).toBe(1000.0);
       expect(testSystem.averageUpdateTime).toBe(1000.0);
-      expect(Logger.warn).toHaveBeenCalledWith(
-        '[BaseSystem] Slow scopeName update: TestSystem took 1000.00ms'
+      expect(Logger.scope('BaseSystem').warn).toHaveBeenCalledWith(
+        '[BaseSystem] Slow system update: TestSystem took 1000.00ms'
       );
     });
 
@@ -892,7 +892,7 @@ describe('BaseSystem', () => {
 
       testSystem.process([], 16.67);
 
-      expect(Logger.warn).not.toHaveBeenCalled(); // Should not warn at exactly threshold
+      expect(Logger.scope('BaseSystem').warn).not.toHaveBeenCalled(); // Should not warn at exactly threshold
     });
 
     it('should warn just above 16.67ms threshold', () => {
@@ -901,8 +901,8 @@ describe('BaseSystem', () => {
 
       testSystem.process([], 16.67);
 
-      expect(Logger.warn).toHaveBeenCalledWith(
-        '[BaseSystem] Slow scopeName update: TestSystem took 16.68ms'
+      expect(Logger.scope('BaseSystem').warn).toHaveBeenCalledWith(
+        '[BaseSystem] Slow system update: TestSystem took 16.68ms'
       );
     });
   });

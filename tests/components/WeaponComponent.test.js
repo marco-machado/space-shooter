@@ -488,7 +488,7 @@ describe('WeaponComponent', () => {
     it('should log weapon switch', () => {
       weapon.switchWeapon('plasma');
       
-      expect(Logger.info).toHaveBeenCalledWith(
+      expect(Logger.scope('WeaponComponent').info).toHaveBeenCalledWith(
         '[WeaponComponent]: Switched from laser to plasma'
       );
     });
@@ -496,7 +496,7 @@ describe('WeaponComponent', () => {
     it('should log warning for unavailable weapon', () => {
       weapon.switchWeapon('missile');
       
-      expect(Logger.warn).toHaveBeenCalledWith(
+      expect(Logger.scope('WeaponComponent').warn).toHaveBeenCalledWith(
         '[WeaponComponent]: Cannot switch to unavailable weapon: missile'
       );
     });
@@ -522,7 +522,7 @@ describe('WeaponComponent', () => {
       const result = weapon.unlockWeapon('invalidWeapon', 10);
       
       expect(result).toBe(false);
-      expect(Logger.warn).toHaveBeenCalledWith(
+      expect(Logger.scope('WeaponComponent').warn).toHaveBeenCalledWith(
         'WeaponComponent: Unknown weapon type: invalidWeapon'
       );
     });
@@ -671,7 +671,7 @@ describe('WeaponComponent', () => {
       it('should log damage upgrade', () => {
         weapon.upgradeDamage(15);
         
-        expect(Logger.info).toHaveBeenCalledWith(
+        expect(Logger.scope('WeaponComponent').info).toHaveBeenCalledWith(
           'WeaponComponent: Damage upgraded by 15 (total bonus: 15)'
         );
       });
@@ -701,7 +701,7 @@ describe('WeaponComponent', () => {
       it('should log fire rate upgrade', () => {
         weapon.upgradeFireRate(40);
         
-        expect(Logger.info).toHaveBeenCalledWith(
+        expect(Logger.scope('WeaponComponent').info).toHaveBeenCalledWith(
           'WeaponComponent: Fire rate upgraded by 40ms (total reduction: 40)'
         );
       });
@@ -724,7 +724,7 @@ describe('WeaponComponent', () => {
       it('should log speed upgrade', () => {
         weapon.upgradeProjectileSpeed(80);
         
-        expect(Logger.info).toHaveBeenCalledWith(
+        expect(Logger.scope('WeaponComponent').info).toHaveBeenCalledWith(
           'WeaponComponent: Projectile speed upgraded by 80 (total bonus: 80)'
         );
       });

@@ -12,6 +12,7 @@ export { Render } from './Render.js';
 export { Physics } from './Physics.js';
 export { AI } from './AI.js';
 export { ProjectileData } from './ProjectileData.js';
+export { Input } from './Input.js';
 
 // Tag Components  
 export { Player } from './Player.js';
@@ -28,6 +29,7 @@ export { default as RenderComponent } from './Render.js';
 export { default as PhysicsComponent } from './Physics.js';
 export { default as AIComponent } from './AI.js';
 export { default as ProjectileDataComponent } from './ProjectileData.js';
+export { default as InputComponent } from './Input.js';
 export { default as PlayerTag } from './Player.js';
 export { default as EnemyTag } from './Enemy.js';
 export { default as ProjectileTag } from './Projectile.js';

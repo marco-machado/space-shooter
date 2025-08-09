@@ -5,6 +5,14 @@
 
 import Logger from '@/utils/Logger.js';
 
+// Player entity creation and management
+export {
+  createPlayer,
+  deactivatePlayer,
+  resetPlayer,
+  getPlayerFromSprite
+} from './createPlayer.js';
+
 // Enemy entity creation and management
 export {
   createEnemy,
@@ -27,6 +35,7 @@ export {
 } from './enemyConfig.js';
 
 // Default exports for convenience
+export { default as PlayerCreator } from './createPlayer.js';
 export { default as EnemyCreator } from './createEnemy.js';
 export { default as EnemyConfig } from './enemyConfig.js';
 

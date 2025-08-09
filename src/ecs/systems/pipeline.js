@@ -5,6 +5,7 @@ import weaponSystem from './WeaponSystem.js';
 import projectileSystem from './ProjectileSystem.js';
 import renderSystem from './RenderSystem.js';
 import timeSystem from './TimeSystem.js';
+import playerInputSystem from './PlayerInputSystem.js';
 import Logger from '@/utils/Logger.js';
 
 const logger = Logger.scope('ECS:Pipeline');
@@ -15,13 +16,16 @@ const logger = Logger.scope('ECS:Pipeline');
  * and returning it for the next system in the pipeline.
  * 
  * Execution order:
- * 1. Movement System - Updates positions based on velocity
- * 2. AI System - Handles enemy AI behavior and movement decisions
- * 3. Weapon System - Processes weapon firing and cooldowns
- * 4. Render System - Synchronizes sprites with entity positions
- * 5. Time System - Manages time state and cleanup
+ * 1. Player Input System - Handles player input and movement
+ * 2. Movement System - Updates positions based on velocity
+ * 3. AI System - Handles enemy AI behavior and movement decisions
+ * 4. Weapon System - Processes weapon firing and cooldowns
+ * 5. Projectile System - Handles projectile logic
+ * 6. Render System - Synchronizes sprites with entity positions
+ * 7. Time System - Manages time state and cleanup
  */
 export const systemPipeline = pipe(
+  playerInputSystem,
   movementSystem,
   aiSystem,
   weaponSystem,
@@ -62,6 +66,11 @@ export const debugSystemPipeline = (world) => {
   const systemTimes = {};
   
   try {
+    // Player Input System
+    const playerInputStart = performance.now();
+    playerInputSystem(world);
+    systemTimes.playerInput = performance.now() - playerInputStart;
+    
     // Movement System
     const movementStart = performance.now();
     movementSystem(world);

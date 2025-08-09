@@ -584,12 +584,13 @@ describe('BaseComponent', () => {
       });
     });
 
-    it('should handle invalid serialization data gracefully', () => {
-      // Valid objects that might have weird values - these should work
+    it('should validate deserialization input types strictly', () => {
+      // Valid objects: either omit fields or provide correct types
       const validObjects = [
-        { componentId: null, active: 'not-boolean' },
-        { componentId: 123, active: {} },
-        { componentId: '', active: [] },
+        {},
+        { componentId: 'id-123' },
+        { active: true },
+        { componentId: 'id-123', active: false },
       ];
 
       validObjects.forEach(data => {
@@ -597,28 +598,21 @@ describe('BaseComponent', () => {
         expect(() => testComponent.deserialize(data)).not.toThrow();
       });
 
-      // Invalid data types that will cause errors
+      // Invalid data types should throw
       const invalidData = [
         null,
         undefined,
+        'not-an-object',
+        42,
+        true,
+        { componentId: 123 },
+        { active: 'not-boolean' },
+        { componentId: '', active: [] },
       ];
 
       invalidData.forEach(data => {
         const testComponent = new BaseComponent();
         expect(() => testComponent.deserialize(data)).toThrow();
-      });
-
-      // Primitive values won't throw but will behave unexpectedly
-      const primitiveData = [
-        'not-an-object',
-        42,
-        true,
-      ];
-
-      primitiveData.forEach(data => {
-        const testComponent = new BaseComponent();
-        expect(() => testComponent.deserialize(data)).not.toThrow();
-        // These will behave strangely but won't crash
       });
     });
 

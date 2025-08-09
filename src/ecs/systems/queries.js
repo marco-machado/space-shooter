@@ -7,6 +7,7 @@ import {
   Render,
   Physics,
   AI,
+  Input,
   Player,
   Enemy,
   Projectile,
@@ -25,6 +26,10 @@ export const playerQuery = defineQuery([Player, Position]);
 export const enemyQuery = defineQuery([Enemy, Position]);
 export const projectileQuery = defineQuery([Projectile, Position]);
 export const powerUpQuery = defineQuery([PowerUp, Position]);
+
+// Player input queries
+export const playerInputQuery = defineQuery([Player, Position, Velocity, Input]);
+export const playerControlQuery = defineQuery([Player, Input]);
 
 // Combat-related queries
 export const weaponQuery = defineQuery([Position, Weapon]);
@@ -68,6 +73,9 @@ export const exitedPowerUpQuery = exitQuery(powerUpQuery);
 export const enteredAIQuery = enterQuery(aiQuery);
 export const exitedAIQuery = exitQuery(aiQuery);
 
+export const enteredPlayerInputQuery = enterQuery(playerInputQuery);
+export const exitedPlayerInputQuery = exitQuery(playerInputQuery);
+
 // Utility function to get query results with debug logging
 export const executeQuery = (query, world, queryName = 'unknown') => {
   const entities = query(world);
@@ -92,7 +100,9 @@ export const getQueryStats = (world) => {
     powerUps: powerUpQuery(world).length,
     weapons: weaponQuery(world).length,
     ai: aiQuery(world).length,
-    physics: physicsQuery(world).length
+    physics: physicsQuery(world).length,
+    playerInput: playerInputQuery(world).length,
+    playerControl: playerControlQuery(world).length
   };
 };
 
