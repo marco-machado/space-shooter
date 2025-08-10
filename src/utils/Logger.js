@@ -463,18 +463,6 @@ function ensureEnvConfig() {
 
     _envConfig = { debugMode, logLevel, levels };
     _cache.levelNumbers = levels;
-
-    // Log initialization in development
-    if (debugMode && levels['debug'] >= levels[logLevel]) {
-      const timestamp = new Date().toISOString().slice(11, 19);
-      const isDev = env.DEV || env.NODE_ENV === 'development';
-
-      globalThis.console?.log('🔍', `${timestamp} [DEBUG]`, 'Logger: auto-initialized', {
-        debugMode,
-        logLevel,
-        environment: isDev ? 'development' : 'production',
-      });
-    }
   } catch (error) {
     globalThis.console?.error('Logger initialization failed, using defaults:', error);
     _envConfig = {
