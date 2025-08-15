@@ -3,7 +3,7 @@ import { createBackground, updateBackground } from '@/entities/Background.js';
 import { playerFactory } from '@/entities/Player.js';
 import { getEventBus } from '@/event-bus/EventBus.js';
 import { EventTypes } from '@/event-bus/EventTypes.js';
-import EnemySpawner from '@/systems/EnemySpawner.js';
+import EnemySystem from '@/systems/EnemySystem.js';
 import GameStateManager from '@/utils/GameStateManager.js';
 import Logger from '@/utils/Logger.js';
 
@@ -59,7 +59,7 @@ export default class GameScene extends Phaser.Scene {
     this.player = playerFactory(this.#playerGroup);
 
     // Setup Enemy Spawner
-    this.#enemySpawner = new EnemySpawner(this, this.#enemyGroup);
+    this.#enemySpawner = new EnemySystem(this, this.#enemyGroup);
 
     this.#eventBus.on(EventTypes.GAME_PAUSE_TOGGLE, this.onPauseToggle, this);
 

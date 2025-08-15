@@ -7,7 +7,7 @@ import Logger from '@/utils/Logger.js';
  * Enemy spawning system that manages continuous enemy spawning
  * Uses composition pattern rather than inheritance
  */
-export default class EnemySpawner {
+export default class EnemySystem {
   #logger;
   #eventBus;
 
@@ -19,7 +19,7 @@ export default class EnemySpawner {
   #spawnConfig;
 
   /**
-   * Create a new EnemySpawner.
+   * Create a new EnemySystem.
    * @param {Phaser.Scene} scene - The scene this spawner belongs to
    * @param {Phaser.Physics.Arcade.Group} enemyGroup - Physics group for enemies
    * @param {Object} [config={}] - Spawner configuration
@@ -231,6 +231,6 @@ export default class EnemySpawner {
     this.destroyAllEnemies();
     this.#eventBus.off(EventTypes.ENEMY_DEATH, this.#onEnemyDeath, this);
 
-    this.#logger.debug('EnemySpawner destroyed');
+    this.#logger.debug('EnemySystem destroyed');
   }
 }
