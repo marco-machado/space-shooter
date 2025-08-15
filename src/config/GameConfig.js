@@ -15,8 +15,8 @@ export const GameConfig = {
 
   // Player settings
   PLAYER: {
-    SPEED: 200, // pixels per second
-    FIRE_RATE: 200, // milliseconds between shots when holding fire button
+    SPEED: 150, // pixels per second
+    FIRE_RATE: 1000, // milliseconds between shots when holding fire button
   },
 
   // Projectile settings
