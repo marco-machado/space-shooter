@@ -46,6 +46,7 @@ class GameStateManager {
     this.totalPlayTime = 0;
 
     // Player statistics
+    // TODO: This should be somewhere else, like level system, health system
     this.score = 0;
     this.lives = config.startingLives || 3;
     this.maxLives = 5;
@@ -54,6 +55,7 @@ class GameStateManager {
     this.experienceToNextLevel = 1000;
 
     // Wave statistics
+    // TODO: Remove all this wave shit
     this.currentWave = 1;
     this.highestWave = 1;
     this.wavesCompleted = 0;
@@ -89,8 +91,6 @@ class GameStateManager {
     this.achievements = new Set();
     this.milestones = new Map();
     this.initializeMilestones();
-
-    // Save data management uses private fields with getters
 
     // Event listeners
     this.setupEventListeners();
@@ -187,7 +187,7 @@ class GameStateManager {
 
     try {
       // Enemy destruction events - HIGH priority for immediate score updates
-    const enemyDeathId = this.eventBus.on(
+      const enemyDeathId = this.eventBus.on(
         EventTypes.ENEMY_DEATH,
         this.onEnemyDestroyed,
         this,
@@ -262,18 +262,6 @@ class GameStateManager {
         EventPriority.NORMAL,
       );
       this.eventListenerIds.set('powerUpCollected', powerUpId);
-
-      // Game state events - NORMAL priority (self-emitted events for logging/consistency)
-      const gameStartId = this.eventBus.on(
-        EventTypes.GAME_STARTED,
-        this.onGameStart,
-        this,
-        EventPriority.LOW,
-      );
-      this.eventListenerIds.set('gameStart', gameStartId);
-
-      // Note: GameStateManager doesn't listen to its own pause events to avoid circular dependencies
-      // It only emits GAME_PAUSED, GAME_RESUMED, and GAME_PAUSE_TOGGLE events
     } catch (error) {
       this.#logger.error('Failed to setup EventBus listeners:', error);
     }
@@ -284,7 +272,6 @@ class GameStateManager {
    * @returns {void}
    */
   startGame() {
-
     this.isPlaying = true;
     this.isPaused = false;
     this.isGameOver = false;
@@ -305,7 +292,7 @@ class GameStateManager {
     this.isPaused = true;
 
     this.eventBus.emit(EventTypes.GAME_PAUSED, this.getGameState());
-    this.eventBus.emit(EventTypes.GAME_PAUSE_TOGGLE, { paused: true });
+    this.eventBus.emit(EventTypes.GAME_PAUSE_TOGGLE, { paused: true }); // TODO: Do we really need this? Move to PAUSE/RESUME only?
   }
 
   /**
@@ -462,8 +449,6 @@ class GameStateManager {
   onPlayerDamage(eventData) {
     // Reset consecutive hits on taking damage
     this.consecutiveHits = 0;
-
-
   }
 
   /**
@@ -523,16 +508,6 @@ class GameStateManager {
 
     // Power-up collection bonus
     this.addScore(250);
-
-
-  }
-
-  /**
-   * Handle game start event
-   * @param {Object} eventData - Game start data
-   * @returns {void}
-   */
-  onGameStart(eventData) {
   }
 
   /**
@@ -824,7 +799,7 @@ class GameStateManager {
   }
 
   /**
-   * Update game state (called each frame)
+   * Update game state
    * @param {number} delta - Time delta in milliseconds
    */
   update(delta) {
@@ -835,11 +810,14 @@ class GameStateManager {
     this.updatePerformance(fps);
 
     // Auto-save periodically
-    const now = Date.now();
-    if (now - this.lastAutoSave >= this.autoSaveInterval) {
-      this.saveGame();
-      this.lastAutoSave = now;
-    }
+    // TODO: Move to a separate system using EventBus
+    // const now = Date.now();
+    // if (now - this.lastAutoSave >= this.autoSaveInterval) {
+    //   this.saveGame();
+    //   this.lastAutoSave = now;
+    // }
+
+    this.#eventBus.emit(EventTypes.GAME_CYCLE, delta);
   }
 
   /**
@@ -874,7 +852,6 @@ class GameStateManager {
     }
     try {
       localStorage.setItem(this.saveKey, JSON.stringify(data));
-
     } catch (error) {
       this.#logger.error('Failed to save game:', error);
     }
@@ -951,8 +928,6 @@ class GameStateManager {
   destroy() {
     // Clean up all EventBus listeners
     if (this.eventBus && this.eventListenerIds.size > 0) {
-
-
       for (const [eventName, listenerId] of this.eventListenerIds) {
         try {
           const removed = this.eventBus.off(listenerId);

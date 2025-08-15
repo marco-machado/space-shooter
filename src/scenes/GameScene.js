@@ -1,6 +1,9 @@
 import ConfigManager from '@/config/ConfigManager.js';
+import { createBackground, updateBackground } from '@/entities/Background.js';
+import { playerFactory } from '@/entities/Player.js';
 import { getEventBus } from '@/event-bus/EventBus.js';
 import { EventTypes } from '@/event-bus/EventTypes.js';
+import EnemySpawner from '@/systems/EnemySpawner.js';
 import GameStateManager from '@/utils/GameStateManager.js';
 import Logger from '@/utils/Logger.js';
 
@@ -15,12 +18,17 @@ export default class GameScene extends Phaser.Scene {
   #eventBus;
   #logger;
   #gameStateManager;
+
   #stars;
+
   #playerGroup;
   #enemyGroup;
+  #enemyBoundsGroup;
   #playerProjectileGroup;
   #enemyProjectileGroup;
   #powerupGroup;
+
+  #enemySpawner;
   #pauseKey;
   #debugSpawnKey;
 
@@ -42,9 +50,16 @@ export default class GameScene extends Phaser.Scene {
     // Initialize game state manager (now that event scopeName is ready)
     this.#gameStateManager = new GameStateManager(this);
 
-    this.createBackground();
+    // this.createBackground();
+    this.#stars = createBackground(this);
+
     this.createCollisionGroups();
     this.setupCollisionDetection();
+
+    this.player = playerFactory(this.#playerGroup);
+
+    // Setup Enemy Spawner
+    this.#enemySpawner = new EnemySpawner(this, this.#enemyGroup);
 
     this.#eventBus.on(EventTypes.GAME_PAUSE_TOGGLE, this.onPauseToggle, this);
 
@@ -62,6 +77,31 @@ export default class GameScene extends Phaser.Scene {
 
     // Start the game
     this.#gameStateManager.startGame();
+  }
+
+  /**
+   * Main game update loop.
+   *
+   * @param {number} _time - Current time (unused)
+   * @param {number} delta - Time delta in milliseconds (unused)
+   */
+  update(_time, delta) {
+    if (Phaser.Input.Keyboard.JustDown(this.#pauseKey)) {
+      this.#gameStateManager.togglePause();
+      return;
+    }
+
+    updateBackground(this.#stars);
+
+    // Update player movement
+    if (this.player && this.player.update) {
+      this.player.update(this.input.keyboard.cursors, delta);
+    }
+
+    // Update game state manager
+    // There shouldn't be anything after this line as it also deals with pause system
+
+    this.#gameStateManager.update(delta);
   }
 
   /**
@@ -83,66 +123,6 @@ export default class GameScene extends Phaser.Scene {
   }
 
   /**
-   * Main game update loop.
-   *
-   * @param {number} _time - Current time (unused)
-   * @param {number} delta - Time delta in milliseconds (unused)
-   */
-  update(_time, delta) {
-    const gameState = this.#gameStateManager.getGameState();
-
-    if (Phaser.Input.Keyboard.JustDown(this.#pauseKey)) {
-      this.#gameStateManager.togglePause();
-      return;
-    }
-
-    if (Phaser.Input.Keyboard.JustDown(this.#debugSpawnKey)) {
-      this.#logger.debug('DEBUG SPAWN KEY');
-    }
-
-    if (!gameState.isPlaying || gameState.isPaused) {
-      return;
-    }
-
-    // Update game state manager
-    this.#gameStateManager.update(delta);
-
-    this.updateBackground();
-  }
-
-  /**
-   * Create the scrolling star background.
-   * @private
-   * @returns {void}
-   */
-  createBackground() {
-    const centerX = this.scale.width / 2;
-    const centerY = this.scale.height / 2;
-
-    // Dark space background
-    this.add.rectangle(centerX, centerY, this.scale.width, this.scale.height, 0x000011);
-
-    this.#stars = this.add.group();
-
-    for (let i = 0; i < 100; i++) {
-      const star = this.add.circle(
-        Math.random() * this.scale.width,
-        Math.random() * this.scale.height,
-        Math.random() * 1.5 + 0.5,
-        0xffffff,
-        Math.random() * 0.8 + 0.2,
-      );
-
-      this.physics.add.existing(star);
-
-      star.body.setVelocity(0, Math.random() * 50 + 25);
-      star.body.setCollideWorldBounds(false);
-
-      this.#stars.add(star);
-    }
-  }
-
-  /**
    * Create physics groups for collision detection.
    * @private
    * @returns {void}
@@ -152,9 +132,19 @@ export default class GameScene extends Phaser.Scene {
 
     this.#playerGroup = this.physics.add.group();
     this.#enemyGroup = this.physics.add.group();
+    this.#enemyBoundsGroup = this.physics.add.group();
     this.#playerProjectileGroup = this.physics.add.group();
     this.#enemyProjectileGroup = this.physics.add.group();
     this.#powerupGroup = this.physics.add.group();
+
+    const lowerBounds = this.add.rectangle(
+      this.scale.width / 2,
+      this.scale.height + 50,
+      this.scale.width,
+      10,
+      0x00ff00,
+    );
+    this.#enemyBoundsGroup.add(lowerBounds);
   }
 
   /**
@@ -198,6 +188,17 @@ export default class GameScene extends Phaser.Scene {
       null,
       this,
     );
+
+    // Enemies vs bounds
+    this.physics.add.overlap(
+      this.#enemyGroup,
+      this.#enemyBoundsGroup,
+      o1 => {
+        o1.destroy();
+      },
+      null,
+      this,
+    );
   }
 
   /**
@@ -212,28 +213,25 @@ export default class GameScene extends Phaser.Scene {
   }
 
   /**
-   * Update the scrolling background stars.
-   * @private
-   * @returns {void}
-   */
-  updateBackground() {
-    this.#stars.children.entries.forEach(star => {
-      // Reset star position when it goes off screen (physics-based wrapping)
-      if (star.y > this.scale.height + 10) {
-        star.y = -10;
-        star.x = Math.random() * this.scale.width;
-      }
-    });
-  }
-
-  /**
    * Handle collision between player projectile and enemy.
    * @param {Phaser.Physics.Arcade.Sprite} projectile - The player projectile
    * @param {Phaser.Physics.Arcade.Sprite} enemy - The enemy sprite
    * @returns {void}
    */
   handleProjectileEnemyCollision(projectile, enemy) {
-    this.#logger.debug('handleProjectileEnemyCollision', projectile, enemy);
+    // Destroy projectile
+    if (projectile && projectile.destroy) {
+      projectile.destroy();
+    }
+
+    // Damage enemy
+    if (enemy && enemy.takeDamage && typeof enemy.takeDamage === 'function') {
+      const destroyed = enemy.takeDamage(1, projectile);
+
+      if (destroyed) {
+        this.#logger.debug('Enemy destroyed by projectile');
+      }
+    }
   }
 
   /**
@@ -243,7 +241,7 @@ export default class GameScene extends Phaser.Scene {
    * @returns {void}
    */
   handleEnemyProjectilePlayerCollision(projectile, player) {
-    this.#logger.debug('handleEnemyProjectilePlayerCollision', projectile, player);
+    // this.#logger.debug('handleEnemyProjectilePlayerCollision', projectile, player);
   }
 
   /**
@@ -253,7 +251,17 @@ export default class GameScene extends Phaser.Scene {
    * @returns {void}
    */
   handlePlayerEnemyCollision(player, enemy) {
-    this.#logger.debug('handlePlayerEnemyCollision', player, enemy);
+    // this.#logger.debug('handlePlayerEnemyCollision', player, enemy);
+
+    // Damage both player and enemy on collision
+    if (enemy && enemy.takeDamage && typeof enemy.takeDamage === 'function') {
+      enemy.takeDamage(1, player);
+    }
+
+    // TODO: Implement player damage when player system is ready
+    // if (player && player.takeDamage && typeof player.takeDamage === 'function') {
+    //   player.takeDamage(enemy.getEnemyComponent ? enemy.getEnemyComponent().damage : 1, enemy);
+    // }
   }
 
   /**
@@ -263,6 +271,6 @@ export default class GameScene extends Phaser.Scene {
    * @returns {void}
    */
   handlePlayerPowerupCollision(player, powerup) {
-    this.#logger.debug('handlePlayerPowerupCollision', player, powerup);
+    // this.#logger.debug('handlePlayerPowerupCollision', player, powerup);
   }
 }

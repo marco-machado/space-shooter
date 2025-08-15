@@ -63,6 +63,7 @@ export default class MainMenuScene extends Phaser.Scene {
    */
   constructor() {
     super({ key: 'MainMenuScene' });
+
     this.#logger = Logger.scope('MainMenuScene');
   }
 
@@ -83,13 +84,12 @@ export default class MainMenuScene extends Phaser.Scene {
     this.#createBackground();
     this.#createTitle();
     this.#createMenu();
-    this.#createInfoPanels();
+    // this.#createInfoPanels();
 
     this.#setupInput();
 
     this.#animateEntrance();
 
-    // Fade in from black
     this.cameras.main.fadeIn(500, 0, 0, 0);
   }
 
@@ -158,27 +158,6 @@ export default class MainMenuScene extends Phaser.Scene {
         strokeThickness: 2,
       })
       .setOrigin(0.5);
-
-    // Subtitle
-    this.#subtitleText = this.add
-      .text(centerX, 180, 'Defend the Galaxy', {
-        fontSize: '20px',
-        color: '#888888',
-        fontFamily: 'Arial, sans-serif',
-        style: 'italic',
-      })
-      .setOrigin(0.5);
-
-    // Version info (development)
-    if (ConfigManager.getConfig().debugMode) {
-      this.add
-        .text(centerX, 210, 'Development Build - Colored Rectangle Graphics', {
-          fontSize: '12px',
-          color: '#ffff00',
-          fontFamily: 'monospace',
-        })
-        .setOrigin(0.5);
-    }
   }
 
   /**
@@ -579,16 +558,6 @@ export default class MainMenuScene extends Phaser.Scene {
       ease: 'Back.easeOut',
     });
 
-    // Subtitle entrance
-    this.#subtitleText.setAlpha(0);
-    this.tweens.add({
-      targets: this.#subtitleText,
-      alpha: 1,
-      duration: 800,
-      delay: 500,
-    });
-
-    // Menu items entrance
     this.#menuItems.forEach((item, index) => {
       item.text.setAlpha(0).setX(item.text.x - 100);
       item.background.setAlpha(0);

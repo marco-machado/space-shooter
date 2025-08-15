@@ -64,27 +64,39 @@ export const EventTypes = {
   ENTITY_DEACTIVATED: 'entity-deactivated',
   ENTITY_DESTROYED: 'entity-destroyed',
   ENTITY_MOVED: 'entity-moved',
+  ENTITY_DAMAGE: 'entity-damage',
+  ENTITY_HEAL: 'entity-heal',
+  ENTITY_DEATH: 'entity-death',
 
   // Game Logic Events
   COLLISION_CONTINUED: 'collision-continued',
   COLLISION_DETECTED: 'collision-detected',
   COLLISION_ENDED: 'collision-ended',
   COLLISION_STARTED: 'collision-started',
+
   DAMAGE_DEALT: 'damage-dealt',
   DAMAGE_RECEIVED: 'damage-received',
+
   ENEMY_DEATH: 'enemy-death',
+
   HEALTH_CHANGED: 'health-changed',
   HEALTH_DEPLETED: 'health-depleted',
+
   PICKUP_COLLECTED: 'pickup-collected',
+
   PLAYER_DAMAGE: 'player-damage',
   PLAYER_DEATH: 'player-death',
+
   POWERUP_ACTIVATED: 'powerup-activated',
   POWERUP_COLLECTED: 'powerup-collected',
   POWERUP_EXPIRED: 'powerup-expired',
+
   SCORE_CHANGED: 'score-changed',
   SCORE_MULTIPLIER_CHANGED: 'score-multiplier-changed',
+
   WAVE_COMPLETE: 'wave-complete',
   WAVE_START: 'wave-start',
+
   WEAPON_CHARGE_STARTED: 'weapon-charge-started',
   WEAPON_CHARGE_STOPPED: 'weapon-charge-stopped',
   WEAPON_COOLDOWN_COMPLETE: 'weapon-cooldown-complete',
@@ -94,6 +106,7 @@ export const EventTypes = {
   WEAPON_SWITCHED: 'weapon-switched',
 
   // Game State Events
+  GAME_CYCLE: 'game-cycle',
   GAME_ERROR: 'game-error',
   GAME_OVER: 'game-over',
   GAME_PAUSED: 'game-paused',
@@ -102,6 +115,7 @@ export const EventTypes = {
   GAME_RESTARTED: 'game-restarted',
   GAME_RESUMED: 'game-resumed',
   GAME_STARTED: 'game-started',
+
   WINDOW_BLUR: 'window-blur',
   WINDOW_FOCUS: 'window-focus',
   WINDOW_HIDDEN: 'window-hidden',
@@ -110,13 +124,18 @@ export const EventTypes = {
 
   // Player Progress Events
   ACHIEVEMENT_UNLOCKED: 'achievement-unlocked',
+
   CONFIG_CHANGED: 'config-changed',
+
   DIFFICULTY_CHANGED: 'difficulty-changed',
+
   EXTRA_LIFE: 'extra-life',
+
   LEVEL_CHANGED: 'level-changed',
   LEVEL_COMPLETED: 'level-completed',
   LEVEL_STARTED: 'level-started',
   LEVEL_UP: 'level-up',
+
   WEAPON_UNLOCKED: 'weapon-unlocked',
 
   // Render Events
@@ -187,7 +206,9 @@ export const EventTypes = {
   // Debug Events
   DEBUG_INFO_UPDATED: 'debug-info-updated',
   DEBUG_MODE_CHANGED: 'debug-mode-changed',
+
   MEMORY_WARNING: 'memory-warning',
+
   PERFORMANCE_WARNING: 'performance-warning',
 
   // Event System Events

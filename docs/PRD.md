@@ -271,7 +271,6 @@ Create an engaging top-down space shooter game using Phaser.js 3.x with Vite bui
 - Game over music
 - Volume controls for music and SFX separately
 
-
 ### Debugging Commands
 
 **Enemy System Debugging**
