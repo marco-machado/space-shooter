@@ -3,7 +3,13 @@ import { GameConfig } from '@/config/GameConfig.js';
 export function playerFactory(playerGroup) {
   const scene = playerGroup.scene;
 
-  const player = scene.add.triangle(scene.scale.width/2, scene.scale.height - 100, 0, -24, -24, 24, 24, 24, 0xff0000);
+  const player = scene.add.rectangle(
+    scene.scale.width / 2,
+    scene.scale.height - 100,
+    40,
+    40,
+    0xff0000,
+  );
 
   playerGroup.add(player);
 
@@ -15,11 +21,11 @@ export function playerFactory(playerGroup) {
    * @param {number} delta - Time delta in milliseconds
    * @returns {void}
    */
-  player.update = function(cursors, delta) {
+  player.update = function (cursors, delta) {
     if (!cursors || !this.body) return;
 
     const speed = GameConfig.PLAYER.SPEED;
-    
+
     // Reset velocity
     this.body.setVelocity(0);
 

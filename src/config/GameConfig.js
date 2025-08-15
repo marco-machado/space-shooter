@@ -16,6 +16,25 @@ export const GameConfig = {
   // Player settings
   PLAYER: {
     SPEED: 200, // pixels per second
+    FIRE_RATE: 200, // milliseconds between shots when holding fire button
+  },
+
+  // Projectile settings
+  PROJECTILES: {
+    PLAYER: {
+      SPEED: 600,    // pixels per second (increased for better visibility)
+      WIDTH: 6,      // projectile width (increased for better visibility)
+      HEIGHT: 16,    // projectile height (increased for better visibility)
+      COLOR: 0xffff00, // yellow
+      DAMAGE: 1,     // damage dealt to enemies
+    },
+    ENEMY: {
+      SPEED: 200,    // pixels per second
+      WIDTH: 3,      // projectile width
+      HEIGHT: 8,     // projectile height
+      COLOR: 0xff8800, // orange
+      DAMAGE: 1,     // damage dealt to player
+    },
   },
 
   // Scene keys

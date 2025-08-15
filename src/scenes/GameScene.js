@@ -1,6 +1,8 @@
 import ConfigManager from '@/config/ConfigManager.js';
+import GameConfig from '@/config/GameConfig.js';
 import { createBackground, updateBackground } from '@/entities/Background.js';
 import { playerFactory } from '@/entities/Player.js';
+import { createEnemyProjectile, createPlayerProjectile, } from '@/entities/Projectile.js';
 import { getEventBus } from '@/event-bus/EventBus.js';
 import { EventTypes } from '@/event-bus/EventTypes.js';
 import EnemySystem from '@/systems/EnemySystem.js';
@@ -31,6 +33,11 @@ export default class GameScene extends Phaser.Scene {
   #enemySpawner;
   #pauseKey;
   #debugSpawnKey;
+  #fireKey;
+
+  // Firing state
+  #lastFireTime;
+  #isFiring;
 
   /**
    * Create a new GameScene instance.
@@ -40,6 +47,10 @@ export default class GameScene extends Phaser.Scene {
 
     this.#eventBus = getEventBus();
     this.#logger = Logger.scope('GameScene');
+
+    // Initialize firing state
+    this.#lastFireTime = 0;
+    this.#isFiring = false;
   }
 
   /**
@@ -71,6 +82,8 @@ export default class GameScene extends Phaser.Scene {
     this.#pauseKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
     this.#debugSpawnKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E); // DEBUG: E to force spawn enemy
 
+    this.#fireKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+
     this.startBackgroundMusic();
 
     this.cameras.main.fadeIn(500, 0, 0, 0);
@@ -82,14 +95,17 @@ export default class GameScene extends Phaser.Scene {
   /**
    * Main game update loop.
    *
-   * @param {number} _time - Current time (unused)
-   * @param {number} delta - Time delta in milliseconds (unused)
+   * @param {number} time - Current time in milliseconds
+   * @param {number} delta - Time delta in milliseconds
    */
-  update(_time, delta) {
+  update(time, delta) {
     if (Phaser.Input.Keyboard.JustDown(this.#pauseKey)) {
       this.#gameStateManager.togglePause();
       return;
     }
+
+    // Handle continuous firing with space key
+    this.#handleWeaponFiring(time);
 
     updateBackground(this.#stars);
 
@@ -98,10 +114,32 @@ export default class GameScene extends Phaser.Scene {
       this.player.update(this.input.keyboard.cursors, delta);
     }
 
+    // Update projectiles
+    this.#updateProjectiles();
+
     // Update game state manager
     // There shouldn't be anything after this line as it also deals with pause system
 
     this.#gameStateManager.update(delta);
+  }
+
+  /**
+   * Handle weapon firing input with rate limiting.
+   * @private
+   * @param {number} time - Current time in milliseconds
+   * @returns {void}
+   */
+  #handleWeaponFiring(time) {
+    const fireKey = this.#fireKey;
+    const fireRate = GameConfig.PLAYER.FIRE_RATE;
+
+    if (fireKey.isDown) {
+      // Check if enough time has passed since last shot
+      if (time - this.#lastFireTime >= fireRate) {
+        this.createPlayerProjectile();
+        this.#lastFireTime = time;
+      }
+    }
   }
 
   /**
@@ -120,6 +158,86 @@ export default class GameScene extends Phaser.Scene {
       this.physics.resume();
       this.time.paused = false;
     }
+  }
+
+  /**
+   * Create a projectile from the player.
+   * @param {number} [velocityY] - Y velocity override (negative for upward)
+   * @returns {Phaser.GameObjects.Rectangle|null} The created projectile or null if no player
+   */
+  createPlayerProjectile(velocityY) {
+    if (!this.player || !this.player.x || !this.player.y) {
+      this.#logger.warn('Cannot create player projectile - player not found or invalid position');
+      return null;
+    }
+
+    const projectile = createPlayerProjectile(
+      this.#playerProjectileGroup,
+      this.player.x,
+      this.player.y,
+      velocityY,
+    );
+
+    this.#logger.debug('Player projectile created', {
+      playerX: this.player.x,
+      playerY: this.player.y,
+      playerWidth: this.player.displayWidth,
+      playerHeight: this.player.displayHeight,
+      projectileX: projectile.x,
+      projectileY: projectile.y,
+      velocityY: projectile.body.velocity.y,
+    });
+
+    return projectile;
+  }
+
+  /**
+   * Create a projectile from an enemy.
+   * @param {Phaser.GameObjects.GameObject} enemy - The enemy that fires the projectile
+   * @param {number} [velocityY] - Y velocity override (positive for downward)
+   * @returns {Phaser.GameObjects.Rectangle|null} The created projectile or null if invalid enemy
+   */
+  createEnemyProjectile(enemy, velocityY) {
+    if (!enemy || !enemy.x || !enemy.y) {
+      this.#logger.warn('Cannot create enemy projectile - enemy not found or invalid position');
+      return null;
+    }
+
+    const projectile = createEnemyProjectile(
+      this.#enemyProjectileGroup,
+      enemy.x,
+      enemy.y + enemy.displayHeight / 2 + 5, // Spawn just below enemy
+      velocityY,
+    );
+
+    this.#logger.debug('Enemy projectile created', {
+      x: projectile.x,
+      y: projectile.y,
+      velocityY: projectile.body.velocity.y,
+    });
+
+    return projectile;
+  }
+
+  /**
+   * Update all projectiles (call their update methods for cleanup).
+   * @private
+   * @returns {void}
+   */
+  #updateProjectiles() {
+    // Update player projectiles
+    this.#playerProjectileGroup.children.entries.forEach(projectile => {
+      if (projectile.update && typeof projectile.update === 'function') {
+        projectile.update();
+      }
+    });
+
+    // Update enemy projectiles
+    this.#enemyProjectileGroup.children.entries.forEach(projectile => {
+      if (projectile.update && typeof projectile.update === 'function') {
+        projectile.update();
+      }
+    });
   }
 
   /**
@@ -219,6 +337,18 @@ export default class GameScene extends Phaser.Scene {
    * @returns {void}
    */
   handleProjectileEnemyCollision(projectile, enemy) {
+    this.#logger.debug('Player projectile hit enemy', {
+      projectileOwner: projectile?.owner,
+      projectileDamage: projectile?.damage,
+    });
+
+    // Emit hit event
+    this.#eventBus.emit(EventTypes.PROJECTILE_HIT_TARGET, {
+      projectile,
+      target: enemy,
+      damage: projectile?.damage || 1,
+    });
+
     // Destroy projectile
     if (projectile && projectile.destroy) {
       projectile.destroy();
@@ -226,11 +356,18 @@ export default class GameScene extends Phaser.Scene {
 
     // Damage enemy
     if (enemy && enemy.takeDamage && typeof enemy.takeDamage === 'function') {
-      const destroyed = enemy.takeDamage(1, projectile);
+      const damage = projectile?.damage || 1;
+      const destroyed = enemy.takeDamage(damage, projectile);
 
       if (destroyed) {
         this.#logger.debug('Enemy destroyed by projectile');
+        this.#eventBus.emit(EventTypes.ENEMY_DEATH, { enemy, cause: 'projectile' });
       }
+    } else if (enemy && enemy.destroy) {
+      // Fallback: if no takeDamage method, destroy enemy directly
+      this.#logger.debug('Enemy destroyed (fallback method)');
+      enemy.destroy();
+      this.#eventBus.emit(EventTypes.ENEMY_DEATH, { enemy, cause: 'projectile' });
     }
   }
 
@@ -241,7 +378,37 @@ export default class GameScene extends Phaser.Scene {
    * @returns {void}
    */
   handleEnemyProjectilePlayerCollision(projectile, player) {
-    // this.#logger.debug('handleEnemyProjectilePlayerCollision', projectile, player);
+    this.#logger.debug('Enemy projectile hit player', {
+      projectileOwner: projectile?.owner,
+      projectileDamage: projectile?.damage,
+    });
+
+    // Emit hit event
+    this.#eventBus.emit(EventTypes.PROJECTILE_HIT_TARGET, {
+      projectile,
+      target: player,
+      damage: projectile?.damage || 1,
+    });
+
+    // Destroy projectile
+    if (projectile && projectile.destroy) {
+      projectile.destroy();
+    }
+
+    // Damage player
+    const damage = projectile?.damage || 1;
+    this.#logger.debug('Player takes damage', { damage });
+
+    // Emit player damage event
+    this.#eventBus.emit(EventTypes.PLAYER_DAMAGE, {
+      player,
+      damage,
+      cause: 'enemy-projectile',
+    });
+
+    // Handle player death if necessary (this would typically be handled by a player health system)
+    // For now, we just log it since the player entity doesn't have health implemented yet
+    this.#logger.warn('Player hit by enemy projectile - health system not yet implemented');
   }
 
   /**

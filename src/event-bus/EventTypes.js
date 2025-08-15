@@ -91,6 +91,10 @@ export const EventTypes = {
   POWERUP_COLLECTED: 'powerup-collected',
   POWERUP_EXPIRED: 'powerup-expired',
 
+  PROJECTILE_CREATED: 'projectile-created',
+  PROJECTILE_DESTROYED: 'projectile-destroyed',
+  PROJECTILE_HIT_TARGET: 'projectile-hit-target',
+
   SCORE_CHANGED: 'score-changed',
   SCORE_MULTIPLIER_CHANGED: 'score-multiplier-changed',
 
