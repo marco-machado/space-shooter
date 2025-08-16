@@ -15,19 +15,13 @@ This is a space shooter game built with Phaser.js 3.x and Vite build tooling. Th
 npm run dev                # localhost:5173
 
 # Code quality and testing
-npm run lint <files>       # Lint specific files only
-npm run lint:fix           # Auto-fix linting issues
+npx eslint <files>         # Lint specific files only
 npm run format             # Format all files with Prettier
 npm run format:check       # Check formatting without changes
 npm run test               # Run all tests
 npm run test:watch         # Continuous testing
 npm run test:coverage      # Run tests with coverage report
 npm run validate           # Run lint + format check + tests
-
-# Lint specific files or patterns
-npm run lint src/scenes/*.js    # Lint specific directory
-npm run lint $(git diff --cached --name-only --diff-filter=ACMR | grep '\.js$')   # Lint staged files
-npm run lint $(git diff --name-only --diff-filter=ACMR | grep '\.js$')            # Lint modified files
 
 # Build
 npm run build              # Production build
@@ -58,6 +52,7 @@ cp .env.example .env
 ### Scene-Based Architecture
 
 Current project structure follows traditional Phaser patterns:
+
 - **BootScene**: Environment setup and configuration validation
 - **PreloaderScene**: Asset loading
 - **MainMenuScene**: Game start menu interface
@@ -79,35 +74,6 @@ Current project structure follows traditional Phaser patterns:
 - **Configuration Management**: Centralized config with environment variable support
 - **Error Handling**: Global error handling with user-friendly messages
 - **State Management**: GameStateManager for progression, scores, and persistence
-
-## Current Implementation Status
-
-### Completed Features (Sprint 2 Complete)
-1. **Core Game Structure**: SpaceShooterGame main class with Phaser integration
-2. **Scene Management**: Boot → Preloader → MainMenu → GameScene → UIScene flow
-3. **Event System**: EventBus with GameEvents, EnemyEvents, and EventTypes
-4. **Background**: Animated starfield with scrolling stars
-5. **Player System**: Full player entity with WASD movement and weapon firing
-6. **Enemy System**: Complete AI with 3 enemy types (Scout, Fighter, Bomber) and level spawning
-7. **Weapon System**: 3 weapon types (Laser, Plasma, Missile) with switching and upgrades
-8. **Projectile System**: Object pooling for performance with auto-cleanup
-9. **Collision System**: Spatial grid optimization with layer-based collision detection
-10. **Health System**: Damage dealing/receiving with visual feedback
-11. **Game State**: Score tracking, lives, level progression, achievements, and persistence
-12. **UI System**: Real-time HUD with health, score, level info, and weapon status
-13. **Performance**: 60+ FPS with object pooling and spatial optimization
-
-### Recently Implemented (Sprint 2)
-- **Component Architecture**: Health, Movement, Weapon, and Collision components
-- **Entity System**: Player, Enemy, Projectile, and Background entities
-- **Game Systems**: EnemySystem for AI and spawning logic
-- **Advanced Features**: Formation flying, AI state machines, weapon progression
-
-### Debug Features
-- **E Key**: Debug spawn key placeholder (currently just logs)
-- **ESC Key**: Pause toggle functionality
-- **Console Logs**: Comprehensive logging with Logger.scope() pattern
-- **Error Display**: Visual error messages with reload functionality
 
 ## Usage Examples
 
@@ -155,11 +121,11 @@ import Logger from '@/utils/Logger.js';
 // Class-based pattern (preferred for classes)
 class MyGameClass {
   #logger;
-  
+
   constructor() {
     this.#logger = Logger.scope('MyGameClass');
   }
-  
+
   someMethod() {
     this.#logger.debug('Method called');
     this.#logger.info('Important event');
@@ -199,7 +165,7 @@ src/
 ├── scenes/                 # Phaser scene classes
 │   ├── BootScene.js       # Environment and initialization
 │   ├── PreloaderScene.js  # Asset loading
-│   ├── MainMenuScene.js   # Main menu interface  
+│   ├── MainMenuScene.js   # Main menu interface
 │   ├── GameScene.js       # Core gameplay with integrated systems
 │   ├── UIScene.js         # Game UI overlay with real-time stats
 │   └── index.js           # Scene exports
@@ -242,13 +208,14 @@ src/
 ## Performance Targets
 
 - **60 FPS** on target hardware
-- **<100MB** total memory usage  
+- **<100MB** total memory usage
 - **<3 seconds** initial load time
 - **Efficient scene management** with proper cleanup
 
 ## Code Style Guidelines
 
 ### **Private Members & Naming**
+
 - **Private Fields**: Use `#` private fields for true encapsulation
 - **JSDoc Standards**: All private members must include `@private` tag
 - **camelCase**: Use camelCase for variables, functions, and methods
@@ -258,13 +225,15 @@ src/
 ## JSDoc Documentation Standards
 
 ### **Required Tags**
+
 - `@param {type} paramName - Description` for all parameters
-- `@returns {type} Description` for all return values  
+- `@returns {type} Description` for all return values
 - `@private` for all private/internal members
 - `@class` for constructor functions
 - `@extends ParentClass` for inheritance
 
 ### **Example Pattern**
+
 ```javascript
 /**
  * Base entity class for all game objects.
@@ -272,8 +241,8 @@ src/
  * @classdesc Provides common functionality for players, enemies, bullets, etc.
  */
 class BaseEntity {
-  #internalState = {};  // Truly private
-  
+  #internalState = {}; // Truly private
+
   /**
    * Create a new entity.
    * @param {Phaser.Scene} scene - The Phaser scene
@@ -285,7 +254,7 @@ class BaseEntity {
     this.scene = scene;
     this.#internalState = { ...config };
   }
-  
+
   /**
    * Update entity state.
    * @param {number} deltaTime - Time since last update
@@ -294,7 +263,7 @@ class BaseEntity {
   update(deltaTime) {
     this.#updateInternals(deltaTime);
   }
-  
+
   /**
    * Internal update logic.
    * @private
@@ -310,7 +279,7 @@ class BaseEntity {
 ## Important Notes
 
 - **Auto-initialization**: Logger, ConfigManager, and EventBus initialize automatically
-- **Scene Lifecycle**: Proper cleanup in scene shutdown methods is critical  
+- **Scene Lifecycle**: Proper cleanup in scene shutdown methods is critical
 - **Event Management**: Always remove event listeners to prevent memory leaks
 - **Error Handling**: Use try/catch with Logger.error() for proper error reporting
 - **Development Mode**: Set `VITE_DEBUG_MODE=true` for detailed logging
@@ -319,6 +288,7 @@ class BaseEntity {
 ## Current Game Features (Fully Playable)
 
 **Core Gameplay Loop:**
+
 - Player movement with WASD controls
 - Weapon firing with Spacebar (3 weapon types: Laser, Plasma, Missile)
 - Weapon switching with number keys (1, 2, 3)
@@ -330,20 +300,11 @@ class BaseEntity {
 - Persistent high scores and game statistics
 
 **Performance Features:**
+
 - 60+ FPS maintained through object pooling
 - Spatial grid collision optimization
 - Efficient memory management (<50MB usage)
 - Real-time performance monitoring
-
-## Next Development Priorities (Sprint 3+)
-
-1. **Audio Integration**: Add sound effects and background music
-2. **Visual Polish**: Replace rectangles with sprite graphics
-3. **Power-up System**: Implement collectible power-ups and upgrades
-4. **Boss Enemies**: Add larger enemies with complex attack patterns
-5. **Particle Effects**: Enhance visual feedback with explosion and trail effects
-6. **Menu System**: Implement settings, leaderboards, and game options
-7. **Mobile Support**: Add touch controls and responsive design
 
 ---
 

@@ -39,10 +39,7 @@ export const CollisionMatrix = {
     CollisionCategories.ENEMY_PROJECTILE,
     CollisionCategories.POWERUP,
   ],
-  [CollisionGroups.ENEMY]: [
-    CollisionCategories.PLAYER,
-    CollisionCategories.PLAYER_PROJECTILE,
-  ],
+  [CollisionGroups.ENEMY]: [CollisionCategories.PLAYER, CollisionCategories.PLAYER_PROJECTILE],
   [CollisionGroups.PLAYER_PROJECTILE]: [CollisionCategories.ENEMY],
   [CollisionGroups.ENEMY_PROJECTILE]: [CollisionCategories.PLAYER],
 };
