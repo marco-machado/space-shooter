@@ -2,7 +2,8 @@ import ConfigManager from '@/config/ConfigManager.js';
 import GameConfig from '@/config/GameConfig.js';
 import { createBackground, updateBackground } from '@/entities/Background.js';
 import { playerFactory } from '@/entities/Player.js';
-import { createEnemyProjectile, createPlayerProjectile, } from '@/entities/Projectile.js';
+import { createEnemyProjectile, createPlayerProjectile } from '@/entities/Projectile.js';
+import { makeEnemyDamagedEvent } from '@/event-bus/EnemyEvents.js';
 import { getEventBus } from '@/event-bus/EventBus.js';
 import { EventTypes } from '@/event-bus/EventTypes.js';
 import EnemySystem from '@/systems/EnemySystem.js';
@@ -342,32 +343,12 @@ export default class GameScene extends Phaser.Scene {
       projectileDamage: projectile?.damage,
     });
 
-    // Emit hit event
-    this.#eventBus.emit(EventTypes.PROJECTILE_HIT_TARGET, {
-      projectile,
-      target: enemy,
-      damage: projectile?.damage || 1,
-    });
+    const event = makeEnemyDamagedEvent(enemy, projectile?.damage || 1);
+    this.#eventBus.emit(event.type, event.data, event.priority);
 
     // Destroy projectile
     if (projectile && projectile.destroy) {
       projectile.destroy();
-    }
-
-    // Damage enemy
-    if (enemy && enemy.takeDamage && typeof enemy.takeDamage === 'function') {
-      const damage = projectile?.damage || 1;
-      const destroyed = enemy.takeDamage(damage, projectile);
-
-      if (destroyed) {
-        this.#logger.debug('Enemy destroyed by projectile');
-        this.#eventBus.emit(EventTypes.ENEMY_DEATH, { enemy, cause: 'projectile' });
-      }
-    } else if (enemy && enemy.destroy) {
-      // Fallback: if no takeDamage method, destroy enemy directly
-      this.#logger.debug('Enemy destroyed (fallback method)');
-      enemy.destroy();
-      this.#eventBus.emit(EventTypes.ENEMY_DEATH, { enemy, cause: 'projectile' });
     }
   }
 
@@ -381,13 +362,6 @@ export default class GameScene extends Phaser.Scene {
     this.#logger.debug('Enemy projectile hit player', {
       projectileOwner: projectile?.owner,
       projectileDamage: projectile?.damage,
-    });
-
-    // Emit hit event
-    this.#eventBus.emit(EventTypes.PROJECTILE_HIT_TARGET, {
-      projectile,
-      target: player,
-      damage: projectile?.damage || 1,
     });
 
     // Destroy projectile
@@ -421,9 +395,6 @@ export default class GameScene extends Phaser.Scene {
     // this.#logger.debug('handlePlayerEnemyCollision', player, enemy);
 
     // Damage both player and enemy on collision
-    if (enemy && enemy.takeDamage && typeof enemy.takeDamage === 'function') {
-      enemy.takeDamage(1, player);
-    }
 
     // TODO: Implement player damage when player system is ready
     // if (player && player.takeDamage && typeof player.takeDamage === 'function') {

@@ -60,6 +60,9 @@ export default class ConfigManager {
     this.GAME_WIDTH = GameConfig.GAME_WIDTH;
     this.GAME_HEIGHT = GameConfig.GAME_HEIGHT;
     this.SCENES = GameConfig.SCENES;
+    this.PLAYER = GameConfig.PLAYER;
+    this.PROJECTILES = GameConfig.PROJECTILES;
+    this.ENEMIES = GameConfig.ENEMIES;
 
     // Visual configuration
     this.COLORS = VisualConfig.COLORS;
@@ -133,6 +136,9 @@ export default class ConfigManager {
     return {
       GAME_WIDTH: this.GAME_WIDTH,
       GAME_HEIGHT: this.GAME_HEIGHT,
+      PLAYER: { ...this.PLAYER },
+      PROJECTILES: { ...this.PROJECTILES },
+      ENEMIES: { ...this.ENEMIES },
       COLORS: { ...this.COLORS },
       COLLISION_GROUPS: { ...this.COLLISION_GROUPS },
       COLLISION_CATEGORIES: { ...this.COLLISION_CATEGORIES },

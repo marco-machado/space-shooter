@@ -77,7 +77,9 @@ export const EventTypes = {
   DAMAGE_DEALT: 'damage-dealt',
   DAMAGE_RECEIVED: 'damage-received',
 
-  ENEMY_DEATH: 'enemy-death',
+  // Enemy Events
+  ENEMY_DAMAGED: 'enemy-damage',
+  ENEMY_DESTROYED: 'enemy-destroyed',
 
   HEALTH_CHANGED: 'health-changed',
   HEALTH_DEPLETED: 'health-depleted',
@@ -93,7 +95,6 @@ export const EventTypes = {
 
   PROJECTILE_CREATED: 'projectile-created',
   PROJECTILE_DESTROYED: 'projectile-destroyed',
-  PROJECTILE_HIT_TARGET: 'projectile-hit-target',
 
   SCORE_CHANGED: 'score-changed',
   SCORE_MULTIPLIER_CHANGED: 'score-multiplier-changed',

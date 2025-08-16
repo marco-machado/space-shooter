@@ -1,4 +1,5 @@
 import { scoutFactory } from '@/entities/Enemy.js';
+import { makeEnemyDestroyedEvent } from '@/event-bus/EnemyEvents.js';
 import { getEventBus } from '@/event-bus/EventBus.js';
 import { EventTypes } from '@/event-bus/EventTypes.js';
 import Logger from '@/utils/Logger.js';
@@ -54,31 +55,24 @@ export default class EnemySystem {
     this.#resetSpawnTimer();
 
     // TODO: Move to a separate method which should save the listener ids so destroy() can clean up
-    this.#eventBus.on(EventTypes.ENEMY_DEATH, this.#onEnemyDeath, this);
+    this.#eventBus.on(EventTypes.GAME_STARTED, this.onGameStartedOrResumed, this);
+    this.#eventBus.on(EventTypes.GAME_RESUMED, this.onGameStartedOrResumed, this);
 
-    this.#eventBus.on(EventTypes.GAME_STARTED, this.start, this);
-    this.#eventBus.on(EventTypes.GAME_RESUMED, this.start, this);
+    this.#eventBus.on(EventTypes.GAME_OVER, this.onGameOverOrPaused, this);
+    this.#eventBus.on(EventTypes.GAME_PAUSED, this.onGameOverOrPaused, this);
 
-    this.#eventBus.on(EventTypes.GAME_OVER, this.stop, this);
-    this.#eventBus.on(EventTypes.GAME_PAUSED, this.stop, this);
+    this.#eventBus.on(EventTypes.ENEMY_DAMAGED, this.#onEnemyDamaged, this);
+    this.#eventBus.on(EventTypes.ENEMY_DESTROYED, this.#onEnemyDestroyed, this);
 
     this.#eventBus.on(EventTypes.GAME_CYCLE, this.#onGameCycle, this);
   }
 
-  /**
-   * Start spawning enemies.
-   * @returns {void}
-   */
-  start() {
+  onGameStartedOrResumed() {
     this.#isActive = true;
     this.#resetSpawnTimer();
   }
 
-  /**
-   * Stop spawning enemies.
-   * @returns {void}
-   */
-  stop() {
+  onGameOverOrPaused() {
     this.#isActive = false;
   }
 
@@ -93,38 +87,6 @@ export default class EnemySystem {
     const scout = scoutFactory(this.#enemyGroup);
 
     this.#activeEnemies.push(scout);
-  }
-
-  /**
-   * @param {number} delta - Time delta in milliseconds
-   * @returns {void}
-   */
-  #onGameCycle(delta) {
-    if (!this.#isActive) return;
-
-    // Clean up destroyed enemies from tracking
-    this.#cleanupDestroyedEnemies();
-
-    // Update spawn timer
-    this.#spawnTimer -= delta;
-
-    // Check if it's time to spawn and we haven't exceeded max enemies
-    if (this.#spawnTimer <= 0 && this.#activeEnemies.length < this.#spawnConfig.maxActiveEnemies) {
-      this.#logger.debug('Spawning', {
-        time: this.#spawnTimer,
-        active: this.#activeEnemies.length,
-        max: this.#spawnConfig.maxActiveEnemies,
-      });
-      this.#spawnEnemy();
-      this.#resetSpawnTimer();
-    }
-
-    // Update all active enemies
-    this.#activeEnemies.forEach(enemy => {
-      if (enemy && enemy.update && enemy.isActive && enemy.isActive()) {
-        enemy.update(delta);
-      }
-    });
   }
 
   /**
@@ -178,13 +140,92 @@ export default class EnemySystem {
 
       return true;
     });
+  }
 
-    // const cleanedCount = originalLength - this.#activeEnemies.length;
-    // if (cleanedCount > 0) {
-    //   this.#logger.debug(`Cleaned up ${cleanedCount} destroyed enemies`, {
-    //     activeEnemies: this.#activeEnemies.length,
-    //   });
-    // }
+  /**
+   * @param {number} delta - Time delta in milliseconds
+   * @returns {void}
+   */
+  #onGameCycle(delta) {
+    if (!this.#isActive) return;
+
+    // Clean up destroyed enemies from tracking
+    this.#cleanupDestroyedEnemies();
+
+    // Update spawn timer
+    this.#spawnTimer -= delta;
+
+    // Check if it's time to spawn and we haven't exceeded max enemies
+    if (this.#spawnTimer <= 0 && this.#activeEnemies.length < this.#spawnConfig.maxActiveEnemies) {
+      this.#logger.debug('Spawning', {
+        time: this.#spawnTimer,
+        active: this.#activeEnemies.length,
+        max: this.#spawnConfig.maxActiveEnemies,
+      });
+      this.#spawnEnemy();
+      this.#resetSpawnTimer();
+    }
+
+    // Update all active enemies
+    this.#activeEnemies.forEach(enemy => {
+      if (enemy && enemy.update && enemy.isActive && enemy.isActive()) {
+        enemy.update(delta);
+      }
+    });
+  }
+
+  /**
+   * Handle enemy damage events from the event bus.
+   * @private
+   * @param {Object} data - Event data
+   * @param {Object} data.enemy - The enemy entity that took damage
+   * @param {number} data.damage - Amount of damage dealt
+   * @returns {void}
+   */
+  #onEnemyDamaged(data) {
+    // Validate event data
+    if (!data || !data.enemy || typeof data.damage !== 'number') {
+      this.#logger.warn('Invalid enemy damage event data', data);
+      return;
+    }
+
+    const { enemy, damage } = data;
+
+    // Check if enemy has health component
+    if (!enemy.health) {
+      this.#logger.warn('Enemy does not have a valid health component', {
+        enemyType: enemy.constructor?.name || 'unknown',
+        hasHealth: !!enemy.health,
+      });
+      return;
+    }
+
+    if (enemy.health.isDead()) {
+      this.#logger.warn('Attempted to damage dead enemy.');
+      return;
+    }
+
+    let previousHealth = 0;
+    let currentHealth = 0;
+
+    // Apply damage to enemy via health component
+    try {
+      previousHealth = enemy.health.getCurrentHealth();
+      currentHealth = Math.max(0, previousHealth - damage);
+
+      enemy.health.setCurrentHealth(currentHealth);
+    } catch (error) {
+      this.#logger.error('Error applying damage to enemy', {
+        error: error.message,
+        damage,
+        enemyType: enemy.constructor?.name || 'unknown',
+      });
+    }
+
+    if (currentHealth === 0) {
+      const event = makeEnemyDestroyedEvent(enemy);
+      this.#eventBus.emit(event.type, event.data, event.priority);
+    }
   }
 
   /**
@@ -193,11 +234,15 @@ export default class EnemySystem {
    * @param {Object} data - Event data
    * @returns {void}
    */
-  #onEnemyDeath(data) {
+  #onEnemyDestroyed(data) {
     // Remove from active tracking when enemy dies
+    if (data && data.enemy) {
+      data.enemy.destroy();
+    }
+
     // This is a backup cleanup in case the regular cleanup misses anything
     if (data && data.position) {
-      this.#logger.debug('Enemy death event received', {
+      this.#logger.debug('Enemy destroyed event received', {
         type: data.enemyType,
         score: data.scoreValue,
         position: data.position,
@@ -227,9 +272,9 @@ export default class EnemySystem {
    * @returns {void}
    */
   destroy() {
-    this.stop();
+    this.onGameOverOrPaused();
     this.destroyAllEnemies();
-    this.#eventBus.off(EventTypes.ENEMY_DEATH, this.#onEnemyDeath, this);
+    this.#eventBus.off(EventTypes.ENEMY_DESTROYED, this.#onEnemyDestroyed, this);
 
     this.#logger.debug('EnemySystem destroyed');
   }

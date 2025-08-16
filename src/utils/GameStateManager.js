@@ -188,7 +188,7 @@ class GameStateManager {
     try {
       // Enemy destruction events - HIGH priority for immediate score updates
       const enemyDeathId = this.eventBus.on(
-        EventTypes.ENEMY_DEATH,
+        EventTypes.ENEMY_DESTROYED,
         this.onEnemyDestroyed,
         this,
         EventPriority.HIGH,
@@ -382,11 +382,11 @@ class GameStateManager {
 
     // Add score with multiplier
     const points = Math.floor(scoreValue * this.scoreMultiplier);
-    this.addScore(points);
+    // this.addScore(points);
 
     // Add experience
     const exp = Math.floor(scoreValue * 0.1 * this.experienceMultiplier);
-    this.addExperience(exp);
+    // this.addExperience(exp);
 
     // Update statistics
     this.enemiesDestroyed++;
