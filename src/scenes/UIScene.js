@@ -59,21 +59,21 @@ export default class UIScene extends Phaser.Scene {
     });
     this.#uiElements.livesText.setScrollFactor(0);
 
-    // Level display
-    this.#uiElements.levelText = this.add.text(20, 80, 'LEVEL: 1', {
+    // Character level display (XP-based progression)
+    this.#uiElements.characterLevelText = this.add.text(20, 80, 'CHAR LVL: 1', {
+      fontSize: '16px',
+      color: '#ffffff',
+      fontFamily: 'monospace',
+    });
+    this.#uiElements.characterLevelText.setScrollFactor(0);
+
+    // Game level display (progression through levels)
+    this.#uiElements.levelText = this.add.text(20, 110, 'LEVEL: 1', {
       fontSize: '16px',
       color: '#ffffff',
       fontFamily: 'monospace',
     });
     this.#uiElements.levelText.setScrollFactor(0);
-
-    // Wave display
-    this.#uiElements.waveText = this.add.text(20, 110, 'WAVE: 1', {
-      fontSize: '16px',
-      color: '#ffffff',
-      fontFamily: 'monospace',
-    });
-    this.#uiElements.waveText.setScrollFactor(0);
 
     // Current weapon display
     this.#uiElements.weaponText = this.add.text(20, 140, 'WEAPON: LASER', {
@@ -159,7 +159,7 @@ export default class UIScene extends Phaser.Scene {
     const weaponListenerId = this.#eventBus.on('ui:weaponUpdate', this.handleWeaponUpdate, this);
     this.#listenerIds.push(weaponListenerId);
 
-    // Game state update listener (lives, level, wave)
+    // Game state update listener (lives, character level, game level)
     const gameStateListenerId = this.#eventBus.on(
       'ui:gameStateUpdate',
       this.handleGameStateUpdate,
@@ -232,11 +232,11 @@ export default class UIScene extends Phaser.Scene {
   }
 
   /**
-   * Handle game state update events (lives, level, wave).
+   * Handle game state update events (lives, character level, game level).
    * @param {Object} data - Event data containing game state information
    * @param {number} [data.lives] - Number of lives remaining
-   * @param {number} [data.level] - Current level number
-   * @param {number} [data.wave] - Current wave number
+   * @param {number} [data.characterLevel] - Current character level (XP-based)
+   * @param {number} [data.level] - Current game level (progression-based)
    * @returns {void}
    */
   handleGameStateUpdate(data) {
@@ -244,12 +244,12 @@ export default class UIScene extends Phaser.Scene {
       this.#uiElements.livesText.setText(`LIVES: ${data.lives}`);
     }
 
-    if (data.level !== undefined && this.#uiElements.levelText) {
-      this.#uiElements.levelText.setText(`LEVEL: ${data.level}`);
+    if (data.characterLevel !== undefined && this.#uiElements.characterLevelText) {
+      this.#uiElements.characterLevelText.setText(`CHAR LVL: ${data.characterLevel}`);
     }
 
-    if (data.wave !== undefined && this.#uiElements.waveText) {
-      this.#uiElements.waveText.setText(`WAVE: ${data.wave}`);
+    if (data.level !== undefined && this.#uiElements.levelText) {
+      this.#uiElements.levelText.setText(`LEVEL: ${data.level}`);
     }
   }
 

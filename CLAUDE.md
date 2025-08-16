@@ -88,13 +88,13 @@ Current project structure follows traditional Phaser patterns:
 3. **Event System**: EventBus with GameEvents, EnemyEvents, and EventTypes
 4. **Background**: Animated starfield with scrolling stars
 5. **Player System**: Full player entity with WASD movement and weapon firing
-6. **Enemy System**: Complete AI with 3 enemy types (Scout, Fighter, Bomber) and wave spawning
+6. **Enemy System**: Complete AI with 3 enemy types (Scout, Fighter, Bomber) and level spawning
 7. **Weapon System**: 3 weapon types (Laser, Plasma, Missile) with switching and upgrades
 8. **Projectile System**: Object pooling for performance with auto-cleanup
 9. **Collision System**: Spatial grid optimization with layer-based collision detection
 10. **Health System**: Damage dealing/receiving with visual feedback
-11. **Game State**: Score tracking, lives, wave progression, achievements, and persistence
-12. **UI System**: Real-time HUD with health, score, wave info, and weapon status
+11. **Game State**: Score tracking, lives, level progression, achievements, and persistence
+12. **UI System**: Real-time HUD with health, score, level info, and weapon status
 13. **Performance**: 60+ FPS with object pooling and spatial optimization
 
 ### Recently Implemented (Sprint 2)
@@ -219,7 +219,7 @@ src/
 ├── components/             # Data components for entities
 │   └── Health.js          # Health component for damage system
 ├── systems/                # Game logic systems
-│   └── EnemySystem.js     # Enemy AI, spawning, and wave management
+│   └── EnemySystem.js     # Enemy AI, spawning, and level management
 ├── event-bus/             # Event system
 │   ├── EventBus.js       # Singleton event manager
 │   ├── EventTypes.js     # Core event type constants
@@ -322,9 +322,9 @@ class BaseEntity {
 - Player movement with WASD controls
 - Weapon firing with Spacebar (3 weapon types: Laser, Plasma, Missile)
 - Weapon switching with number keys (1, 2, 3)
-- Enemy waves with 3 enemy types and formation flying
+- Enemy levels with 3 enemy types and formation flying
 - Real-time collision detection and damage system
-- Score system with multipliers and wave progression
+- Score system with multipliers and level progression
 - Lives system with player respawn mechanics
 - Achievement system with unlockable rewards
 - Persistent high scores and game statistics

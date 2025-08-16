@@ -247,7 +247,7 @@ export default class MainMenuScene extends Phaser.Scene {
     // Game info
     const gameInfoText = [
       'OBJECTIVE:',
-      'Destroy enemies and survive waves',
+      'Destroy enemies and survive levels',
       'Collect power-ups for upgrades',
       'Achieve the highest score!',
     ].join('\n');

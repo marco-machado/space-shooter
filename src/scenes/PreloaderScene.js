@@ -131,7 +131,7 @@ export default class PreloaderScene extends Phaser.Scene {
       'Use WASD or Arrow Keys to move',
       'Hold SPACE to shoot',
       'Collect power-ups for upgrades',
-      'Survive enemy waves to level up',
+      'Survive enemy levels to advance',
     ];
 
     const randomTip = tips[Math.floor(Math.random() * tips.length)];

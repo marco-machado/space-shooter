@@ -51,7 +51,7 @@ class GameStateManager {
     this.score = 0;
     this.lives = config.startingLives || 3;
     this.maxLives = 5;
-    this.currentLevel = 1;
+    this.characterLevel = 1;
     this.experience = 0;
     this.experienceToNextLevel = 1000;
 
@@ -79,6 +79,12 @@ class GameStateManager {
     this.experienceMultiplier = 1.0;
     this.consecutiveHits = 0;
     this.maxConsecutiveHits = 0;
+
+    // Game progression
+    this.enemiesDestroyed = 0;
+    this.totalEnemiesDestroyed = 0;
+    this.levelsCompleted = 0;
+    this.highestLevel = 1;
 
     // Achievements and milestones
     this.achievements = new Set();
@@ -123,7 +129,7 @@ class GameStateManager {
       reward: 'weapon',
       value: 'missile',
     });
-    this.milestones.set('wavemaster', {
+    this.milestones.set('levelmaster', {
       target: 10,
       current: 0,
       achieved: false,
@@ -208,6 +214,23 @@ class GameStateManager {
         EventPriority.NORMAL,
       );
       this.#eventListenerIds.set('powerUpCollected', powerUpId);
+
+      // Level progression events - HIGH priority for immediate updates
+      const levelStartedId = this.#eventBus.on(
+        EventTypes.LEVEL_STARTED,
+        this.onLevelStarted,
+        this,
+        EventPriority.HIGH,
+      );
+      this.#eventListenerIds.set('levelStarted', levelStartedId);
+
+      const levelCompletedId = this.#eventBus.on(
+        EventTypes.LEVEL_COMPLETED,
+        this.onLevelCompleted,
+        this,
+        EventPriority.HIGH,
+      );
+      this.#eventListenerIds.set('levelCompleted', levelCompletedId);
     } catch (error) {
       this.#logger.error('Failed to setup EventBus listeners:', error);
     }
@@ -302,7 +325,7 @@ class GameStateManager {
     // Reset game progress
     this.score = 0;
     this.lives = config.startingLives || 3;
-    this.currentWave = 1;
+    this.currentLevel = 1;
     this.enemiesDestroyed = 0;
     this.shotsFired = 0;
     this.shotsHit = 0;
@@ -345,42 +368,42 @@ class GameStateManager {
   }
 
   /**
-   * Handle wave start event
-   * @param {Object} eventData - Event data containing wave information
-   * @param {number} eventData.wave - The wave number that started
+   * Handle level start event
+   * @param {Object} eventData - Event data containing level information
+   * @param {number} eventData.level - The level number that started
    * @returns {void}
    */
-  onWaveStart(eventData) {
-    this.currentWave = eventData.wave;
+  onLevelStarted(eventData) {
+    this.currentLevel = eventData.level;
     this.enemiesDestroyed = 0;
 
-    // Increase score multiplier slightly each wave
-    this.scoreMultiplier = 1.0 + (this.currentWave - 1) * 0.05;
+    // Increase score multiplier slightly each level
+    this.scoreMultiplier = 1.0 + (this.currentLevel - 1) * 0.05;
 
-    this.#logger.info(`Wave ${this.currentWave} started`, {
+    this.#logger.info(`Level ${this.currentLevel} started`, {
       scoreMultiplier: this.scoreMultiplier.toFixed(2),
     });
   }
 
   /**
-   * Handle wave complete event
-   * @param {Object} _eventData - Wave complete data (unused)
+   * Handle level complete event
+   * @param {Object} _eventData - Level complete data (unused)
    * @returns {void}
    */
-  onWaveComplete(_eventData) {
-    this.wavesCompleted++;
-    this.highestWave = Math.max(this.highestWave, this.currentWave);
+  onLevelCompleted(_eventData) {
+    this.levelsCompleted++;
+    this.highestLevel = Math.max(this.highestLevel, this.currentLevel);
 
-    // Wave completion bonus
-    const waveBonus = Math.floor(1000 * this.currentWave * this.scoreMultiplier);
-    this.addScore(waveBonus);
+    // Level completion bonus
+    const levelBonus = Math.floor(1000 * this.currentLevel * this.scoreMultiplier);
+    this.addScore(levelBonus);
 
     // Experience bonus
-    const expBonus = Math.floor(200 * this.currentWave);
+    const expBonus = Math.floor(200 * this.currentLevel);
     this.addExperience(expBonus);
 
-    this.#logger.info(`Wave ${this.currentWave} completed`, {
-      waveBonus,
+    this.#logger.info(`Level ${this.currentLevel} completed`, {
+      levelBonus,
       expBonus,
       totalScore: this.score,
     });
@@ -505,24 +528,24 @@ class GameStateManager {
    */
   levelUp() {
     this.experience -= this.experienceToNextLevel;
-    this.currentLevel++;
+    this.characterLevel++;
 
     // Increase XP requirement for next level
     this.experienceToNextLevel = Math.floor(this.experienceToNextLevel * 1.2);
 
     // Level up rewards
-    this.addScore(1000 * this.currentLevel);
+    this.addScore(1000 * this.characterLevel);
 
     // Check for weapon unlocks
     this.checkWeaponUnlocks();
 
-    this.#logger.info(`Level up! Now level ${this.currentLevel}`, {
+    this.#logger.info(`Character level up! Now level ${this.characterLevel}`, {
       nextLevelXP: this.experienceToNextLevel,
       currentXP: this.experience,
     });
 
     this.#eventBus.emit(EventTypes.LEVEL_UP, {
-      level: this.currentLevel,
+      level: this.characterLevel,
       nextLevelXP: this.experienceToNextLevel,
     });
   }
@@ -538,12 +561,12 @@ class GameStateManager {
       7: 'missile',
     };
 
-    const unlockedWeapon = weaponUnlocks[this.currentLevel];
+    const unlockedWeapon = weaponUnlocks[this.characterLevel];
     if (unlockedWeapon && !this.weaponsUnlocked.has(unlockedWeapon)) {
       this.weaponsUnlocked.add(unlockedWeapon);
       this.#eventBus.emit(EventTypes.WEAPON_UNLOCKED, {
         weaponType: unlockedWeapon,
-        level: this.currentLevel,
+        level: this.characterLevel,
       });
     }
   }
@@ -587,13 +610,13 @@ class GameStateManager {
           currentValue = this.consecutiveHits;
           break;
         case 'survivor':
-          currentValue = this.wavesCompleted;
+          currentValue = this.levelsCompleted;
           break;
         case 'destroyer':
           currentValue = this.totalEnemiesDestroyed;
           break;
-        case 'wavemaster':
-          currentValue = this.wavesCompleted;
+        case 'levelmaster':
+          currentValue = this.levelsCompleted;
           break;
         case 'accuracy':
           currentValue = this.accuracy;
@@ -683,8 +706,8 @@ class GameStateManager {
 
     const gameRecord = {
       score: this.score,
-      wave: this.currentWave,
       level: this.currentLevel,
+      characterLevel: this.characterLevel,
       accuracy: this.accuracy,
       enemiesDestroyed: this.totalEnemiesDestroyed,
       playTime: this.totalPlayTime,
@@ -712,15 +735,15 @@ class GameStateManager {
       // Player stats
       score: this.score,
       lives: this.lives,
-      level: this.currentLevel,
+      characterLevel: this.characterLevel,
       experience: this.experience,
       experienceToNextLevel: this.experienceToNextLevel,
 
       // Progress
-      currentWave: this.currentWave,
+      currentLevel: this.currentLevel,
       enemiesDestroyed: this.enemiesDestroyed,
       totalEnemiesDestroyed: this.totalEnemiesDestroyed,
-      wavesCompleted: this.wavesCompleted,
+      levelsCompleted: this.levelsCompleted,
 
       // Weapon stats
       shotsFired: this.shotsFired,
@@ -776,11 +799,11 @@ class GameStateManager {
   saveGame() {
     const gameData = {
       // Persistent progress
-      level: this.currentLevel,
+      characterLevel: this.characterLevel,
       totalEnemiesDestroyed: this.totalEnemiesDestroyed,
       weaponsUnlocked: Array.from(this.weaponsUnlocked),
       achievements: Array.from(this.achievements),
-      highestWave: this.highestWave,
+      highestLevel: this.highestLevel,
       totalPlayTime: this.totalPlayTime,
 
       // Settings and preferences
@@ -817,11 +840,13 @@ class GameStateManager {
         const data = JSON.parse(savedData);
 
         // Apply loaded data
-        if (data.level) this.currentLevel = data.level;
+        if (data.characterLevel) this.characterLevel = data.characterLevel;
+        if (data.level) this.characterLevel = data.level; // Backward compatibility
         if (data.totalEnemiesDestroyed) this.totalEnemiesDestroyed = data.totalEnemiesDestroyed;
         if (data.weaponsUnlocked) this.weaponsUnlocked = new Set(data.weaponsUnlocked);
         if (data.achievements) this.achievements = new Set(data.achievements);
-        if (data.highestWave) this.highestWave = data.highestWave;
+        if (data.highestLevel) this.highestLevel = data.highestLevel;
+        if (data.highestWave) this.highestLevel = data.highestWave; // Backward compatibility
         if (data.totalPlayTime) this.totalPlayTime = data.totalPlayTime;
 
         return data;
@@ -841,11 +866,11 @@ class GameStateManager {
     localStorage.removeItem(this.saveKey);
 
     // Reset to initial state
-    this.currentLevel = 1;
+    this.characterLevel = 1;
     this.totalEnemiesDestroyed = 0;
     this.weaponsUnlocked = new Set(['laser']);
     this.achievements = new Set();
-    this.highestWave = 1;
+    this.highestLevel = 1;
     this.totalPlayTime = 0;
 
     this.initializeMilestones();
@@ -861,8 +886,8 @@ class GameStateManager {
     return {
       score: this.score.toLocaleString(),
       lives: this.lives,
+      characterLevel: this.characterLevel,
       level: this.currentLevel,
-      wave: this.currentWave,
       accuracy: `${this.accuracy.toFixed(1)}%`,
       consecutiveHits: this.consecutiveHits,
       powerUps: this.powerUpsCollected,
