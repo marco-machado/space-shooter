@@ -192,7 +192,7 @@ VITE_BASE_SCORE_MULTIPLIER=1.0 # Score calculation multiplier
 VITE_MAX_PARTICLES=1000       # Maximum particle count
 VITE_OBJECT_POOL_SIZE=200     # Object pool size for performance
 
-# Development Graphics
+# Graphics
 VITE_SHOW_FPS=true           # Display FPS counter
 VITE_SHOW_DEBUG_INFO=true    # Show debug information overlay
 ```
@@ -258,7 +258,7 @@ VITE_SHOW_DEBUG_INFO=true    # Show debug information overlay
 class Player extends BaseEntity {
    constructor(scene) {
       // Backward compatible - continues working
-      super(scene, x, y, 64, 64, 0x0099ff); // Blue rectangle in dev
+      super(scene, x, y, 64, 64, 0x0099ff); // Blue rectangle
       
       // OR use new flexible configuration
       super(scene, {
@@ -340,7 +340,7 @@ The game follows a structured scene flow:
 BootScene → PreloaderScene → MainMenuScene → GameScene
     ↓              ↓              ↓            ↓
 Environment    Asset Loading   Menu UI    Core Gameplay
-   Setup       (Dev Graphics)  Interface   Player Control
+   Setup       (Graphics)  Interface   Player Control
 ```
 
 ### Auto-Initializing Logger System
@@ -377,11 +377,11 @@ Logger.groupEnd();
 - ✅ **Production Safe**: Automatically disabled in production builds
 - ✅ **Rich Formatting**: Timestamps, emoji indicators, and performance timing
 
-### Development Graphics Strategy
+### Graphics Strategy
 
-During development, the game uses simple colored shapes for rapid prototyping:
+The game uses simple colored shapes for rapid prototyping:
 
-| BaseEntity Type | Development Graphics            | Production Ready |
+| BaseEntity Type | Graphics            | Production Ready |
 | --------------- | ------------------------------- | ---------------- |
 | **Player**      | Blue 64x64px rectangle          | ✅ Functional    |
 | **Enemies**     | Red rectangles (various sizes)  | 🔄 Coming Soon   |
@@ -425,7 +425,7 @@ space-shooter/
 │   │
 │   ├── scenes/             # ✅ Phaser scenes
 │   │   ├── BootScene.js    # Environment setup and initialization
-│   │   ├── PreloaderScene.js # Asset loading (dev graphics)
+│   │   ├── PreloaderScene.js # Asset loading
 │   │   ├── MainMenuScene.js  # Main menu interface
 │   │   └── GameScene.js    # Primary gameplay scene with full game integration
 │   │
@@ -447,7 +447,7 @@ space-shooter/
 │   │   ├── CollisionSystem.js # ✅ Spatial grid collision detection
 │   │   └── EnemySpawnSystem.js # ✅ Wave generation and enemy AI
 │   │
-│   ├── graphics/           # ✅ Development graphics
+│   ├── graphics/           # ✅ Graphics
 │   │   └── DevShapes.js    # Colored shape generators
 │   │
 │   └── utils/              # ✅ Enhanced utility functions

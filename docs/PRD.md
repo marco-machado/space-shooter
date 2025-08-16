@@ -177,9 +177,9 @@ Create an engaging top-down space shooter game using Phaser.js 3.x with Vite bui
 
 #### Difficulty Scaling:
 
-- Enemy health increases by 10% every 3 waves
-- Enemy speed increases by 5% every 5 waves
-- More complex enemy formations in later waves
+- Enemy health increases by 10% every 3 levels
+- Enemy speed increases by 5% every 5 levels
+- More complex enemy formations in later levels
 - Introduction of new enemy types at specific thresholds
 
 **Acceptance Criteria**:
@@ -270,15 +270,3 @@ Create an engaging top-down space shooter game using Phaser.js 3.x with Vite bui
 - Boss encounter music (more intense)
 - Game over music
 - Volume controls for music and SFX separately
-
-### Debugging Commands
-
-**Enemy System Debugging**
-- Press `E` key in-game to force spawn enemies
-- Check console for enemy spawn system logs
-- Monitor pool utilization in game statistics
-
-**Performance Monitoring**
-- Enable debug mode via `VITE_DEBUG_MODE=true`
-- Use debug pipeline for detailed system logging
-- Monitor entity counts and pool sizes

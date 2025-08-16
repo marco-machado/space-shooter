@@ -21,7 +21,7 @@ export default defineConfig({
         'tests/',
         'dist/',
         'src/scenes/', // Skip Phaser scene testing
-        'src/graphics/', // Skip development graphics testing
+        'src/graphics/', // Skip graphics testing
         'src/config/', // Skip configuration files
       ],
       thresholds: {

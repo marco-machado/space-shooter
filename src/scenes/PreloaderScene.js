@@ -2,10 +2,10 @@ import ConfigManager from '@/config/ConfigManager.js';
 import Logger from '@/utils/Logger.js';
 
 /**
- * Preloader Scene - Asset loading with development graphics
+ * Preloader Scene - Asset loading
  * Handles loading of all game assets and displays progress
  * @class
- * @classdesc Manages asset loading with visual progress indicators and development graphics simulation
+ * @classdesc Manages asset loading with visual progress indicators
  * @extends Phaser.Scene
  */
 export default class PreloaderScene extends Phaser.Scene {
@@ -57,8 +57,8 @@ export default class PreloaderScene extends Phaser.Scene {
     // Set loading path
     this.load.path = 'assets/';
 
-    // In development phase, we don't load actual graphics
-    // Instead, we'll simulate loading for development graphics scopeName
+    // We don't load actual graphics yet
+    // Instead, we'll simulate loading for graphics system
     this.loadDevelopmentAssets();
 
     // Load audio assets if audio is enabled
@@ -173,8 +173,8 @@ export default class PreloaderScene extends Phaser.Scene {
   }
 
   /**
-   * Loads simulated development assets.
-   * Creates fake loading progress for development graphics.
+   * Loads simulated assets.
+   * Creates fake loading progress for graphics system.
    * @private
    * @returns {void}
    */

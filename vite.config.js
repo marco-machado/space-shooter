@@ -37,7 +37,7 @@ export default defineConfig({
         'tests/',
         'dist/',
         'src/scenes/', // Don't test Phaser scenes
-        'src/graphics/', // Don't test development graphics
+        'src/graphics/', // Don't test graphics
       ],
     },
   },
