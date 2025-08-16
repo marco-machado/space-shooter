@@ -29,6 +29,8 @@ export function scoutFactory(enemyGroup) {
 
   addHealthToEnemy(scout, scoutConfig.HEALTH);
 
+  scout.score = scoutConfig.SCORE; // TODO: I don't like this
+
   return scout;
 }
 

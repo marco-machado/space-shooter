@@ -1,6 +1,7 @@
 import ConfigManager from '@/config/ConfigManager.js';
 import { getEventBus } from '@/event-bus/EventBus.js';
 import { EventPriority, EventTypes } from '@/event-bus/EventTypes.js';
+import { makeScoreUpdatedEvent } from '@/event-bus/GameEvents.js';
 import Logger from './Logger.js';
 
 /**
@@ -54,14 +55,6 @@ class GameStateManager {
     this.experience = 0;
     this.experienceToNextLevel = 1000;
 
-    // Wave statistics
-    // TODO: Remove all this wave shit
-    this.currentWave = 1;
-    this.highestWave = 1;
-    this.wavesCompleted = 0;
-    this.enemiesDestroyed = 0;
-    this.totalEnemiesDestroyed = 0;
-
     // Weapon statistics
     this.shotsFired = 0;
     this.shotsHit = 0;
@@ -82,7 +75,7 @@ class GameStateManager {
     };
 
     // Multipliers and bonuses
-    this.scoreMultiplier = config.baseScoreMultiplier || 1.0;
+    this.scoreMultiplier = config.baseScoreMultiplier || 1.0; // TODO: Double check all configs
     this.experienceMultiplier = 1.0;
     this.consecutiveHits = 0;
     this.maxConsecutiveHits = 0;
@@ -94,35 +87,6 @@ class GameStateManager {
 
     // Event listeners
     this.setupEventListeners();
-  }
-
-  // Getters for private fields
-  get logger() {
-    return this.#logger;
-  }
-
-  get eventBus() {
-    return this.#eventBus;
-  }
-
-  get eventListenerIds() {
-    return this.#eventListenerIds;
-  }
-
-  get saveKey() {
-    return this.#saveKey;
-  }
-
-  get autoSaveInterval() {
-    return this.#autoSaveInterval;
-  }
-
-  get lastAutoSave() {
-    return this.#lastAutoSave;
-  }
-
-  set lastAutoSave(value) {
-    this.#lastAutoSave = value;
   }
 
   /**
@@ -181,87 +145,69 @@ class GameStateManager {
    * @returns {void}
    */
   setupEventListeners() {
-    if (!this.eventBus) {
+    if (!this.#eventBus) {
       throw new Error('EventBus not available');
     }
 
     try {
       // Enemy destruction events - HIGH priority for immediate score updates
-      const enemyDeathId = this.eventBus.on(
+      const enemyDestroyedId = this.#eventBus.on(
         EventTypes.ENEMY_DESTROYED,
         this.onEnemyDestroyed,
         this,
         EventPriority.HIGH,
       );
-      this.eventListenerIds.set('enemyDeath', enemyDeathId);
+      this.#eventListenerIds.set('enemyDeath', enemyDestroyedId);
 
-      // Wave events - NORMAL priority
-      const waveStartId = this.eventBus.on(
-        EventTypes.WAVE_START,
-        this.onWaveStart,
-        this,
-        EventPriority.NORMAL,
-      );
-      this.eventListenerIds.set('waveStart', waveStartId);
-
-      const waveCompleteId = this.eventBus.on(
-        EventTypes.WAVE_COMPLETE,
-        this.onWaveComplete,
-        this,
-        EventPriority.NORMAL,
-      );
-      this.eventListenerIds.set('waveComplete', waveCompleteId);
-
-      // Player events - HIGH priority for immediate response
-      const playerDamageId = this.eventBus.on(
+      const playerDamageId = this.#eventBus.on(
         EventTypes.PLAYER_DAMAGE,
         this.onPlayerDamage,
         this,
         EventPriority.HIGH,
       );
-      this.eventListenerIds.set('playerDamage', playerDamageId);
+      this.#eventListenerIds.set('playerDamage', playerDamageId);
 
-      const playerDeathId = this.eventBus.on(
+      const playerDeathId = this.#eventBus.on(
         EventTypes.PLAYER_DEATH,
         this.onPlayerDeath,
         this,
         EventPriority.HIGH,
       );
-      this.eventListenerIds.set('playerDeath', playerDeathId);
+      this.#eventListenerIds.set('playerDeath', playerDeathId);
 
       // Weapon events - HIGH priority for accuracy tracking
-      const weaponFireId = this.eventBus.on(
+      const weaponFiredId = this.#eventBus.on(
         EventTypes.WEAPON_FIRED,
-        this.onWeaponFire,
+        this.onWeaponFired,
         this,
         EventPriority.HIGH,
       );
-      this.eventListenerIds.set('weaponFire', weaponFireId);
+      this.#eventListenerIds.set('weaponFire', weaponFiredId);
 
-      const weaponHitId = this.eventBus.on(
+      const weaponHitId = this.#eventBus.on(
         EventTypes.WEAPON_HIT,
         this.onWeaponHit,
         this,
         EventPriority.HIGH,
       );
-      this.eventListenerIds.set('weaponHit', weaponHitId);
+      this.#eventListenerIds.set('weaponHit', weaponHitId);
 
-      const weaponUnlockedId = this.eventBus.on(
+      const weaponUnlockedId = this.#eventBus.on(
         EventTypes.WEAPON_UNLOCKED,
         this.onWeaponUnlocked,
         this,
         EventPriority.NORMAL,
       );
-      this.eventListenerIds.set('weaponUnlocked', weaponUnlockedId);
+      this.#eventListenerIds.set('weaponUnlocked', weaponUnlockedId);
 
       // Power-up events - NORMAL priority
-      const powerUpId = this.eventBus.on(
+      const powerUpId = this.#eventBus.on(
         EventTypes.POWERUP_COLLECTED,
         this.onPowerUpCollected,
         this,
         EventPriority.NORMAL,
       );
-      this.eventListenerIds.set('powerUpCollected', powerUpId);
+      this.#eventListenerIds.set('powerUpCollected', powerUpId);
     } catch (error) {
       this.#logger.error('Failed to setup EventBus listeners:', error);
     }
@@ -276,10 +222,9 @@ class GameStateManager {
     this.isPaused = false;
     this.isGameOver = false;
     this.gameStartTime = Date.now();
-    this.currentWave = 1;
     this.enemiesDestroyed = 0;
 
-    this.eventBus.emit(EventTypes.GAME_STARTED, this.getGameState());
+    this.#eventBus.emit(EventTypes.GAME_STARTED, this.getGameState());
   }
 
   /**
@@ -291,8 +236,8 @@ class GameStateManager {
 
     this.isPaused = true;
 
-    this.eventBus.emit(EventTypes.GAME_PAUSED, this.getGameState());
-    this.eventBus.emit(EventTypes.GAME_PAUSE_TOGGLE, { paused: true }); // TODO: Do we really need this? Move to PAUSE/RESUME only?
+    this.#eventBus.emit(EventTypes.GAME_PAUSED, this.getGameState());
+    this.#eventBus.emit(EventTypes.GAME_PAUSE_TOGGLE, { paused: true }); // TODO: Do we really need this? Move to PAUSE/RESUME only?
   }
 
   /**
@@ -304,8 +249,8 @@ class GameStateManager {
 
     this.isPaused = false;
 
-    this.eventBus.emit(EventTypes.GAME_RESUMED, this.getGameState());
-    this.eventBus.emit(EventTypes.GAME_PAUSE_TOGGLE, { paused: false });
+    this.#eventBus.emit(EventTypes.GAME_RESUMED, this.getGameState());
+    this.#eventBus.emit(EventTypes.GAME_PAUSE_TOGGLE, { paused: false });
   }
 
   /**
@@ -338,7 +283,7 @@ class GameStateManager {
     // Update high scores
     this.updateHighScores();
 
-    this.eventBus.emit(EventTypes.GAME_OVER, {
+    this.#eventBus.emit(EventTypes.GAME_OVER, {
       reason,
       ...this.getGameState(),
     });
@@ -373,20 +318,21 @@ class GameStateManager {
 
   /**
    * Handle enemy destroyed event
-   * @param {Object} eventData - Event data containing enemy and score information
-   * @param {number} eventData.scoreValue - Score value for destroying the enemy
+   * @param {Object} eventData - Event data containing enemy
+   * @param {number} eventData.enemy
+   * @param {number} eventData.enemy.score
    * @returns {void}
    */
   onEnemyDestroyed(eventData) {
-    const { scoreValue } = eventData;
+    const { enemy } = eventData;
 
     // Add score with multiplier
-    const points = Math.floor(scoreValue * this.scoreMultiplier);
-    // this.addScore(points);
+    const points = Math.floor(enemy.score * this.scoreMultiplier);
+    this.addScore(points);
 
     // Add experience
-    const exp = Math.floor(scoreValue * 0.1 * this.experienceMultiplier);
-    // this.addExperience(exp);
+    const exp = Math.floor(enemy.score * 0.1 * this.experienceMultiplier);
+    this.addExperience(exp);
 
     // Update statistics
     this.enemiesDestroyed++;
@@ -473,7 +419,7 @@ class GameStateManager {
    * Handle weapon fire event
    * @returns {void}
    */
-  onWeaponFire() {
+  onWeaponFired() {
     this.shotsFired++;
     this.updateAccuracy();
   }
@@ -516,7 +462,7 @@ class GameStateManager {
    */
   addScore(points) {
     if (typeof points !== 'number' || isNaN(points)) {
-      throw new TypeError('points must be a valid number');
+      throw new TypeError('Score points must be a valid number');
     }
     if (points <= 0) return;
 
@@ -531,6 +477,9 @@ class GameStateManager {
       this.addLife();
       this.#logger.info(`Extra life earned at ${this.score} points!`);
     }
+
+    const event = makeScoreUpdatedEvent(this.score);
+    this.#eventBus.emit(event.type, event.data, event.priority);
   }
 
   /**
@@ -572,7 +521,7 @@ class GameStateManager {
       currentXP: this.experience,
     });
 
-    this.eventBus.emit(EventTypes.LEVEL_UP, {
+    this.#eventBus.emit(EventTypes.LEVEL_UP, {
       level: this.currentLevel,
       nextLevelXP: this.experienceToNextLevel,
     });
@@ -592,7 +541,7 @@ class GameStateManager {
     const unlockedWeapon = weaponUnlocks[this.currentLevel];
     if (unlockedWeapon && !this.weaponsUnlocked.has(unlockedWeapon)) {
       this.weaponsUnlocked.add(unlockedWeapon);
-      this.eventBus.emit(EventTypes.WEAPON_UNLOCKED, {
+      this.#eventBus.emit(EventTypes.WEAPON_UNLOCKED, {
         weaponType: unlockedWeapon,
         level: this.currentLevel,
       });
@@ -606,7 +555,7 @@ class GameStateManager {
   addLife() {
     if (this.lives < this.maxLives) {
       this.lives++;
-      this.eventBus.emit(EventTypes.EXTRA_LIFE, { lives: this.lives });
+      this.#eventBus.emit(EventTypes.EXTRA_LIFE, { lives: this.lives });
     }
   }
 
@@ -678,7 +627,7 @@ class GameStateManager {
         break;
       case 'weapon':
         this.weaponsUnlocked.add(milestone.value);
-        this.eventBus.emit(EventTypes.WEAPON_UNLOCKED, {
+        this.#eventBus.emit(EventTypes.WEAPON_UNLOCKED, {
           weaponType: milestone.value,
           source: 'achievement',
         });
@@ -690,7 +639,7 @@ class GameStateManager {
       value: milestone.value,
     });
 
-    this.eventBus.emit(EventTypes.ACHIEVEMENT_UNLOCKED, {
+    this.#eventBus.emit(EventTypes.ACHIEVEMENT_UNLOCKED, {
       name,
       milestone,
       totalAchievements: this.achievements.size,
@@ -927,10 +876,10 @@ class GameStateManager {
    */
   destroy() {
     // Clean up all EventBus listeners
-    if (this.eventBus && this.eventListenerIds.size > 0) {
-      for (const [eventName, listenerId] of this.eventListenerIds) {
+    if (this.#eventBus && this.#eventListenerIds.size > 0) {
+      for (const [eventName, listenerId] of this.#eventListenerIds) {
         try {
-          const removed = this.eventBus.off(listenerId);
+          const removed = this.#eventBus.off(listenerId);
           if (!removed) {
             this.#logger.warn(`Failed to remove listener for ${eventName}: ${listenerId}`);
           }
@@ -939,14 +888,14 @@ class GameStateManager {
         }
       }
 
-      this.eventListenerIds.clear();
+      this.#eventListenerIds.clear();
     }
 
     // Final save
     this.saveGame();
 
     // Clean up references
-    this.eventBus = null;
+    this.#eventBus = null;
     this.scene = null;
 
     this.#logger.info('GameStateManager destroyed');

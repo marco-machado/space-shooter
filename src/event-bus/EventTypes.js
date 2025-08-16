@@ -15,6 +15,14 @@ export const EventPriority = Object.freeze({
  * Comprehensive event taxonomy for the Space Shooter game
  */
 export const EventTypes = {
+  // Enemy Events
+  ENEMY_DAMAGED: 'enemy-damage',
+  ENEMY_DESTROYED: 'enemy-destroyed',
+
+  SCORE_UPDATED: 'score-updated',
+
+  /** UNCONFIRMED EVENTS **/
+
   // Input Events
   INPUT_ACTION: 'input-action',
   INPUT_ACTION_STOP: 'input-action-stop',
@@ -77,13 +85,6 @@ export const EventTypes = {
   DAMAGE_DEALT: 'damage-dealt',
   DAMAGE_RECEIVED: 'damage-received',
 
-  // Enemy Events
-  ENEMY_DAMAGED: 'enemy-damage',
-  ENEMY_DESTROYED: 'enemy-destroyed',
-
-  HEALTH_CHANGED: 'health-changed',
-  HEALTH_DEPLETED: 'health-depleted',
-
   PICKUP_COLLECTED: 'pickup-collected',
 
   PLAYER_DAMAGE: 'player-damage',
@@ -95,12 +96,6 @@ export const EventTypes = {
 
   PROJECTILE_CREATED: 'projectile-created',
   PROJECTILE_DESTROYED: 'projectile-destroyed',
-
-  SCORE_CHANGED: 'score-changed',
-  SCORE_MULTIPLIER_CHANGED: 'score-multiplier-changed',
-
-  WAVE_COMPLETE: 'wave-complete',
-  WAVE_START: 'wave-start',
 
   WEAPON_CHARGE_STARTED: 'weapon-charge-started',
   WEAPON_CHARGE_STOPPED: 'weapon-charge-stopped',
@@ -142,20 +137,6 @@ export const EventTypes = {
   LEVEL_UP: 'level-up',
 
   WEAPON_UNLOCKED: 'weapon-unlocked',
-
-  // Render Events
-  RENDER_ANIMATION_COMPLETE: 'render-animation-complete',
-  RENDER_ANIMATION_START: 'render-animation-start',
-  RENDER_ANIMATION_STOP: 'render-animation-stop',
-  RENDER_CAMERA_MOVED: 'render-camera-moved',
-  RENDER_EFFECT_CREATE: 'render-effect-create',
-  RENDER_EFFECT_DESTROY: 'render-effect-destroy',
-  RENDER_LAYER_CHANGED: 'render-layer-changed',
-  RENDER_SCREEN_SHAKE: 'render-screen-shake',
-  RENDER_SPRITE_BATCH_UPDATE: 'render-sprite-batch-update',
-  RENDER_SPRITE_CREATE: 'render-sprite-create',
-  RENDER_SPRITE_DESTROY: 'render-sprite-destroy',
-  RENDER_SPRITE_UPDATE: 'render-sprite-update',
 
   // Audio Events
   AUDIO_CROSSFADE: 'audio-crossfade',
@@ -199,28 +180,6 @@ export const EventTypes = {
   ASSET_PROGRESS: 'asset-progress',
   ASSET_UNLOADED: 'asset-unloaded',
   ASSET_UNLOAD_REQUEST: 'asset-unload-request',
-
-  // Scene Events
-  SCENE_PAUSE: 'scene-pause',
-  SCENE_RESUME: 'scene-resume',
-  SCENE_SHUTDOWN: 'scene-shutdown',
-  SCENE_START: 'scene-start',
-  SCENE_TRANSITION_COMPLETE: 'scene-transition-complete',
-  SCENE_TRANSITION_START: 'scene-transition-start',
-
-  // Debug Events
-  DEBUG_INFO_UPDATED: 'debug-info-updated',
-  DEBUG_MODE_CHANGED: 'debug-mode-changed',
-
-  MEMORY_WARNING: 'memory-warning',
-
-  PERFORMANCE_WARNING: 'performance-warning',
-
-  // Event System Events
-  EVENT_BATCH_PROCESSED: 'event-batch-processed',
-  EVENT_LISTENER_ERROR: 'event-listener-error',
-  EVENT_PROCESSING_ERROR: 'event-processing-error',
-  EVENT_QUEUE_OVERFLOW: 'event-queue-overflow',
 };
 
 /**

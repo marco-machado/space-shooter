@@ -13,17 +13,15 @@ import Logger from '@/utils/Logger.js';
 export default class UIScene extends Phaser.Scene {
   // Private fields
   #eventBus;
+  #logger;
+
   #uiElements = {};
   #listenerIds = [];
-  #logger;
 
   constructor() {
     super({ key: 'UIScene' });
 
-    // Get EventBus instance for communication
     this.#eventBus = getEventBus();
-
-    // Initialize logger
     this.#logger = Logger.scope('UIScene');
   }
 
@@ -112,16 +110,6 @@ export default class UIScene extends Phaser.Scene {
       .setOrigin(0, 0.5);
     this.#uiElements.healthBar.setScrollFactor(0);
 
-    // Debug info (if enabled)
-    if (ConfigManager.getConfig().showDebugInfo) {
-      this.#uiElements.debugText = this.add.text(10, this.scale.height - 100, '', {
-        fontSize: '12px',
-        color: '#00ff00',
-        fontFamily: 'monospace',
-      });
-      this.#uiElements.debugText.setScrollFactor(0);
-    }
-
     // Pause indicator (initially hidden)
     this.#uiElements.pauseText = this.add
       .text(this.scale.width / 2, this.scale.height / 2, 'PAUSED', {
@@ -160,7 +148,7 @@ export default class UIScene extends Phaser.Scene {
    */
   setupEventListeners() {
     // Score update listener
-    const scoreListenerId = this.#eventBus.on('ui:scoreUpdate', this.handleScoreUpdate, this);
+    const scoreListenerId = this.#eventBus.on(EventTypes.SCORE_UPDATED, this.onScoreUpdated, this);
     this.#listenerIds.push(scoreListenerId);
 
     // Health update listener
@@ -187,12 +175,6 @@ export default class UIScene extends Phaser.Scene {
     );
     this.#listenerIds.push(accuracyListenerId);
 
-    // Debug info update listener
-    if (ConfigManager.getConfig().showDebugInfo) {
-      const debugListenerId = this.#eventBus.on('ui:debugUpdate', this.handleDebugUpdate, this);
-      this.#listenerIds.push(debugListenerId);
-    }
-
     // Pause state listeners
     const pauseListenerId = this.#eventBus.on(
       EventTypes.GAME_PAUSE_TOGGLE,
@@ -208,7 +190,7 @@ export default class UIScene extends Phaser.Scene {
    * @param {number} data.score - The current score value
    * @returns {void}
    */
-  handleScoreUpdate(data) {
+  onScoreUpdated(data) {
     if (this.#uiElements.scoreText && data.score !== undefined) {
       this.#uiElements.scoreText.setText(`SCORE: ${data.score}`);
     }
