@@ -15,8 +15,8 @@ export const GameConfig = {
 
   // Player settings
   PLAYER: {
-    SPEED: 150, // pixels per second
-    FIRE_RATE: 1000, // milliseconds between shots when holding fire button
+    SPEED: 200, // pixels per second
+    FIRE_RATE: 800, // milliseconds between shots when holding fire button
     WIDTH: 64,
     HEIGHT: 64,
     COLOR: 0x0099ff,

@@ -59,7 +59,10 @@ Create an engaging top-down space shooter game using Phaser.js 3.x with Vite bui
 
 - Active weapon switching with number keys (1, 2, 3)
 - Visual ammunition/energy indicators
-- Weapon overheating mechanics to prevent spam
+- Weapon overheating mechanics:
+  - Each shot generates heat (+5 heat)
+  - Weapons passively cool at 5 heat per second when not firing
+  - Reaching 100 heat causes an overheat lockout until cooled below 50
 - Upgrade trees with meaningful choices
 
 **Acceptance Criteria**:
@@ -67,6 +70,7 @@ Create an engaging top-down space shooter game using Phaser.js 3.x with Vite bui
 - Each weapon feels distinct and useful in different situations
 - Upgrade progression provides clear power increases
 - Weapon switching is smooth and responsive
+- Overheating prevents continuous firing and is verified by tests
 
 ### 3. Enemy System
 
@@ -117,10 +121,10 @@ Create an engaging top-down space shooter game using Phaser.js 3.x with Vite bui
 
 #### Temporary Power-ups (Duration: 15 seconds):
 
-- **Shield Boost**: Extra layer of protection
-- **Rapid Fire**: Increased fire rate for all weapons
-- **Invincibility**: Temporary immunity to damage
-- **Multi-Shot**: Additional projectiles for current weapon
+- **Shield Boost**: Extra layer of protection; dissipates after absorbing one hit or when 15 seconds pass
+- **Rapid Fire**: Increased fire rate for all weapons; effect wears off after 15 seconds
+- **Damage Boost**: Doubles weapon damage; expires after 15 seconds
+- **Invulnerability**: Player cannot take damage; invincibility ends when the timer runs out
 
 #### Permanent Power-ups:
 
@@ -171,7 +175,7 @@ Create an engaging top-down space shooter game using Phaser.js 3.x with Vite bui
 - Player can see clear improvement over time
 - Persistent saves work reliably across sessions
 
-### 6. Difficulty Scaling
+### 5. Difficulty Scaling
 
 **Objective**: Provide escalating challenge and varied gameplay
 
