@@ -110,6 +110,26 @@ const EnvironmentSchema = z.object({
       const normalized = val.toLowerCase().trim();
       return ['true', '1', 'yes', 'on'].includes(normalized);
     }),
+
+  // Progression settings for testing
+  VITE_FAST_PROGRESSION: z
+    .string()
+    .optional()
+    .transform(val => {
+      if (!val || val === '') return false;
+      const normalized = val.toLowerCase().trim();
+      return ['true', '1', 'yes', 'on'].includes(normalized);
+    }),
+
+  // Development starting points for easier upgrade testing
+  VITE_DEV_STARTING_POINTS: z
+    .string()
+    .optional()
+    .transform(val => {
+      const parsed = parseInt(val, 10);
+      if (isNaN(parsed)) return 0;
+      return Math.min(100, Math.max(0, parsed)); // Cap at 100 points for safety
+    }),
 });
 
 export default EnvironmentSchema;

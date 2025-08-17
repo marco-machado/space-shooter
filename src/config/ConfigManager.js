@@ -1,4 +1,3 @@
-/* global process */
 import Logger from '@/utils/Logger.js';
 import EnvironmentSchema from './EnvironmentSchema.js';
 import { GameConfig } from './GameConfig.js';
@@ -50,6 +49,8 @@ export default class ConfigManager {
     this.OBJECT_POOL_SIZE = parsed.VITE_OBJECT_POOL_SIZE;
     this.SHOW_FPS = parsed.VITE_SHOW_FPS;
     this.SHOW_DEBUG_INFO = parsed.VITE_SHOW_DEBUG_INFO;
+    this.FAST_PROGRESSION = parsed.VITE_FAST_PROGRESSION;
+    this.DEV_STARTING_POINTS = parsed.VITE_DEV_STARTING_POINTS;
 
     this.IS_DEVELOPMENT = import.meta.env.DEV;
     this.IS_PRODUCTION = import.meta.env.PROD;
@@ -96,6 +97,8 @@ export default class ConfigManager {
       objectPoolSize: this.OBJECT_POOL_SIZE,
       showFps: this.SHOW_FPS,
       showDebugInfo: this.SHOW_DEBUG_INFO,
+      fastProgression: this.FAST_PROGRESSION,
+      devStartingPoints: this.DEV_STARTING_POINTS,
       isDevelopment: this.IS_DEVELOPMENT,
       isProduction: this.IS_PRODUCTION,
     };
