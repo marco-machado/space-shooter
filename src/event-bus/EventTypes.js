@@ -121,6 +121,9 @@ export const EventTypes = {
 
   EXTRA_LIFE: 'extra-life',
 
+  INVINCIBILITY_STARTED: 'invincibility-started',
+  INVINCIBILITY_ENDED: 'invincibility-ended',
+
   LEVEL_CHANGED: 'level-changed',
   LEVEL_COMPLETED: 'level-completed',
   LEVEL_STARTED: 'level-started',

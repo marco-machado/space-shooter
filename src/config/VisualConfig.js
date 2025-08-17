@@ -41,10 +41,6 @@ export const Depths = {
  * @constant {Object}
  */
 export const VisualEffects = {
-  SCREEN_SHAKE: {
-    PLAYER_HIT: { duration: 300, intensity: 8 },
-    ENEMY_DESTROYED: { duration: 150, intensity: 4 },
-  },
   FLASH_EFFECT: {
     PLAYER_HIT: { color: 0xff0000, duration: 200 }, // Red flash
     ENEMY_HIT: { color: 0xffffff, duration: 100 }, // White flash

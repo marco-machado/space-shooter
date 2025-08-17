@@ -37,6 +37,13 @@ export default class PlayerHealthSystem {
   #invincibility;
 
   /**
+   * Private listener ID for cleanup
+   * @private
+   * @type {string}
+   */
+  #damageListenerId;
+
+  /**
    * Create a new PlayerHealthSystem instance
    * @param {Object} player - The player entity with health component
    */
@@ -69,7 +76,7 @@ export default class PlayerHealthSystem {
    * @returns {void}
    */
   #setupEventListeners() {
-    this.#eventBus.on(EventTypes.PLAYER_DAMAGED, this.#handlePlayerDamage, this);
+    this.#damageListenerId = this.#eventBus.on(EventTypes.PLAYER_DAMAGED, this.#handlePlayerDamage, this);
   }
 
   /**
@@ -133,10 +140,21 @@ export default class PlayerHealthSystem {
     this.#invincibility.active = true;
     this.#logger.debug('Invincibility activated', { duration: this.#invincibility.duration });
 
+    // Emit invincibility started event
+    this.#eventBus.emit(EventTypes.INVINCIBILITY_STARTED, {
+      duration: this.#invincibility.duration,
+      player: this.#player,
+    });
+
     this.#invincibility.timer = setTimeout(() => {
       this.#invincibility.active = false;
       this.#invincibility.timer = null;
       this.#logger.debug('Invincibility deactivated');
+
+      // Emit invincibility ended event
+      this.#eventBus.emit(EventTypes.INVINCIBILITY_ENDED, {
+        player: this.#player,
+      });
     }, this.#invincibility.duration);
   }
 
@@ -200,8 +218,15 @@ export default class PlayerHealthSystem {
    * @returns {void}
    */
   destroy() {
+    // Prevent multiple calls
+    if (!this.#logger) {
+      return;
+    }
+
     // Remove event listeners
-    this.#eventBus.off(EventTypes.PLAYER_DAMAGED, this.#handlePlayerDamage, this);
+    if (this.#damageListenerId && this.#eventBus) {
+      this.#eventBus.off(this.#damageListenerId);
+    }
 
     // Clear invincibility timer
     if (this.#invincibility.timer) {
@@ -209,11 +234,12 @@ export default class PlayerHealthSystem {
       this.#invincibility.timer = null;
     }
 
+    this.#logger.debug('PlayerHealthSystem destroyed');
+
     // Clear references
     this.#player = null;
     this.#eventBus = null;
     this.#logger = null;
-
-    this.#logger.debug('PlayerHealthSystem destroyed');
+    this.#damageListenerId = null;
   }
 }

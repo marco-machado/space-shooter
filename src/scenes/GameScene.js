@@ -8,6 +8,7 @@ import { getEventBus } from '@/event-bus/EventBus.js';
 import { EventTypes } from '@/event-bus/EventTypes.js';
 import EnemySystem from '@/systems/EnemySystem.js';
 import PlayerHealthSystem from '@/systems/PlayerHealthSystem.js';
+import VisualFXSystem from '@/systems/VisualFXSystem.js';
 import GameStateManager from '@/utils/GameStateManager.js';
 import Logger from '@/utils/Logger.js';
 
@@ -34,6 +35,7 @@ export default class GameScene extends Phaser.Scene {
 
   #enemySpawner;
   #playerHealthSystem;
+  #visualFXSystem;
   #pauseKey;
   #debugSpawnKey;
   #fireKey;
@@ -74,6 +76,9 @@ export default class GameScene extends Phaser.Scene {
 
     // Setup Player Health System
     this.#playerHealthSystem = new PlayerHealthSystem(this.player);
+
+    // Setup Visual Effects System
+    this.#visualFXSystem = new VisualFXSystem(this, this.player);
 
     // Setup Enemy Spawner
     this.#enemySpawner = new EnemySystem(this, this.#enemyGroup);
@@ -123,6 +128,11 @@ export default class GameScene extends Phaser.Scene {
 
     // Update projectiles
     this.#updateProjectiles();
+
+    // Update visual effects system
+    if (this.#visualFXSystem) {
+      this.#visualFXSystem.update(delta);
+    }
 
     // Update game state manager
     // There shouldn't be anything after this line as it also deals with pause system
@@ -462,6 +472,12 @@ export default class GameScene extends Phaser.Scene {
     if (this.#playerHealthSystem) {
       this.#playerHealthSystem.destroy();
       this.#playerHealthSystem = null;
+    }
+
+    // Clean up VisualFXSystem
+    if (this.#visualFXSystem) {
+      this.#visualFXSystem.destroy();
+      this.#visualFXSystem = null;
     }
 
     // Remove event listeners
