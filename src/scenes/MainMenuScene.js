@@ -172,6 +172,7 @@ export default class MainMenuScene extends Phaser.Scene {
 
     const menuOptions = [
       { text: 'START GAME', action: 'startGame' },
+      { text: 'UPGRADE TREE', action: 'showUpgradeTree' },
       { text: 'INSTRUCTIONS', action: 'showInstructions' },
       { text: 'SETTINGS', action: 'showSettings' },
     ];
@@ -430,6 +431,10 @@ export default class MainMenuScene extends Phaser.Scene {
         this.#startGame();
         break;
 
+      case 'showUpgradeTree':
+        this.#showUpgradeTree();
+        break;
+
       case 'showInstructions':
         this.#showInstructions();
         break;
@@ -455,6 +460,19 @@ export default class MainMenuScene extends Phaser.Scene {
 
     this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
       this.scene.start('GameScene');
+    });
+  }
+
+  /**
+   * Show the upgrade tree by transitioning to UpgradeTreeScene.
+   * @private
+   * @returns {void}
+   */
+  #showUpgradeTree() {
+    this.cameras.main.fadeOut(500, 0, 0, 0);
+
+    this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
+      this.scene.start('UpgradeTreeScene');
     });
   }
 

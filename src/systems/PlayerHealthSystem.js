@@ -30,6 +30,13 @@ export default class PlayerHealthSystem {
   #player;
 
   /**
+   * Private upgrade system reference
+   * @private
+   * @type {Object}
+   */
+  #upgradeSystem;
+
+  /**
    * Private invincibility state tracking
    * @private
    * @type {Object}
@@ -37,17 +44,25 @@ export default class PlayerHealthSystem {
   #invincibility;
 
   /**
-   * Private listener ID for cleanup
+   * Private listener IDs for cleanup
    * @private
-   * @type {string}
+   * @type {Array}
    */
-  #damageListenerId;
+  #listenerIds;
+
+  /**
+   * Base health value (before upgrades)
+   * @private
+   * @type {number}
+   */
+  #baseHealth;
 
   /**
    * Create a new PlayerHealthSystem instance
    * @param {Object} player - The player entity with health component
+   * @param {Object} [upgradeSystem] - The upgrade system for defense effects
    */
-  constructor(player) {
+  constructor(player, upgradeSystem = null) {
     if (!player || !player.health) {
       throw new Error('PlayerHealthSystem requires a player entity with health component');
     }
@@ -55,6 +70,11 @@ export default class PlayerHealthSystem {
     this.#logger = Logger.scope('PlayerHealthSystem');
     this.#eventBus = getEventBus();
     this.#player = player;
+    this.#upgradeSystem = upgradeSystem;
+    this.#listenerIds = [];
+
+    // Store base health (before any upgrades)
+    this.#baseHealth = player.health.getMaxHealth();
 
     this.#invincibility = {
       active: false,
@@ -64,9 +84,17 @@ export default class PlayerHealthSystem {
 
     this.#setupEventListeners();
 
+    // Apply initial health and shield upgrades if upgrade system is available
+    if (this.#upgradeSystem) {
+      this.#applyHealthUpgrades();
+      this.#applyShieldUpgrades();
+    }
+
     this.#logger.debug('PlayerHealthSystem initialized', {
+      baseHealth: this.#baseHealth,
       playerHealth: player.health.getCurrentHealth(),
       maxHealth: player.health.getMaxHealth(),
+      upgradeSystemAvailable: !!upgradeSystem,
     });
   }
 
@@ -76,7 +104,15 @@ export default class PlayerHealthSystem {
    * @returns {void}
    */
   #setupEventListeners() {
-    this.#damageListenerId = this.#eventBus.on(EventTypes.PLAYER_DAMAGED, this.#handlePlayerDamage, this);
+    // Player damage events
+    const damageListenerId = this.#eventBus.on(EventTypes.PLAYER_DAMAGED, this.#handlePlayerDamage, this);
+    this.#listenerIds.push(damageListenerId);
+
+    // Health upgrade events
+    if (this.#upgradeSystem) {
+      const upgradeListenerId = this.#eventBus.on(EventTypes.UPGRADE_PURCHASED, this.#handleUpgradePurchased, this);
+      this.#listenerIds.push(upgradeListenerId);
+    }
   }
 
   /**
@@ -91,38 +127,79 @@ export default class PlayerHealthSystem {
       return;
     }
 
+    // Check for mobility upgrade invulnerability frames (barrel roll)
+    if (this.#player.isInvulnerable && this.#player.isInvulnerable()) {
+      this.#logger.debug('Player damage blocked by invulnerability frames');
+      return;
+    }
+
+    // Check for evasive maneuvers dodge chance
+    if (this.#player.shouldDodgeDamage && this.#player.shouldDodgeDamage()) {
+      this.#logger.debug('Player dodged damage with evasive maneuvers');
+      return;
+    }
+
     const { damage, source } = data;
     const currentHealth = this.#player.health.getCurrentHealth();
-    const maxHealth = this.#player.health.getMaxHealth();
 
     if (currentHealth <= 0) {
       this.#logger.debug('Player damage ignored - already dead');
       return;
     }
 
-    // Apply damage
-    const damageAmount = Math.max(0, damage || 1);
-    const newHealth = Math.max(0, currentHealth - damageAmount);
+    // Get damage reduction from upgrades
+    const damageReduction = this.#upgradeSystem ? this.#upgradeSystem.getDamageReduction() : 0;
 
-    this.#player.health.setCurrentHealth(newHealth);
+    // Apply damage with reduction and shield absorption
+    const damageAmount = Math.max(0, damage || 1);
+    const currentTime = Date.now();
+    const damageResult = this.#player.health.takeDamage(damageAmount, damageReduction, currentTime);
 
     this.#logger.debug('Player took damage', {
-      damage: damageAmount,
+      incomingDamage: damageAmount,
+      actualDamage: damageResult.actualDamage,
+      shieldDamage: damageResult.shieldDamage,
+      healthDamage: damageResult.healthDamage,
+      damageReduction,
       source,
-      oldHealth: currentHealth,
-      newHealth,
-      maxHealth,
+      oldHealth: damageResult.previousHealth,
+      newHealth: damageResult.currentHealth,
+      oldShields: damageResult.previousShields,
+      newShields: damageResult.currentShields,
+      maxHealth: this.#player.health.getMaxHealth(),
+      shieldBurst: damageResult.shieldBurst,
     });
 
+    // Handle shield burst damage if shields were destroyed
+    if (damageResult.shieldBurst && damageResult.shieldBurst.triggered) {
+      this.#handleShieldBurst(damageResult.shieldBurst, source);
+    }
+
+    // Emit damage reduction event if applicable
+    if (damageReduction > 0) {
+      this.#eventBus.emit(EventTypes.DAMAGE_REDUCED, {
+        incomingDamage: damageAmount,
+        actualDamage: damageResult.actualDamage,
+        damageReduction,
+        damageBlocked: damageAmount - damageResult.actualDamage,
+        source,
+      });
+    }
+
     // Emit health decreased event
-    const healthEvent = makeHealthDecreasedEvent(newHealth, maxHealth, damageAmount, source);
+    const healthEvent = makeHealthDecreasedEvent(
+      damageResult.currentHealth, 
+      this.#player.health.getMaxHealth(), 
+      damageResult.actualDamage, 
+      source
+    );
     this.#eventBus.emit(healthEvent.type, healthEvent.data, healthEvent.priority);
 
     // Activate invincibility frames
     this.#activateInvincibility();
 
     // Check for death
-    if (newHealth <= 0) {
+    if (damageResult.wasKilled) {
       this.#handlePlayerDeath(source);
     }
   }
@@ -173,36 +250,212 @@ export default class PlayerHealthSystem {
   }
 
   /**
+   * Handle upgrade purchase events
+   * @private
+   * @param {Object} data - Upgrade purchase event data
+   * @returns {void}
+   */
+  #handleUpgradePurchased(data) {
+    const { upgradeId, upgrade } = data;
+    
+    // Check if this is a defense-related upgrade
+    if (upgrade.tree === 'defense') {
+      if (upgrade.branch === 'hull' || upgrade.branch === 'armor') {
+        this.#logger.info(`Health-related upgrade purchased: ${upgrade.name}`);
+        this.#applyHealthUpgrades();
+      } else if (upgrade.branch === 'shields') {
+        this.#logger.info(`Shield-related upgrade purchased: ${upgrade.name}`);
+        this.#applyShieldUpgrades();
+      }
+    }
+  }
+
+  /**
+   * Apply current health upgrades from the upgrade system
+   * @private
+   * @returns {void}
+   */
+  #applyHealthUpgrades() {
+    if (!this.#upgradeSystem) {
+      return;
+    }
+
+    const currentHealth = this.#player.health.getCurrentHealth();
+    const oldMaxHealth = this.#player.health.getMaxHealth();
+    const newMaxHealth = this.#upgradeSystem.getTotalMaxHealth(this.#baseHealth);
+
+    if (newMaxHealth !== oldMaxHealth) {
+      // Update max health and heal to new maximum if this is an upgrade
+      const isUpgrade = newMaxHealth > oldMaxHealth;
+      this.#player.health.setMaxHealth(newMaxHealth, isUpgrade);
+
+      this.#logger.debug('Health upgrades applied', {
+        baseHealth: this.#baseHealth,
+        oldMaxHealth,
+        newMaxHealth,
+        currentHealth: this.#player.health.getCurrentHealth(),
+        healthBonus: this.#upgradeSystem.upgradeEffects.healthBonus,
+        healedToMax: isUpgrade,
+      });
+
+      // Emit health upgrade event
+      this.#eventBus.emit(EventTypes.HEALTH_UPGRADE_APPLIED, {
+        baseHealth: this.#baseHealth,
+        oldMaxHealth,
+        newMaxHealth,
+        currentHealth: this.#player.health.getCurrentHealth(),
+        healthBonus: this.#upgradeSystem.upgradeEffects.healthBonus,
+        damageReduction: this.#upgradeSystem.getDamageReduction(),
+      });
+
+      // Emit max health increased event
+      this.#eventBus.emit(EventTypes.HEALTH_MAX_INCREASED, {
+        oldMaxHealth,
+        newMaxHealth,
+        currentHealth: this.#player.health.getCurrentHealth(),
+        healthPercent: this.#player.health.getHealthPercentage() / 100,
+      });
+    }
+  }
+
+  /**
+   * Apply current shield upgrades from the upgrade system
+   * @private
+   * @returns {void}
+   */
+  #applyShieldUpgrades() {
+    if (!this.#upgradeSystem) {
+      return;
+    }
+
+    const upgradeEffects = this.#upgradeSystem.getUpgradeEffects();
+    const shieldConfig = {
+      capacity: upgradeEffects.shieldCapacity,
+      regenRate: upgradeEffects.shieldRegenRate,
+      regenDelay: upgradeEffects.shieldRegenDelay,
+    };
+
+    this.#player.health.setShieldConfig(shieldConfig);
+
+    this.#logger.debug('Shield upgrades applied', {
+      shieldCapacity: shieldConfig.capacity,
+      regenRate: shieldConfig.regenRate,
+      regenDelay: shieldConfig.regenDelay,
+    });
+  }
+
+  /**
+   * Handle shield burst when shields are destroyed
+   * @private
+   * @param {Object} shieldBurst - Shield burst data
+   * @param {string} source - Damage source
+   * @returns {void}
+   */
+  #handleShieldBurst(shieldBurst, source) {
+    if (!this.#upgradeSystem) {
+      return;
+    }
+
+    const upgradeEffects = this.#upgradeSystem.getUpgradeEffects();
+    const burstDamage = upgradeEffects.shieldBurstDamage;
+    const burstRadius = upgradeEffects.shieldBurstRadius;
+
+    if (burstDamage > 0 && burstRadius > 0) {
+      this.#logger.debug('Shield burst triggered', {
+        damage: burstDamage,
+        radius: burstRadius,
+        playerPosition: { x: this.#player.x, y: this.#player.y },
+      });
+
+      // Emit shield burst event for other systems to handle damage
+      this.#eventBus.emit(EventTypes.SHIELD_BURST, {
+        x: this.#player.x,
+        y: this.#player.y,
+        damage: burstDamage,
+        radius: burstRadius,
+        source: 'shield_burst',
+      });
+    }
+  }
+
+  /**
+   * Update shield regeneration (should be called regularly)
+   * @param {number} deltaTime - Time delta in milliseconds
+   * @returns {void}
+   */
+  update(deltaTime) {
+    if (!this.#player.health.updateShieldRegeneration) {
+      return;
+    }
+
+    const currentTime = Date.now();
+    const regenResult = this.#player.health.updateShieldRegeneration(currentTime, deltaTime);
+
+    if (regenResult && regenResult.amount > 0) {
+      this.#logger.debug('Shields regenerating', {
+        amount: regenResult.amount,
+        current: regenResult.current,
+        max: regenResult.max,
+        isComplete: regenResult.isComplete,
+      });
+
+      // Emit shield regeneration event
+      this.#eventBus.emit(EventTypes.SHIELD_REGENERATED, {
+        amount: regenResult.amount,
+        current: regenResult.current,
+        max: regenResult.max,
+        isComplete: regenResult.isComplete,
+      });
+    }
+  }
+
+  /**
    * Heal the player (for future power-up integration)
    * @param {number} healAmount - Amount to heal
    * @param {string} source - Source of healing
    * @returns {void}
    */
   heal(healAmount, source = 'unknown') {
-    const currentHealth = this.#player.health.getCurrentHealth();
-    const maxHealth = this.#player.health.getMaxHealth();
-
-    if (currentHealth >= maxHealth) {
-      this.#logger.debug('Heal ignored - already at max health');
-      return;
-    }
-
-    const actualHealAmount = Math.min(healAmount, maxHealth - currentHealth);
-    const newHealth = currentHealth + actualHealAmount;
-
-    this.#player.health.setCurrentHealth(newHealth);
+    const healResult = this.#player.health.heal(healAmount);
 
     this.#logger.debug('Player healed', {
-      healAmount: actualHealAmount,
+      healAmount,
+      actualHealing: healResult.actualHealing,
       source,
-      oldHealth: currentHealth,
-      newHealth,
-      maxHealth,
+      oldHealth: healResult.previousHealth,
+      newHealth: healResult.currentHealth,
+      maxHealth: healResult.maxHealth,
+      wasFullyHealed: healResult.wasFullyHealed,
     });
 
-    // Emit health increased event
-    const healthEvent = makeHealthIncreasedEvent(newHealth, maxHealth, actualHealAmount, source);
-    this.#eventBus.emit(healthEvent.type, healthEvent.data, healthEvent.priority);
+    if (healResult.actualHealing > 0) {
+      // Emit health increased event
+      const healthEvent = makeHealthIncreasedEvent(
+        healResult.currentHealth, 
+        healResult.maxHealth, 
+        healResult.actualHealing, 
+        source
+      );
+      this.#eventBus.emit(healthEvent.type, healthEvent.data, healthEvent.priority);
+    }
+  }
+
+  /**
+   * Set the upgrade system reference (for delayed initialization)
+   * @param {Object} upgradeSystem - The upgrade system instance
+   * @returns {void}
+   */
+  setUpgradeSystem(upgradeSystem) {
+    this.#upgradeSystem = upgradeSystem;
+    
+    // Set up upgrade event listener if not already done
+    if (upgradeSystem) {
+      const upgradeListenerId = this.#eventBus.on(EventTypes.UPGRADE_PURCHASED, this.#handleUpgradePurchased, this);
+      this.#listenerIds.push(upgradeListenerId);
+      
+      // Apply existing upgrades
+      this.#applyHealthUpgrades();
+    }
   }
 
   /**
@@ -224,8 +477,10 @@ export default class PlayerHealthSystem {
     }
 
     // Remove event listeners
-    if (this.#damageListenerId && this.#eventBus) {
-      this.#eventBus.off(this.#damageListenerId);
+    if (this.#listenerIds && this.#eventBus) {
+      this.#listenerIds.forEach(listenerId => {
+        this.#eventBus.off(listenerId);
+      });
     }
 
     // Clear invincibility timer
@@ -239,7 +494,8 @@ export default class PlayerHealthSystem {
     // Clear references
     this.#player = null;
     this.#eventBus = null;
+    this.#upgradeSystem = null;
     this.#logger = null;
-    this.#damageListenerId = null;
+    this.#listenerIds = null;
   }
 }
