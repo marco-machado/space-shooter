@@ -1,7 +1,5 @@
 import GameConfig from '@/config/GameConfig.js';
 import Logger from '@/utils/Logger.js';
-import { getEventBus } from '@/event-bus/EventBus.js';
-import { EventTypes } from '@/event-bus/EventTypes.js';
 
 /**
  * Factory function to create projectile entities.
@@ -22,7 +20,6 @@ import { EventTypes } from '@/event-bus/EventTypes.js';
 export function projectileFactory(projectileGroup, config) {
   const scene = projectileGroup.scene;
   const logger = Logger.scope('ProjectileFactory');
-  const eventBus = getEventBus();
 
   // Validate required parameters
   if (!config.owner || !['player', 'enemy'].includes(config.owner)) {
@@ -31,9 +28,8 @@ export function projectileFactory(projectileGroup, config) {
   }
 
   // Get default configuration based on owner
-  const defaultConfig = config.owner === 'player' 
-    ? GameConfig.PROJECTILES.PLAYER 
-    : GameConfig.PROJECTILES.ENEMY;
+  const defaultConfig =
+    config.owner === 'player' ? GameConfig.PROJECTILES.PLAYER : GameConfig.PROJECTILES.ENEMY;
 
   // Merge config with defaults
   const finalConfig = {
@@ -41,13 +37,13 @@ export function projectileFactory(projectileGroup, config) {
     height: defaultConfig.HEIGHT,
     color: defaultConfig.COLOR,
     damage: defaultConfig.DAMAGE,
-    ...config
+    ...config,
   };
 
   logger.debug('Creating projectile', {
     owner: config.owner,
     position: { x: finalConfig.x, y: finalConfig.y },
-    velocity: { x: finalConfig.velocityX, y: finalConfig.velocityY }
+    velocity: { x: finalConfig.velocityX, y: finalConfig.velocityY },
   });
 
   // Create the projectile as a rectangle
@@ -56,7 +52,7 @@ export function projectileFactory(projectileGroup, config) {
     finalConfig.y,
     finalConfig.width,
     finalConfig.height,
-    finalConfig.color
+    finalConfig.color,
   );
 
   // Add to physics group
@@ -76,29 +72,17 @@ export function projectileFactory(projectileGroup, config) {
    * Update projectile state - checks for out of bounds destruction.
    * @returns {void}
    */
-  projectile.update = function() {
+  projectile.update = function () {
     // Check if projectile is out of world bounds and destroy it
     const padding = 50; // Allow some padding before destruction
-    if (this.x < -padding || 
-        this.x > scene.scale.width + padding ||
-        this.y < -padding || 
-        this.y > scene.scale.height + padding) {
+    if (
+      this.x < -padding ||
+      this.x > scene.scale.width + padding ||
+      this.y < -padding ||
+      this.y > scene.scale.height + padding
+    ) {
       this.destroy();
     }
-  };
-
-  /**
-   * Enhanced destroy method that emits events.
-   * @returns {void}
-   */
-  const originalDestroy = projectile.destroy.bind(projectile);
-  projectile.destroy = function() {
-    logger.debug('Destroying projectile', { owner: this.owner });
-    eventBus.emit(EventTypes.PROJECTILE_DESTROYED, { 
-      projectile: this,
-      owner: this.owner 
-    });
-    originalDestroy();
   };
 
   // Set up automatic lifespan destruction if specified
@@ -109,17 +93,6 @@ export function projectileFactory(projectileGroup, config) {
       }
     });
   }
-
-  // Emit creation event
-  eventBus.emit(EventTypes.PROJECTILE_CREATED, { 
-    projectile: projectile,
-    owner: finalConfig.owner 
-  });
-
-  logger.debug('Projectile created successfully', { 
-    owner: finalConfig.owner,
-    id: projectile.name || 'unnamed'
-  });
 
   return projectile;
 }
@@ -132,13 +105,18 @@ export function projectileFactory(projectileGroup, config) {
  * @param {number} [velocityY=-400] - Y velocity (negative for upward movement)
  * @returns {Phaser.GameObjects.Rectangle} The created projectile
  */
-export function createPlayerProjectile(projectileGroup, x, y, velocityY = -GameConfig.PROJECTILES.PLAYER.SPEED) {
+export function createPlayerProjectile(
+  projectileGroup,
+  x,
+  y,
+  velocityY = -GameConfig.PROJECTILES.PLAYER.SPEED,
+) {
   return projectileFactory(projectileGroup, {
-    x: x,
-    y: y,
+    x,
+    y,
     velocityX: 0,
-    velocityY: velocityY,
-    owner: 'player'
+    velocityY,
+    owner: 'player',
   });
 }
 
@@ -150,12 +128,17 @@ export function createPlayerProjectile(projectileGroup, x, y, velocityY = -GameC
  * @param {number} [velocityY=200] - Y velocity (positive for downward movement)
  * @returns {Phaser.GameObjects.Rectangle} The created projectile
  */
-export function createEnemyProjectile(projectileGroup, x, y, velocityY = GameConfig.PROJECTILES.ENEMY.SPEED) {
+export function createEnemyProjectile(
+  projectileGroup,
+  x,
+  y,
+  velocityY = GameConfig.PROJECTILES.ENEMY.SPEED,
+) {
   return projectileFactory(projectileGroup, {
-    x: x,
-    y: y,
+    x,
+    y,
     velocityX: 0,
-    velocityY: velocityY,
-    owner: 'enemy'
+    velocityY,
+    owner: 'enemy',
   });
 }

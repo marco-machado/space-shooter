@@ -21,5 +21,4 @@ if (document.readyState === 'loading') {
 if (ConfigManager.getConfig().debugMode) {
   window.spaceShooterGame = spaceShooterGame;
   window.phaser = Phaser;
-
 }
