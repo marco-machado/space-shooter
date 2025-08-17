@@ -52,8 +52,14 @@ class GameStateManager {
     this.lives = config.startingLives || 3;
     this.maxLives = 5;
     this.characterLevel = 1;
+    this.currentLevel = 1; // Game progression level (separate from character XP level)
     this.experience = 0;
-    this.experienceToNextLevel = 1000;
+    this.experienceToNextLevel = this.calculateXPRequired(2) - this.calculateXPRequired(1); // XP needed to reach level 2
+
+    // Points system for progression upgrades
+    this.availablePoints = 0; // Points available to spend
+    this.spentPoints = 0; // Points already spent
+    this.pointsHistory = []; // History of point transactions for debugging
 
     // Weapon statistics
     this.shotsFired = 0;
@@ -325,7 +331,7 @@ class GameStateManager {
     // Reset game progress
     this.score = 0;
     this.lives = config.startingLives || 3;
-    this.currentLevel = 1;
+    this.currentLevel = 1; // Reset game level
     this.enemiesDestroyed = 0;
     this.shotsFired = 0;
     this.shotsHit = 0;
@@ -353,8 +359,10 @@ class GameStateManager {
     const points = Math.floor(enemy.score * this.scoreMultiplier);
     this.addScore(points);
 
-    // Add experience
-    const exp = Math.floor(enemy.score * 0.1 * this.experienceMultiplier);
+    // Add experience with scaling based on enemy type and level
+    const baseExp = Math.floor(enemy.score * 0.15); // Increased base XP rate
+    const levelScaling = 1 + ((this.currentLevel || 1) - 1) * 0.1; // Scale with current level, default to 1
+    const exp = Math.floor(baseExp * levelScaling * this.experienceMultiplier);
     this.addExperience(exp);
 
     // Update statistics
@@ -398,8 +406,10 @@ class GameStateManager {
     const levelBonus = Math.floor(1000 * this.currentLevel * this.scoreMultiplier);
     this.addScore(levelBonus);
 
-    // Experience bonus
-    const expBonus = Math.floor(200 * this.currentLevel);
+    // Experience bonus - scales with level and has multiplier support
+    const baseExpBonus = 200;
+    const levelMultiplier = Math.pow(this.currentLevel, 0.8); // Gradual scaling
+    const expBonus = Math.floor(baseExpBonus * levelMultiplier * this.experienceMultiplier);
     this.addExperience(expBonus);
 
     this.#logger.info(`Level ${this.currentLevel} completed`, {
@@ -498,7 +508,7 @@ class GameStateManager {
   }
 
   /**
-   * Add experience and handle level ups
+   * Add experience and handle level ups with proper overflow handling
    * @param {number} exp - Experience to add
    */
   addExperience(exp) {
@@ -509,8 +519,70 @@ class GameStateManager {
 
     this.experience += exp;
 
+    // Emit XP gained event for UI feedback
+    this.#eventBus.emit(EventTypes.XP_GAINED, {
+      amount: exp,
+      currentXP: this.experience,
+      requiredXP: this.experienceToNextLevel,
+      level: this.characterLevel,
+      progress: Math.min(1, this.experience / this.experienceToNextLevel),
+    });
+
+    // Handle multiple level-ups with proper overflow
     while (this.experience >= this.experienceToNextLevel) {
       this.levelUp();
+    }
+  }
+
+  /**
+   * Calculate XP required to reach a specific level using the mathematical formula
+   * Formula: XP_required = 100 * level^1.5 + 50 * (level - 1)
+   * When fast progression is enabled, requirements are divided by 5 for easier testing
+   * @param {number} level - Target level
+   * @returns {number} XP required to reach that level
+   */
+  calculateXPRequired(level) {
+    if (typeof level !== 'number' || level < 1) {
+      throw new TypeError('level must be a number >= 1');
+    }
+
+    const config = ConfigManager.getConfig();
+    const baseXP = Math.floor(100 * Math.pow(level, 1.5) + 50 * (level - 1));
+
+    // Apply fast progression divisor for testing/development
+    if (config.fastProgression) {
+      return Math.floor(baseXP / 5);
+    }
+
+    return baseXP;
+  }
+
+  /**
+   * Calculate points awarded for reaching a specific level
+   * Point allocation based on level ranges:
+   * - Levels 1-5: 3 points per level
+   * - Levels 6-10: 4 points per level
+   * - Levels 11-15: 5 points per level
+   * - Levels 16-20: 6 points per level
+   * - Levels 21+: 7 points per level
+   * @param {number} level - Target level
+   * @returns {number} Points awarded for reaching that level
+   */
+  calculatePointsForLevel(level) {
+    if (typeof level !== 'number' || level < 1) {
+      throw new TypeError('level must be a number >= 1');
+    }
+
+    if (level <= 5) {
+      return 3;
+    } else if (level <= 10) {
+      return 4;
+    } else if (level <= 15) {
+      return 5;
+    } else if (level <= 20) {
+      return 6;
+    } else {
+      return 7;
     }
   }
 
@@ -522,11 +594,15 @@ class GameStateManager {
     this.experience -= this.experienceToNextLevel;
     this.characterLevel++;
 
-    // Increase XP requirement for next level
-    this.experienceToNextLevel = Math.floor(this.experienceToNextLevel * 1.2);
+    // Calculate XP requirement for next level using the mathematical formula
+    this.experienceToNextLevel = this.calculateXPRequired(this.characterLevel + 1) - this.calculateXPRequired(this.characterLevel);
 
     // Level up rewards
     this.addScore(1000 * this.characterLevel);
+
+    // Award points based on level
+    const pointsAwarded = this.calculatePointsForLevel(this.characterLevel);
+    this.awardPoints(pointsAwarded, `Level ${this.characterLevel} reached`);
 
     // Check for weapon unlocks
     this.checkWeaponUnlocks();
@@ -534,11 +610,17 @@ class GameStateManager {
     this.#logger.info(`Character level up! Now level ${this.characterLevel}`, {
       nextLevelXP: this.experienceToNextLevel,
       currentXP: this.experience,
+      pointsAwarded,
+      availablePoints: this.availablePoints,
     });
 
     this.#eventBus.emit(EventTypes.LEVEL_UP, {
       level: this.characterLevel,
       nextLevelXP: this.experienceToNextLevel,
+      totalXPForLevel: this.calculateXPRequired(this.characterLevel),
+      totalXPForNextLevel: this.calculateXPRequired(this.characterLevel + 1),
+      pointsAwarded,
+      availablePoints: this.availablePoints,
     });
   }
 
@@ -572,6 +654,200 @@ class GameStateManager {
       this.lives++;
       this.#eventBus.emit(EventTypes.EXTRA_LIFE, { lives: this.lives });
     }
+  }
+
+  /**
+   * Award points to the player with transaction tracking
+   * @param {number} points - Points to award (must be positive)
+   * @param {string} reason - Reason for awarding points
+   * @returns {void}
+   */
+  awardPoints(points, reason) {
+    if (typeof points !== 'number' || isNaN(points)) {
+      throw new TypeError('Points must be a valid number');
+    }
+    if (points <= 0) {
+      throw new Error('Points awarded must be positive');
+    }
+    if (typeof reason !== 'string' || reason.trim() === '') {
+      throw new TypeError('Reason must be a non-empty string');
+    }
+
+    this.availablePoints += points;
+
+    // Track transaction history
+    const transaction = {
+      type: 'earned',
+      amount: points,
+      reason: reason.trim(),
+      timestamp: Date.now(),
+      availableAfter: this.availablePoints,
+      spentAfter: this.spentPoints,
+    };
+    this.pointsHistory.push(transaction);
+
+    // Keep history reasonable (last 100 transactions)
+    if (this.pointsHistory.length > 100) {
+      this.pointsHistory.shift();
+    }
+
+    this.#logger.info(`Points awarded: ${points} (${reason})`, {
+      availablePoints: this.availablePoints,
+      spentPoints: this.spentPoints,
+    });
+
+    this.#eventBus.emit(EventTypes.POINTS_EARNED, {
+      amount: points,
+      reason,
+      availablePoints: this.availablePoints,
+      spentPoints: this.spentPoints,
+      transaction,
+    });
+  }
+
+  /**
+   * Spend points with validation and transaction tracking
+   * @param {number} amount - Points to spend (must be positive and <= available)
+   * @param {string} reason - Reason for spending points
+   * @returns {boolean} True if points were successfully spent, false otherwise
+   */
+  spendPoints(amount, reason) {
+    if (typeof amount !== 'number' || isNaN(amount)) {
+      throw new TypeError('Amount must be a valid number');
+    }
+    if (amount <= 0) {
+      throw new Error('Amount to spend must be positive');
+    }
+    if (typeof reason !== 'string' || reason.trim() === '') {
+      throw new TypeError('Reason must be a non-empty string');
+    }
+
+    // Validation: Can't spend more than available
+    if (amount > this.availablePoints) {
+      this.#logger.warn(`Cannot spend ${amount} points - only ${this.availablePoints} available`, {
+        requested: amount,
+        available: this.availablePoints,
+        reason: reason.trim(),
+      });
+      return false;
+    }
+
+    this.availablePoints -= amount;
+    this.spentPoints += amount;
+
+    // Track transaction history
+    const transaction = {
+      type: 'spent',
+      amount,
+      reason: reason.trim(),
+      timestamp: Date.now(),
+      availableAfter: this.availablePoints,
+      spentAfter: this.spentPoints,
+    };
+    this.pointsHistory.push(transaction);
+
+    // Keep history reasonable (last 100 transactions)
+    if (this.pointsHistory.length > 100) {
+      this.pointsHistory.shift();
+    }
+
+    this.#logger.info(`Points spent: ${amount} (${reason})`, {
+      availablePoints: this.availablePoints,
+      spentPoints: this.spentPoints,
+    });
+
+    this.#eventBus.emit(EventTypes.POINTS_SPENT, {
+      amount,
+      reason,
+      availablePoints: this.availablePoints,
+      spentPoints: this.spentPoints,
+      transaction,
+    });
+
+    return true;
+  }
+
+  /**
+   * Refund points (for respec functionality)
+   * @param {number} amount - Points to refund (must be positive and <= spent)
+   * @param {string} reason - Reason for refunding points
+   * @returns {boolean} True if points were successfully refunded, false otherwise
+   */
+  refundPoints(amount, reason) {
+    if (typeof amount !== 'number' || isNaN(amount)) {
+      throw new TypeError('Amount must be a valid number');
+    }
+    if (amount <= 0) {
+      throw new Error('Amount to refund must be positive');
+    }
+    if (typeof reason !== 'string' || reason.trim() === '') {
+      throw new TypeError('Reason must be a non-empty string');
+    }
+
+    // Validation: Can't refund more than spent
+    if (amount > this.spentPoints) {
+      this.#logger.warn(`Cannot refund ${amount} points - only ${this.spentPoints} spent`, {
+        requested: amount,
+        spent: this.spentPoints,
+        reason: reason.trim(),
+      });
+      return false;
+    }
+
+    this.availablePoints += amount;
+    this.spentPoints -= amount;
+
+    // Track transaction history
+    const transaction = {
+      type: 'refunded',
+      amount,
+      reason: reason.trim(),
+      timestamp: Date.now(),
+      availableAfter: this.availablePoints,
+      spentAfter: this.spentPoints,
+    };
+    this.pointsHistory.push(transaction);
+
+    // Keep history reasonable (last 100 transactions)
+    if (this.pointsHistory.length > 100) {
+      this.pointsHistory.shift();
+    }
+
+    this.#logger.info(`Points refunded: ${amount} (${reason})`, {
+      availablePoints: this.availablePoints,
+      spentPoints: this.spentPoints,
+    });
+
+    this.#eventBus.emit(EventTypes.POINTS_EARNED, {
+      amount,
+      reason: `Refund: ${reason}`,
+      availablePoints: this.availablePoints,
+      spentPoints: this.spentPoints,
+      transaction,
+    });
+
+    return true;
+  }
+
+  /**
+   * Get total points earned across all levels
+   * @returns {number} Total points that have been earned
+   */
+  getTotalPointsEarned() {
+    return this.availablePoints + this.spentPoints;
+  }
+
+  /**
+   * Get points breakdown for debugging
+   * @returns {Object} Points summary and transaction history
+   */
+  getPointsDebugInfo() {
+    return {
+      availablePoints: this.availablePoints,
+      spentPoints: this.spentPoints,
+      totalEarned: this.getTotalPointsEarned(),
+      transactionHistory: [...this.pointsHistory], // Copy to prevent external modification
+    };
   }
 
   /**
@@ -731,6 +1007,11 @@ class GameStateManager {
       experience: this.experience,
       experienceToNextLevel: this.experienceToNextLevel,
 
+      // Points system
+      availablePoints: this.availablePoints,
+      spentPoints: this.spentPoints,
+      totalPointsEarned: this.getTotalPointsEarned(),
+
       // Progress
       currentLevel: this.currentLevel,
       enemiesDestroyed: this.enemiesDestroyed,
@@ -798,9 +1079,14 @@ class GameStateManager {
       highestLevel: this.highestLevel,
       totalPlayTime: this.totalPlayTime,
 
+      // Points system data
+      availablePoints: this.availablePoints,
+      spentPoints: this.spentPoints,
+      pointsHistory: this.pointsHistory.slice(-50), // Save last 50 transactions
+
       // Settings and preferences
       lastPlayed: Date.now(),
-      version: '1.0.0',
+      version: '1.1.0', // Increment version for points system
     };
 
     this.saveGameData(gameData);
@@ -815,39 +1101,240 @@ class GameStateManager {
       throw new TypeError('data must be a valid object');
     }
     try {
-      localStorage.setItem(this.saveKey, JSON.stringify(data));
+      localStorage.setItem(this.#saveKey, JSON.stringify(data));
     } catch (error) {
       this.#logger.error('Failed to save game:', error);
     }
   }
 
   /**
-   * Load game data from localStorage
+   * Load game data from localStorage with migration and validation
    * @returns {Object} Loaded game data
    */
   loadGame() {
     try {
-      const savedData = localStorage.getItem(this.saveKey);
+      const savedData = localStorage.getItem(this.#saveKey);
       if (savedData) {
         const data = JSON.parse(savedData);
 
-        // Apply loaded data
-        if (data.characterLevel) this.characterLevel = data.characterLevel;
-        if (data.level) this.characterLevel = data.level; // Backward compatibility
-        if (data.totalEnemiesDestroyed) this.totalEnemiesDestroyed = data.totalEnemiesDestroyed;
-        if (data.weaponsUnlocked) this.weaponsUnlocked = new Set(data.weaponsUnlocked);
-        if (data.achievements) this.achievements = new Set(data.achievements);
-        if (data.highestLevel) this.highestLevel = data.highestLevel;
-        if (data.highestWave) this.highestLevel = data.highestWave; // Backward compatibility
-        if (data.totalPlayTime) this.totalPlayTime = data.totalPlayTime;
+        // Data migration for points system
+        const migratedData = this.migrateGameData(data);
 
-        return data;
+        // Apply loaded data
+        if (migratedData.characterLevel) this.characterLevel = migratedData.characterLevel;
+        if (migratedData.level) this.characterLevel = migratedData.level; // Backward compatibility
+        if (migratedData.totalEnemiesDestroyed) this.totalEnemiesDestroyed = migratedData.totalEnemiesDestroyed;
+        if (migratedData.weaponsUnlocked) this.weaponsUnlocked = new Set(migratedData.weaponsUnlocked);
+        if (migratedData.achievements) this.achievements = new Set(migratedData.achievements);
+        if (migratedData.highestLevel) this.highestLevel = migratedData.highestLevel;
+        if (migratedData.highestWave) this.highestLevel = migratedData.highestWave; // Backward compatibility
+        if (migratedData.totalPlayTime) this.totalPlayTime = migratedData.totalPlayTime;
+
+        // Load points system data
+        if (migratedData.availablePoints !== undefined) this.availablePoints = 20;
+        // if (migratedData.availablePoints !== undefined) this.availablePoints = migratedData.availablePoints;
+        if (migratedData.spentPoints !== undefined) this.spentPoints = migratedData.spentPoints;
+        if (migratedData.pointsHistory && Array.isArray(migratedData.pointsHistory)) {
+          this.pointsHistory = migratedData.pointsHistory;
+        }
+
+        // Validate points data consistency
+        this.validatePointsData();
+
+        // Apply development starting points if configured
+        this.applyDevelopmentStartingPoints();
+
+        return migratedData;
       }
     } catch (error) {
       this.#logger.error('Failed to load game:', error);
     }
 
+    // For new players (no saved data), apply development starting points
+    this.applyDevelopmentStartingPoints();
+
     return {};
+  }
+
+  /**
+   * Migrate game data to current version with points system
+   * @param {Object} data - Raw save data
+   * @returns {Object} Migrated data
+   */
+  migrateGameData(data) {
+    const currentVersion = '1.1.0';
+    const dataVersion = data.version || '1.0.0';
+
+    // No migration needed for current version
+    if (dataVersion === currentVersion) {
+      return data;
+    }
+
+    this.#logger.info(`Migrating save data from version ${dataVersion} to ${currentVersion}`);
+
+    // Migration from 1.0.0 to 1.1.0 - Add points system
+    if (dataVersion === '1.0.0') {
+      // Calculate total points that should have been earned based on character level
+      const characterLevel = data.characterLevel || data.level || 1;
+      let totalPointsEarned = 0;
+
+      // Calculate cumulative points for all levels reached
+      for (let level = 2; level <= characterLevel; level++) {
+        totalPointsEarned += this.calculatePointsForLevel(level);
+      }
+
+      // For existing players, award all points as available (nothing spent yet)
+      data.availablePoints = totalPointsEarned;
+      data.spentPoints = 0;
+      data.pointsHistory = [{
+        type: 'migration',
+        amount: totalPointsEarned,
+        reason: 'Migration from v1.0.0 - retroactive points for existing levels',
+        timestamp: Date.now(),
+        availableAfter: totalPointsEarned,
+        spentAfter: 0,
+      }];
+
+      data.version = '1.1.0';
+
+      this.#logger.info(`Migration complete: awarded ${totalPointsEarned} retroactive points for level ${characterLevel}`);
+    }
+
+    return data;
+  }
+
+  /**
+   * Validate points data for corruption detection and recovery
+   * @private
+   * @returns {void}
+   */
+  validatePointsData() {
+    const expectedTotal = this.getTotalPointsEarned();
+    const actualTotal = this.availablePoints + this.spentPoints;
+
+    // Check for negative values
+    if (this.availablePoints < 0 || this.spentPoints < 0) {
+      this.#logger.warn('Detected negative points values, resetting points system');
+      this.resetPointsData();
+      return;
+    }
+
+    // Check for reasonable values (no more than 1000 total points expected)
+    if (actualTotal > 1000) {
+      this.#logger.warn('Detected unreasonably high points values, possible corruption');
+      this.resetPointsData();
+      return;
+    }
+
+    // Calculate what points should be based on character level
+    let expectedPointsFromLevels = 0;
+    for (let level = 2; level <= this.characterLevel; level++) {
+      expectedPointsFromLevels += this.calculatePointsForLevel(level);
+    }
+
+    // Allow some tolerance for edge cases and manual awards
+    const tolerance = 50;
+    if (actualTotal > expectedPointsFromLevels + tolerance) {
+      this.#logger.warn('Points total exceeds expected value, possible corruption detected');
+      // Don't auto-reset in this case, just log for investigation
+    }
+
+    this.#logger.debug('Points validation passed', {
+      availablePoints: this.availablePoints,
+      spentPoints: this.spentPoints,
+      totalPoints: actualTotal,
+      expectedFromLevels: expectedPointsFromLevels,
+      characterLevel: this.characterLevel,
+    });
+  }
+
+  /**
+   * Apply development starting points for easier upgrade testing
+   * This method awards bonus points in development mode when certain conditions are met:
+   * - Only runs in development environment
+   * - Only awards points if the configured amount is positive
+   * - Will not duplicate points if already awarded (checks transaction history)
+   * - Safe for existing players - won't disrupt their progression
+   * @private
+   * @returns {void}
+   */
+  applyDevelopmentStartingPoints() {
+    const config = ConfigManager.getConfig();
+
+    // Only apply in development mode and if configured
+    if (!config.isDevelopment || !config.devStartingPoints || config.devStartingPoints <= 0) {
+      return;
+    }
+
+    // Check if development points have already been awarded (avoid duplicating on multiple loadGame calls)
+    const hasDevPointsTransaction = this.pointsHistory.some(transaction =>
+      transaction.type === 'dev_bonus' || transaction.reason.includes('Development starting points')
+    );
+
+    if (hasDevPointsTransaction) {
+      this.#logger.debug('Development starting points already awarded, skipping');
+      return;
+    }
+
+    // Award the development starting points
+    this.availablePoints += config.devStartingPoints;
+
+    // Track transaction history
+    const transaction = {
+      type: 'dev_bonus',
+      amount: config.devStartingPoints,
+      reason: 'Development starting points for upgrade testing',
+      timestamp: Date.now(),
+      availableAfter: this.availablePoints,
+      spentAfter: this.spentPoints,
+    };
+    this.pointsHistory.push(transaction);
+
+    // Keep history reasonable (last 100 transactions)
+    if (this.pointsHistory.length > 100) {
+      this.pointsHistory.shift();
+    }
+
+    this.#logger.info(`Development starting points awarded: ${config.devStartingPoints} points`, {
+      availablePoints: this.availablePoints,
+      spentPoints: this.spentPoints,
+      reason: 'Development upgrade testing',
+    });
+
+    // Emit event for UI updates
+    this.#eventBus.emit(EventTypes.POINTS_EARNED, {
+      amount: config.devStartingPoints,
+      reason: 'Development starting points',
+      availablePoints: this.availablePoints,
+      spentPoints: this.spentPoints,
+      transaction,
+    });
+  }
+
+  /**
+   * Reset points data in case of corruption
+   * @private
+   * @returns {void}
+   */
+  resetPointsData() {
+    // Recalculate points based on character level
+    let totalPointsEarned = 0;
+    for (let level = 2; level <= this.characterLevel; level++) {
+      totalPointsEarned += this.calculatePointsForLevel(level);
+    }
+
+    this.availablePoints = totalPointsEarned;
+    this.spentPoints = 0;
+    this.pointsHistory = [{
+      type: 'reset',
+      amount: totalPointsEarned,
+      reason: 'Points data reset due to corruption detection',
+      timestamp: Date.now(),
+      availableAfter: totalPointsEarned,
+      spentAfter: 0,
+    }];
+
+    this.#logger.info(`Points data reset: awarded ${totalPointsEarned} points for level ${this.characterLevel}`);
   }
 
   /**
@@ -855,7 +1342,7 @@ class GameStateManager {
    * @returns {void}
    */
   resetProgress() {
-    localStorage.removeItem(this.saveKey);
+    localStorage.removeItem(this.#saveKey);
 
     // Reset to initial state
     this.characterLevel = 1;
@@ -864,6 +1351,11 @@ class GameStateManager {
     this.achievements = new Set();
     this.highestLevel = 1;
     this.totalPlayTime = 0;
+
+    // Reset points system
+    this.availablePoints = 0;
+    this.spentPoints = 0;
+    this.pointsHistory = [];
 
     this.initializeMilestones();
 
@@ -884,6 +1376,9 @@ class GameStateManager {
       consecutiveHits: this.consecutiveHits,
       powerUps: this.powerUpsCollected,
       fps: Math.round(this.performanceMetrics.averageFPS),
+      availablePoints: this.availablePoints,
+      spentPoints: this.spentPoints,
+      totalPoints: this.getTotalPointsEarned(),
     };
   }
 
