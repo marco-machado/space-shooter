@@ -1,4 +1,3 @@
-import ConfigManager from '@/config/ConfigManager.js';
 import { getEventBus } from '@/event-bus/EventBus.js';
 import { EventTypes } from '@/event-bus/EventTypes.js';
 import Logger from '@/utils/Logger.js';
@@ -110,6 +109,16 @@ export default class UIScene extends Phaser.Scene {
       .setOrigin(0, 0.5);
     this.#uiElements.healthBar.setScrollFactor(0);
 
+    // Health numerical display
+    this.#uiElements.healthText = this.add
+      .text(healthBarX + healthBarWidth + 10, healthBarY, '5/5', {
+        fontSize: '16px',
+        color: '#ffffff',
+        fontFamily: 'monospace',
+      })
+      .setOrigin(0, 0.5);
+    this.#uiElements.healthText.setScrollFactor(0);
+
     // Pause indicator (initially hidden)
     this.#uiElements.pauseText = this.add
       .text(this.scale.width / 2, this.scale.height / 2, 'PAUSED', {
@@ -151,9 +160,20 @@ export default class UIScene extends Phaser.Scene {
     const scoreListenerId = this.#eventBus.on(EventTypes.SCORE_UPDATED, this.onScoreUpdated, this);
     this.#listenerIds.push(scoreListenerId);
 
-    // Health update listener
-    const healthListenerId = this.#eventBus.on('ui:healthUpdate', this.handleHealthUpdate, this);
-    this.#listenerIds.push(healthListenerId);
+    // Health update listeners
+    const healthDecreasedListenerId = this.#eventBus.on(
+      EventTypes.HEALTH_DECREASED,
+      this.handleHealthUpdate,
+      this,
+    );
+    this.#listenerIds.push(healthDecreasedListenerId);
+
+    const healthIncreasedListenerId = this.#eventBus.on(
+      EventTypes.HEALTH_INCREASED,
+      this.handleHealthUpdate,
+      this,
+    );
+    this.#listenerIds.push(healthIncreasedListenerId);
 
     // Weapon update listener
     const weaponListenerId = this.#eventBus.on('ui:weaponUpdate', this.handleWeaponUpdate, this);
@@ -182,6 +202,14 @@ export default class UIScene extends Phaser.Scene {
       this,
     );
     this.#listenerIds.push(pauseListenerId);
+
+    // Game over listener
+    const gameOverListenerId = this.#eventBus.on(
+      EventTypes.GAME_OVER,
+      this.handleGameOver,
+      this,
+    );
+    this.#listenerIds.push(gameOverListenerId);
   }
 
   /**
@@ -206,8 +234,14 @@ export default class UIScene extends Phaser.Scene {
     if (!this.#uiElements.healthBar || data.healthPercent === undefined) return;
 
     const healthPercent = Math.max(0, Math.min(1, data.healthPercent));
+    const { currentHealth, maxHealth } = data;
     const maxWidth = 200;
     this.#uiElements.healthBar.width = maxWidth * healthPercent;
+
+    // Update numerical health display
+    if (this.#uiElements.healthText) {
+      this.#uiElements.healthText.setText(`${currentHealth}/${maxHealth}`);
+    }
 
     // Change color based on health
     if (healthPercent > 0.6) {
@@ -354,6 +388,66 @@ export default class UIScene extends Phaser.Scene {
     if (this.#uiElements.pauseOverlay) {
       this.#uiElements.pauseOverlay.setVisible(false);
     }
+  }
+
+  /**
+   * Handle game over event - fade out UI elements
+   * @param {Object} data - Game over event data
+   */
+  handleGameOver(data) {
+    this.#logger.debug('Game over received in UIScene:', data);
+
+    // Fade out all UI elements except pause overlay
+    const elementsToFade = [
+      this.#uiElements.scoreText,
+      this.#uiElements.livesText,
+      this.#uiElements.levelText,
+      this.#uiElements.weaponText,
+      this.#uiElements.accuracyText,
+      this.#uiElements.healthBar,
+      this.#uiElements.healthText,
+    ].filter(element => element);
+
+    elementsToFade.forEach(element => {
+      this.tweens.add({
+        targets: element,
+        alpha: 0,
+        duration: 1000,
+        ease: 'Power2.easeOut'
+      });
+    });
+
+    // Brief "GAME OVER" overlay before scene transition
+    const gameOverText = this.add.text(
+      this.cameras.main.width / 2,
+      this.cameras.main.height / 2,
+      'GAME OVER',
+      {
+        fontSize: '48px',
+        color: '#ff0000',
+        fontFamily: 'Arial Black',
+        stroke: '#ffffff',
+        strokeThickness: 2
+      }
+    ).setOrigin(0.5).setAlpha(0);
+
+    // Animate game over text
+    this.tweens.add({
+      targets: gameOverText,
+      alpha: 1,
+      scale: { from: 1.5, to: 1 },
+      duration: 800,
+      ease: 'Back.easeOut',
+      onComplete: () => {
+        // Fade out after brief display
+        this.tweens.add({
+          targets: gameOverText,
+          alpha: 0,
+          duration: 500,
+          delay: 500
+        });
+      }
+    });
   }
 
   /**

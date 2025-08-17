@@ -7,6 +7,7 @@ import { makeEnemyDamagedEvent } from '@/event-bus/EnemyEvents.js';
 import { getEventBus } from '@/event-bus/EventBus.js';
 import { EventTypes } from '@/event-bus/EventTypes.js';
 import EnemySystem from '@/systems/EnemySystem.js';
+import PlayerHealthSystem from '@/systems/PlayerHealthSystem.js';
 import GameStateManager from '@/utils/GameStateManager.js';
 import Logger from '@/utils/Logger.js';
 
@@ -32,6 +33,7 @@ export default class GameScene extends Phaser.Scene {
   #powerupGroup;
 
   #enemySpawner;
+  #playerHealthSystem;
   #pauseKey;
   #debugSpawnKey;
   #fireKey;
@@ -70,10 +72,14 @@ export default class GameScene extends Phaser.Scene {
 
     this.player = playerFactory(this.#playerGroup);
 
+    // Setup Player Health System
+    this.#playerHealthSystem = new PlayerHealthSystem(this.player);
+
     // Setup Enemy Spawner
     this.#enemySpawner = new EnemySystem(this, this.#enemyGroup);
 
     this.#eventBus.on(EventTypes.GAME_PAUSE_TOGGLE, this.onPauseToggle, this);
+    this.#eventBus.on(EventTypes.GAME_OVER, this.onGameOver, this);
 
     this.scene.launch('UIScene');
 
@@ -159,6 +165,37 @@ export default class GameScene extends Phaser.Scene {
       this.physics.resume();
       this.time.paused = false;
     }
+  }
+
+  /**
+   * Handle game over event
+   * @param {Object} data - Game over event data
+   */
+  onGameOver(data) {
+    this.#logger.debug('Game over event received:', data);
+
+    // Stop all game systems
+    if (this.player) {
+      this.player.setActive(false);
+      this.player.setVisible(false);
+    }
+
+    // Pause physics to stop all movement
+    this.physics.pause();
+
+    // Disable input
+    this.input.keyboard.enabled = false;
+
+    // Note: EnemySystem automatically handles GAME_OVER events
+
+    // Create transition effect and switch scenes
+    this.cameras.main.fadeOut(1000);
+
+    this.cameras.main.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
+      // Stop UIScene before starting GameOverScene
+      this.scene.stop('UIScene');
+      this.scene.start('GameOverScene', data);
+    });
   }
 
   /**
@@ -374,7 +411,7 @@ export default class GameScene extends Phaser.Scene {
     this.#logger.debug('Player takes damage', { damage });
 
     // Emit player damage event
-    this.#eventBus.emit(EventTypes.PLAYER_DAMAGE, {
+    this.#eventBus.emit(EventTypes.PLAYER_DAMAGED, {
       player,
       damage,
       cause: 'enemy-projectile',
@@ -392,14 +429,18 @@ export default class GameScene extends Phaser.Scene {
    * @returns {void}
    */
   handlePlayerEnemyCollision(player, enemy) {
-    // this.#logger.debug('handlePlayerEnemyCollision', player, enemy);
+    // Apply collision damage to player
+    const damage = enemy.getEnemyComponent ? enemy.getEnemyComponent().damage : 1;
 
-    // Damage both player and enemy on collision
+    const event = makeEnemyDamagedEvent(enemy, 5);
+    this.#eventBus.emit(event.type, event.data, event.priority);
 
-    // TODO: Implement player damage when player system is ready
-    // if (player && player.takeDamage && typeof player.takeDamage === 'function') {
-    //   player.takeDamage(enemy.getEnemyComponent ? enemy.getEnemyComponent().damage : 1, enemy);
-    // }
+    // Emit player damage event
+    this.#eventBus.emit(EventTypes.PLAYER_DAMAGED, {
+      damage,
+      source: 'collision',
+      enemy,
+    });
   }
 
   /**
@@ -408,7 +449,30 @@ export default class GameScene extends Phaser.Scene {
    * @param {Phaser.Physics.Arcade.Sprite} powerup - The power-up sprite
    * @returns {void}
    */
-  handlePlayerPowerupCollision(player, powerup) {
-    // this.#logger.debug('handlePlayerPowerupCollision', player, powerup);
+  handlePlayerPowerupCollision(_player, _powerup) {
+    // this.#logger.debug('handlePlayerPowerupCollision', _player, _powerup);
+  }
+
+  /**
+   * Clean up scene resources when shutting down
+   * @returns {void}
+   */
+  shutdown() {
+    // Clean up PlayerHealthSystem
+    if (this.#playerHealthSystem) {
+      this.#playerHealthSystem.destroy();
+      this.#playerHealthSystem = null;
+    }
+
+    // Remove event listeners
+    this.#eventBus.off(EventTypes.GAME_PAUSE_TOGGLE, this.onPauseToggle, this);
+    this.#eventBus.off(EventTypes.GAME_OVER, this.onGameOver, this);
+
+    // Clean up other systems
+    if (this.#gameStateManager) {
+      this.#gameStateManager.destroy();
+    }
+
+    this.#logger.debug('GameScene shutdown complete');
   }
 }

@@ -21,6 +21,13 @@ export const EventTypes = {
 
   SCORE_UPDATED: 'score-updated',
 
+  HEALTH_MAX_INCREASED: 'health-max-increased', // Will be used with progression system later
+  HEALTH_INCREASED: 'health-increased', // Will be used by power-ups later
+  HEALTH_DECREASED: 'health-decreased', // When damage received
+
+  PLAYER_DAMAGED: 'player-damaged',
+  PLAYER_DESTROYED: 'player-death',
+
   /** UNCONFIRMED EVENTS **/
 
   // Input Events
@@ -61,7 +68,6 @@ export const EventTypes = {
   INPUT_TOUCH_END: 'input-touch-end',
   INPUT_TOUCH_MOVE: 'input-touch-move',
   INPUT_TOUCH_START: 'input-touch-start',
-  PLAYER_INPUT: 'player-input',
 
   // BaseEntity Events
   ENTITY_ACTIVATED: 'entity-activated',
@@ -74,28 +80,12 @@ export const EventTypes = {
   ENTITY_MOVED: 'entity-moved',
   ENTITY_DAMAGE: 'entity-damage',
   ENTITY_HEAL: 'entity-heal',
-  ENTITY_DEATH: 'entity-death',
 
   // Game Logic Events
-  COLLISION_CONTINUED: 'collision-continued',
-  COLLISION_DETECTED: 'collision-detected',
-  COLLISION_ENDED: 'collision-ended',
-  COLLISION_STARTED: 'collision-started',
-
-  DAMAGE_DEALT: 'damage-dealt',
-  DAMAGE_RECEIVED: 'damage-received',
-
-  PICKUP_COLLECTED: 'pickup-collected',
-
-  PLAYER_DAMAGE: 'player-damage',
-  PLAYER_DEATH: 'player-death',
-
   POWERUP_ACTIVATED: 'powerup-activated',
   POWERUP_COLLECTED: 'powerup-collected',
-  POWERUP_EXPIRED: 'powerup-expired',
 
-  PROJECTILE_CREATED: 'projectile-created',
-  PROJECTILE_DESTROYED: 'projectile-destroyed',
+  POWERUP_EXPIRED: 'powerup-expired',
 
   WEAPON_CHARGE_STARTED: 'weapon-charge-started',
   WEAPON_CHARGE_STOPPED: 'weapon-charge-stopped',
@@ -137,49 +127,6 @@ export const EventTypes = {
   LEVEL_UP: 'level-up',
 
   WEAPON_UNLOCKED: 'weapon-unlocked',
-
-  // Audio Events
-  AUDIO_CROSSFADE: 'audio-crossfade',
-  AUDIO_FADE_IN: 'audio-fade-in',
-  AUDIO_FADE_OUT: 'audio-fade-out',
-  AUDIO_LISTENER_MOVE: 'audio-listener-move',
-  AUDIO_LOAD_ERROR: 'audio-load-error',
-  AUDIO_LOADED: 'audio-loaded',
-  AUDIO_MUSIC_FADE: 'audio-music-fade',
-  AUDIO_MUSIC_PLAY: 'audio-music-play',
-  AUDIO_MUSIC_STARTED: 'audio-music-started',
-  AUDIO_MUSIC_STOP: 'audio-music-stop',
-  AUDIO_MUSIC_STOPPED: 'audio-music-stopped',
-  AUDIO_MUTE_TOGGLE: 'audio-mute-toggle',
-  AUDIO_PAUSE_MUSIC: 'audio-pause-music',
-  AUDIO_PAUSE_SOUND: 'audio-pause-sound',
-  AUDIO_PLAY_MUSIC: 'audio-play-music',
-  AUDIO_PLAY_SOUND: 'audio-play-sound',
-  AUDIO_PRELOAD: 'audio-preload',
-  AUDIO_RESUME_MUSIC: 'audio-resume-music',
-  AUDIO_RESUME_SOUND: 'audio-resume-sound',
-  AUDIO_SOUND_PAUSE: 'audio-sound-pause',
-  AUDIO_SOUND_PLAY: 'audio-sound-play',
-  AUDIO_SOUND_RESUME: 'audio-sound-resume',
-  AUDIO_SOUND_STARTED: 'audio-sound-started',
-  AUDIO_SOUND_STOP: 'audio-sound-stop',
-  AUDIO_SOUND_STOPPED: 'audio-sound-stopped',
-  AUDIO_STOP_MUSIC: 'audio-stop-music',
-  AUDIO_STOP_SOUND: 'audio-stop-sound',
-  AUDIO_VOLUME_CHANGE: 'audio-volume-change',
-  AUDIO_VOLUME_CHANGED: 'audio-volume-changed',
-
-  // Asset Events
-  ASSET_BATCH_COMPLETE: 'asset-batch-complete',
-  ASSET_BATCH_PROGRESS: 'asset-batch-progress',
-  ASSET_BATCH_START: 'asset-batch-start',
-  ASSET_LOADED: 'asset-loaded',
-  ASSET_LOAD_FAILED: 'asset-load-failed',
-  ASSET_LOAD_REQUEST: 'asset-load-request',
-  ASSET_PRELOAD_REQUEST: 'asset-preload-request',
-  ASSET_PROGRESS: 'asset-progress',
-  ASSET_UNLOADED: 'asset-unloaded',
-  ASSET_UNLOAD_REQUEST: 'asset-unload-request',
 };
 
 /**

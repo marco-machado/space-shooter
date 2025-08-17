@@ -1,6 +1,11 @@
 import HealthComponent from '@/components/Health.js';
 import { GameConfig } from '@/config/GameConfig.js';
 
+/**
+ * Creates a new player entity with movement controls and health component.
+ * @param {Phaser.Physics.Arcade.Group} playerGroup - The physics group to add the player to
+ * @returns {Phaser.GameObjects.Rectangle} The created player object with update and destroy methods
+ */
 export function playerFactory(playerGroup) {
   const scene = playerGroup.scene;
 
@@ -12,12 +17,13 @@ export function playerFactory(playerGroup) {
     GameConfig.PLAYER.COLOR,
   );
 
+  // playerGroup adds a physics body to player
   playerGroup.add(player);
 
   player.body.setCollideWorldBounds(true);
 
   // Add health component
-  player.health = new HealthComponent(player, 100);
+  player.health = new HealthComponent(player, GameConfig.PLAYER.HEALTH);
 
   /**
    * Update player movement based on keyboard input.
@@ -26,7 +32,13 @@ export function playerFactory(playerGroup) {
    * @returns {void}
    */
   player.update = function (cursors, _delta) {
+    // Enhanced input validation
     if (!cursors || !this.body) return;
+    if (!cursors.left || !cursors.right || !cursors.up || !cursors.down) return;
+    if (typeof cursors.left.isDown !== 'boolean' || 
+        typeof cursors.right.isDown !== 'boolean' || 
+        typeof cursors.up.isDown !== 'boolean' || 
+        typeof cursors.down.isDown !== 'boolean') return;
 
     const speed = GameConfig.PLAYER.SPEED;
     let velocityX = 0;
