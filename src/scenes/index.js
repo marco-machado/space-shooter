@@ -4,3 +4,4 @@ export { default as PreloaderScene } from './PreloaderScene.js';
 export { default as GameScene } from './GameScene.js';
 export { default as UIScene } from './UIScene.js';
 export { default as GameOverScene } from './GameOverScene.js';
+export { default as UpgradeTreeScene } from './UpgradeTreeScene.js';

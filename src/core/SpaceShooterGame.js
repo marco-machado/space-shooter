@@ -1,7 +1,7 @@
 import ConfigManager from '@/config/ConfigManager.js';
 import { getEventBus } from '@/event-bus/EventBus.js';
 import { EventTypes } from '@/event-bus/EventTypes.js';
-import { BootScene, GameScene, GameOverScene, MainMenuScene, PreloaderScene, UIScene } from '@/scenes';
+import { BootScene, GameScene, GameOverScene, MainMenuScene, PreloaderScene, UIScene, UpgradeTreeScene } from '@/scenes';
 import Logger from '@/utils/Logger.js';
 import Phaser from 'phaser';
 
@@ -39,7 +39,7 @@ export default class SpaceShooterGame {
       }
 
       // Register scenes with ConfigManager
-      ConfigManager.registerScenes([BootScene, PreloaderScene, MainMenuScene, GameScene, UIScene, GameOverScene]);
+      ConfigManager.registerScenes([BootScene, PreloaderScene, MainMenuScene, GameScene, UIScene, GameOverScene, UpgradeTreeScene]);
 
       // Get Phaser game configuration
       const config = ConfigManager.getPhaserConfig();
