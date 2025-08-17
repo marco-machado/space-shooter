@@ -21,6 +21,7 @@ export const GameConfig = {
     HEIGHT: 64,
     COLOR: 0x0099ff,
     START_Y_OFFSET: 100,
+    HEALTH: 5,
   },
 
   // Projectile settings

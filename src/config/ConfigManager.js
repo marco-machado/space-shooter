@@ -254,13 +254,19 @@ export default class ConfigManager {
 
     // Validate against performance bounds
     const bounds = PerformanceConfig.BOUNDS;
-    if (this.MAX_PARTICLES < bounds.MAX_PARTICLES.min || this.MAX_PARTICLES > bounds.MAX_PARTICLES.max) {
+    if (
+      this.MAX_PARTICLES < bounds.MAX_PARTICLES.min ||
+      this.MAX_PARTICLES > bounds.MAX_PARTICLES.max
+    ) {
       Logger.scope('ConfigManager').warn(
         `MAX_PARTICLES (${this.MAX_PARTICLES}) is outside recommended bounds (${bounds.MAX_PARTICLES.min}-${bounds.MAX_PARTICLES.max})`,
       );
     }
 
-    if (this.OBJECT_POOL_SIZE < bounds.OBJECT_POOL_SIZE.min || this.OBJECT_POOL_SIZE > bounds.OBJECT_POOL_SIZE.max) {
+    if (
+      this.OBJECT_POOL_SIZE < bounds.OBJECT_POOL_SIZE.min ||
+      this.OBJECT_POOL_SIZE > bounds.OBJECT_POOL_SIZE.max
+    ) {
       Logger.scope('ConfigManager').warn(
         `OBJECT_POOL_SIZE (${this.OBJECT_POOL_SIZE}) is outside recommended bounds (${bounds.OBJECT_POOL_SIZE.min}-${bounds.OBJECT_POOL_SIZE.max})`,
       );

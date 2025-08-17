@@ -12,7 +12,7 @@ export const PerformanceConfig = {
   // Object pooling and memory management
   DEFAULT_MAX_PARTICLES: 1000,
   DEFAULT_OBJECT_POOL_SIZE: 200,
-  
+
   // Performance bounds and validation
   BOUNDS: {
     MAX_PARTICLES: { min: 100, max: 10000 },

@@ -166,7 +166,7 @@ class GameStateManager {
       this.#eventListenerIds.set('enemyDeath', enemyDestroyedId);
 
       const playerDamageId = this.#eventBus.on(
-        EventTypes.PLAYER_DAMAGE,
+        EventTypes.PLAYER_DAMAGED,
         this.onPlayerDamage,
         this,
         EventPriority.HIGH,
@@ -174,8 +174,8 @@ class GameStateManager {
       this.#eventListenerIds.set('playerDamage', playerDamageId);
 
       const playerDeathId = this.#eventBus.on(
-        EventTypes.PLAYER_DEATH,
-        this.onPlayerDeath,
+        EventTypes.PLAYER_DESTROYED,
+        this.onPlayerDestroyed,
         this,
         EventPriority.HIGH,
       );
@@ -424,18 +424,10 @@ class GameStateManager {
    * Handle player death event
    * @returns {void}
    */
-  onPlayerDeath() {
-    this.lives--;
+  onPlayerDestroyed() {
     this.consecutiveHits = 0;
 
-    if (this.lives <= 0) {
-      this.endGame('no_lives');
-    } else {
-      this.#logger.info(`Player died, ${this.lives} lives remaining`);
-
-      // Brief invulnerability bonus score
-      this.addScore(100);
-    }
+    this.endGame('no_lives');
   }
 
   /**
