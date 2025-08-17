@@ -36,21 +36,21 @@ Create an engaging top-down space shooter game using Phaser.js 3.x with Vite bui
 
 ### 2. Weapon System
 
-**Objective**: Provide varied combat options with meaningful upgrade paths
+**Objective**: Provide varied combat options
 
 #### Weapon Types:
 
-1. **Laser Cannon** (Starting weapon)
+1. **Laser Cannon**
    - High fire rate, low damage
    - Straight-line projectiles
    - Upgrades: Increased damage, faster projectiles, multi-shot
 
-2. **Plasma Gun** (Unlocked at level 3)
+2. **Plasma Gun**
    - Medium fire rate, medium damage
    - Slightly slower projectiles with area effect
    - Upgrades: Larger blast radius, piercing shots, chain lightning
 
-3. **Missile Launcher** (Unlocked at level 7)
+3. **Missile Launcher**
    - Low fire rate, high damage
    - Homing projectiles (when upgraded)
    - Upgrades: Homing capability, cluster bombs, increased blast radius
@@ -161,7 +161,7 @@ Create an engaging top-down space shooter game using Phaser.js 3.x with Vite bui
 1. **Weapons**: Damage, fire rate, special effects
 2. **Defense**: Hull strength, shield capacity, regeneration
 3. **Mobility**: Speed, acceleration, maneuverability
-4. **Special**: Weapon switching speed, power-up duration, XP multiplier
+4. **Special**: Power-up duration, XP multiplier
 
 #### Progression Persistence:
 
@@ -175,7 +175,7 @@ Create an engaging top-down space shooter game using Phaser.js 3.x with Vite bui
 - Player can see clear improvement over time
 - Persistent saves work reliably across sessions
 
-### 5. Difficulty Scaling
+### 6. Difficulty Scaling
 
 **Objective**: Provide escalating challenge and varied gameplay
 
@@ -233,7 +233,8 @@ Create an engaging top-down space shooter game using Phaser.js 3.x with Vite bui
 
 ### Main Menu:
 
-- Start Game button
+- Continue saved game button (if available)
+- Start new game button
 - High Scores display
 - Help/Instructions screen
 
@@ -274,3 +275,9 @@ Create an engaging top-down space shooter game using Phaser.js 3.x with Vite bui
 - Boss encounter music (more intense)
 - Game over music
 - Volume controls for music and SFX separately
+
+## Implementation Roadmap
+
+[ ] Clean-up EventType by removing unused events, and make sure all events use EventTypes.
+[ ] Document all existing event flows with diagrams.
+[ ] Create and implement a design system and UI library. Replace all UI with components.

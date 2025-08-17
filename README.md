@@ -7,13 +7,14 @@ A modern space shooter game built with **Phaser.js 3.x** and **Vite**, featuring
 **🚨 PROTECT GAME INTEGRITY - READ BEFORE DEVELOPMENT**
 
 - **NEVER lint the whole project** - Use selective linting on specific files only
-- **NEVER modify GameScene.js for testing** - Game scene integrity is paramount  
+- **NEVER modify GameScene.js for testing** - Game scene integrity is paramount
 - **NEVER run automated tools on game scenes/systems** - Manual development only
 - **USE ONLY safe scripts** - See [Available Scripts](#-available-scripts-protective-usage) section
 
 **Safe Development Approach:**
+
 - ✅ `npm run dev` - Always safe for development
-- ✅ `eslint src/utils/MathUtils.js` - Single file linting only  
+- ✅ `eslint src/utils/MathUtils.js` - Single file linting only
 - ✅ `npm run test` - Only tests utilities, never game files
 - ❌ `npm run lint` - FORBIDDEN: Whole project linting
 - ❌ `npm run validate` - FORBIDDEN: Interferes with game files
@@ -56,6 +57,7 @@ A modern space shooter game built with **Phaser.js 3.x** and **Vite**, featuring
 ### Technical Achievements
 
 #### **Architecture Excellence**
+
 - ✅ **Enhanced Game Objects**: Flexible BaseEntity with 6 GameObject types + null logical entities
 - ✅ **Auto-Initialization**: Logger scopeName with zero manual setup, dual environment support
 - ✅ **Event-Driven Input**: KeyboardInputAdapter with normalized movement and state tracking
@@ -63,6 +65,7 @@ A modern space shooter game built with **Phaser.js 3.x** and **Vite**, featuring
 - ✅ **EventBus Integration**: Decoupled communication with structured event emission
 
 #### **Testing & Quality**
+
 - ✅ **Comprehensive Testing**: 36+ unit tests with strategic Phaser mocking
 - ✅ **Architecture Coverage**: Logger (32 tests), BaseEntity, ObjectPool, SaveManager
 - ✅ **100% Test Success**: Fast execution (~661ms), reliable edge case coverage
@@ -70,6 +73,7 @@ A modern space shooter game built with **Phaser.js 3.x** and **Vite**, featuring
 - ✅ **Developer Experience**: Eliminated initialization errors, enhanced debugging
 
 #### **Performance & Optimization**
+
 - ✅ **Performance**: 125 FPS sustained (208% of target), 33-45MB memory (under 100MB target)
 - ✅ **Object Pooling**: 100 projectiles per pool, 0% pool misses during testing
 - ✅ **Spatial Optimization**: 64px grid collision scopeName for efficient detection
@@ -131,6 +135,7 @@ The game will be available at `http://localhost:5173`
 ### Available Scripts (PROTECTIVE USAGE)
 
 #### **✅ SAFE Scripts (Always Use These)**
+
 ```bash
 # Development (Always safe)
 npm run dev          # Start Vite dev server with HMR
@@ -148,6 +153,7 @@ npm run clean        # Clean build artifacts
 ```
 
 #### **⚠️ SELECTIVE Scripts (Use With Caution - Target Specific Files Only)**
+
 ```bash
 # Code Quality (NEVER use on whole project)
 npm run format:check # Check if code is formatted (read-only)
@@ -158,15 +164,17 @@ prettier --check src/utils/          # ✅ Directory-specific formatting
 ```
 
 #### **❌ FORBIDDEN Scripts (NEVER USE - Interfere with Game Development)**
+
 ```bash
 # These scripts operate on whole project and interfere with game files:
 # npm run lint         # FORBIDDEN: Whole project linting
 # npm run lint:fix     # FORBIDDEN: Automated fixes project-wide
-# npm run format       # FORBIDDEN: May format protected game files  
+# npm run format       # FORBIDDEN: May format protected game files
 # npm run validate     # FORBIDDEN: Runs whole project quality checks
 ```
 
 #### **🚨 Emergency Bypass (When Automation Blocks Development)**
+
 ```bash
 # Temporary bypass when automated tools interfere:
 export SKIP_LINT=true && npm run dev
@@ -226,7 +234,7 @@ VITE_SHOW_DEBUG_INFO=true    # Show debug information overlay
    ```bash
    npm run test               # ✅ Only tests utils/ directory
    vitest src/utils/MathUtils.test.js  # ✅ Single test file
-   
+
    # ❌ FORBIDDEN: Never test game scenes or systems
    # Never modify GameScene.js for testing
    ```
@@ -238,12 +246,14 @@ VITE_SHOW_DEBUG_INFO=true    # Show debug information overlay
    ```
 
 #### **Protected Files (NO AUTOMATED CHANGES)**
+
 - **GameScene.js** - Critical gameplay scene (manual changes only)
 - **All scenes/** - Game scenes protected from automation
-- **All systems/** - Game systems protected from automation  
+- **All systems/** - Game systems protected from automation
 - **All entities/** - Game entities protected from automation
 
 #### **Safe Files for Automation**
+
 - **utils/** - Utility functions (safe for linting/testing)
 - **config/** - Configuration files (safe for linting)
 
@@ -256,70 +266,71 @@ VITE_SHOW_DEBUG_INFO=true    # Show debug information overlay
 ```javascript
 // ✨ NEW: Flexible BaseEntity - Multiple GameObject types or pure logical entities
 class Player extends BaseEntity {
-   constructor(scene) {
-      // Backward compatible - continues working
-      super(scene, x, y, 64, 64, 0x0099ff); // Blue rectangle
-      
-      // OR use new flexible configuration
-      super(scene, {
-         type: 'sprite',          // 'rectangle', 'sprite', 'circle', 'text', null
-         x: 400, y: 300,
-         texture: 'player-sprite', // For sprite types
-         name: 'player'
-      });
+  constructor(scene) {
+    // Backward compatible - continues working
+    super(scene, x, y, 64, 64, 0x0099ff); // Blue rectangle
 
-      this.addComponent(new HealthComponent(100))
-          .addComponent(new MovementComponent(300))
-          .addComponent(new WeaponComponent('laser'));
-   }
-   
-   // ✨ NEW: Runtime GameObject type changes
-   upgrade() {
-      this.changeGameObjectType('sprite', { texture: 'upgraded-player' });
-   }
+    // OR use new flexible configuration
+    super(scene, {
+      type: 'sprite', // 'rectangle', 'sprite', 'circle', 'text', null
+      x: 400,
+      y: 300,
+      texture: 'player-sprite', // For sprite types
+      name: 'player',
+    });
+
+    this.addComponent(new HealthComponent(100))
+      .addComponent(new MovementComponent(300))
+      .addComponent(new WeaponComponent('laser'));
+  }
+
+  // ✨ NEW: Runtime GameObject type changes
+  upgrade() {
+    this.changeGameObjectType('sprite', { texture: 'upgraded-player' });
+  }
 }
 
 // Enhanced BaseComponent - Data containers with entity references and serialization
 class HealthComponent extends BaseComponent {
-   constructor(maxHealth) {
-      super();
-      this.maxHealth = maxHealth;
-      this.currentHealth = maxHealth;
-   }
-   
-   // ✨ NEW: Enhanced component functionality
-   serialize() {
-      return { maxHealth: this.maxHealth, currentHealth: this.currentHealth };
-   }
+  constructor(maxHealth) {
+    super();
+    this.maxHealth = maxHealth;
+    this.currentHealth = maxHealth;
+  }
+
+  // ✨ NEW: Enhanced component functionality
+  serialize() {
+    return { maxHealth: this.maxHealth, currentHealth: this.currentHealth };
+  }
 }
 
 // ✨ NEW: KeyboardInputAdapter - Event-driven input management
 class KeyboardInputAdapter extends BaseAdapter {
-   constructor(scene) {
-      super(scene); // Auto-gets EventBus
-      this.inputState = {
-         movement: { x: 0, y: 0 },
-         keys: new Set(),
-         weaponFiring: false
-      };
-   }
-   
-   updateMovementState() {
-      // Normalized diagonal movement calculation
-      // Emits structured PLAYER_INPUT events via EventBus
-   }
+  constructor(scene) {
+    super(scene); // Auto-gets EventBus
+    this.inputState = {
+      movement: { x: 0, y: 0 },
+      keys: new Set(),
+      weaponFiring: false,
+    };
+  }
+
+  updateMovementState() {
+    // Normalized diagonal movement calculation
+    // Emits structured PLAYER_INPUT events via EventBus
+  }
 }
 
 // BaseSystem - Logic processors with enhanced error handling
 class MovementSystem extends BaseSystem {
-   update(entities, delta) {
-      entities.forEach(entity => {
-         const movement = entity.getComponent(MovementComponent);
-         if (movement && entity.active) {
-            movement.update(delta);
-         }
-      });
-   }
+  update(entities, delta) {
+    entities.forEach(entity => {
+      const movement = entity.getComponent(MovementComponent);
+      if (movement && entity.active) {
+        movement.update(delta);
+      }
+    });
+  }
 }
 ```
 
@@ -352,7 +363,7 @@ import Logger from '@/utils/Logger.js';
 
 // ✨ NEW: Works immediately - no manual init() required!
 Logger.debug('Player spawned at', x, y); // Auto-initializes on first call
-Logger.info('Game started'); // General information  
+Logger.info('Game started'); // General information
 Logger.warn('Low health warning'); // Potential issues
 Logger.error('Failed to load asset'); // Critical problems
 
@@ -381,7 +392,7 @@ Logger.groupEnd();
 
 The game uses simple colored shapes for rapid prototyping:
 
-| BaseEntity Type | Graphics            | Production Ready |
+| BaseEntity Type | Graphics                        | Production Ready |
 | --------------- | ------------------------------- | ---------------- |
 | **Player**      | Blue 64x64px rectangle          | ✅ Functional    |
 | **Enemies**     | Red rectangles (various sizes)  | 🔄 Coming Soon   |
@@ -754,10 +765,10 @@ npm run build -- --mode production
 ```javascript
 // 1. Create BaseComponent (data only)
 export class NewComponent extends BaseComponent {
-   constructor(data) {
-      super();
-      this.someProperty = data;
-   }
+  constructor(data) {
+    super();
+    this.someProperty = data;
+  }
 }
 
 // 2. Add to BaseEntity
@@ -765,14 +776,14 @@ entity.addComponent(new NewComponent(data));
 
 // 3. Create BaseSystem (logic only)
 export class NewSystem extends BaseSystem {
-   update(entities, delta) {
-      entities.forEach(entity => {
-         const component = entity.getComponent(NewComponent);
-         if (component) {
-            // Process logic here
-         }
-      });
-   }
+  update(entities, delta) {
+    entities.forEach(entity => {
+      const component = entity.getComponent(NewComponent);
+      if (component) {
+        // Process logic here
+      }
+    });
+  }
 }
 ```
 
