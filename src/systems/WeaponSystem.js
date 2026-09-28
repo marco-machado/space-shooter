@@ -1,3 +1,4 @@
+import Phaser from 'phaser';
 import BaseSystem from './BaseSystem.js';
 import Projectile from '@/entities/Projectile.js';
 import WeaponComponent from '@/components/WeaponComponent.js';

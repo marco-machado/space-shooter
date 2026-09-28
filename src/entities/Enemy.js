@@ -1,16 +1,16 @@
-import Entity from './Entity.js';
+import BaseEntity from './BaseEntity.js';
 import MovementComponent from '../components/MovementComponent.js';
 import CollisionComponent from '../components/CollisionComponent.js';
 import HealthComponent from '../components/HealthComponent.js';
 import WeaponComponent from '../components/WeaponComponent.js';
-import Logger from '../core/Logger.js';
+import Logger from '../utils/Logger.js';
 
 /**
  * Enemy Entity
  * Represents different types of enemy ships with AI behavior
  * Uses colored rectangles for development graphics
  */
-class Enemy extends Entity {
+class Enemy extends BaseEntity {
   constructor(scene, x, y, enemyType = 'scout') {
     // Get enemy configuration
     const config = Enemy.getEnemyConfig(enemyType);

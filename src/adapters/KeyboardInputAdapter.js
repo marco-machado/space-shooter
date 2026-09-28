@@ -1,3 +1,4 @@
+import Phaser from 'phaser';
 import BaseAdapter from '@/adapters/BaseAdapter.js';
 import Logger from '@/utils/Logger.js';
 import { EventTypes } from '@/event-bus/EventTypes.js';

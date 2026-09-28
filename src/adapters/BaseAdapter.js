@@ -1,3 +1,4 @@
+import Phaser from 'phaser';
 import { getEventBus } from '@/event-bus/EventBus.js';
 
 export default class BaseAdapter {

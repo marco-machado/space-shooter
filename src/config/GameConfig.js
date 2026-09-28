@@ -1,3 +1,4 @@
+import Phaser from 'phaser';
 import Environment from './Environment.js';
 
 // Import scenes
