@@ -462,11 +462,10 @@ eventBus1.emit(EventTypes.PLAYER_INPUT, {
 # Verify vitest configuration:
 cat vitest.config.js
 
-# Should contain path alias:
+# The alias is the one exported by vite.config.js:
+# import viteConfig from './vite.config.js';
 # resolve: {
-#   alias: {
-#     '@': path.resolve(__dirname, './src'),
-#   },
+#   alias: viteConfig.resolve.alias,
 # },
 
 # Check test file imports:

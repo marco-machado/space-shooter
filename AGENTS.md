@@ -32,13 +32,8 @@ Browser space shooter built with Phaser 3 (`phaser` ^3.90) and Vite 7, plain ES 
 
 ## Pitfalls
 
-- The `@/` import alias is used in newer code and tests (`@/utils/Logger.js`), but no `resolve.alias` is defined in `vite.config.js` or `vitest.config.js`. Those imports will not resolve until an alias for `@` -> `src` is added. Relative imports (`../../src/...`) work. 7 of 9 test files fail to load because of this (#4).
-- 12 older files import modules that do not exist: `../core/Logger.js` (Logger is in `src/utils/`), `./Entity.js`, `./Component.js`, `./System.js` (now `BaseEntity.js` / `BaseComponent.js` / `BaseSystem.js`). Affected: `src/main.js`, all of `src/scenes/`, `src/entities/Enemy.js`, `src/components/{Health,Collision}Component.js`, `src/systems/CollisionSystem.js`, `src/utils/GameStateManager.js`, `src/graphics/DevShapes.js`. `npm run build` fails on these (#5).
-- The ESLint `no-console` override targets `src/core/Logger.js`, which does not exist; `src/utils/Logger.js` is not exempted, so `npm run lint` reports 8 errors there (#6).
+- Vitest loads `vitest.config.js` and reads `resolve.alias` from `vite.config.js`. Keep the `@` path in `vite.config.js` only.
 - `npm run lint <files>` appends files to `src/`, so it still lints all of `src/`.
-- `vite.config.js` sets `minify: 'terser'`, but `terser` is not in `devDependencies`; `npm run build` fails with `terser not found` until it is installed (#7).
-- Test config is duplicated in `vite.config.js` and `vitest.config.js`; Vitest uses `vitest.config.js`. Edit that one.
-- `src/config/` has both `ConfigManager.js` and the older `Environment.js`/`GameConfig.js`; new code should use `ConfigManager`.
-- `tests/setup.js` forces `VITE_LOG_LEVEL=error`, `VITE_DEBUG_MODE=false`, and silences `console.log/debug/info`.
-- `docs/DEVELOPMENT.md` mentions `npm run test:ui`; that script does not exist (#8).
-- `.serena/memories/` holds notes from another agent tool; treat as history, not authoritative.
+- `src/config/` has both `ConfigManager.js` and the older `Environment.js`/`GameConfig.js`. New code should use `ConfigManager`.
+- `tests/setup.js` forces `VITE_LOG_LEVEL=error`, `VITE_DEBUG_MODE=false`, and silences `console.log`, `console.debug`, and `console.info`.
+- `.serena/memories/` holds notes from another agent tool. Treat them as history, not as the current tree.
