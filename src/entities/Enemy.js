@@ -145,22 +145,22 @@ class Enemy extends BaseEntity {
     const deltaSeconds = delta / 1000;
 
     const movement = this.getComponent(MovementComponent);
-    if (movement) {
+    if (movement && typeof movement.update === 'function') {
       movement.update(deltaSeconds);
     }
 
     const health = this.getComponent(HealthComponent);
-    if (health) {
+    if (health && typeof health.update === 'function') {
       health.update(delta);
     }
 
     const collision = this.getComponent(CollisionComponent);
-    if (collision) {
+    if (collision && typeof collision.update === 'function') {
       collision.update(delta);
     }
 
     const weapon = this.getComponent(WeaponComponent);
-    if (weapon) {
+    if (weapon && typeof weapon.update === 'function') {
       weapon.update(delta);
     }
   }

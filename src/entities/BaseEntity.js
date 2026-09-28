@@ -343,13 +343,17 @@ export default class BaseEntity {
   recreateGameObject() {
     // Check if recreation is needed
     if (this.gameObject) {
-      Logger.debug(`[BaseEntity] Entity ${this.entityId}: GameObject already exists, skipping recreation`);
+      Logger.debug(
+        `[BaseEntity] Entity ${this.entityId}: GameObject already exists, skipping recreation`
+      );
       return this;
     }
 
     // Validate scene state before recreation
     if (!this.scene || this.scene.sys.isDestroyed) {
-      Logger.error(`[BaseEntity] Entity ${this.entityId}: Cannot recreate GameObject - scene is destroyed`);
+      Logger.error(
+        `[BaseEntity] Entity ${this.entityId}: Cannot recreate GameObject - scene is destroyed`
+      );
       return this;
     }
 
@@ -622,7 +626,6 @@ export default class BaseEntity {
 
       // Update GameObject if it exists and supports setSize
       if (this.gameObject && typeof this.gameObject.setSize === 'function') {
-
         // Validate entity state before calling setSize
         if (!this.scene || this.scene.sys.isDestroyed) {
           Logger.error(`[BaseEntity] Entity ${this.entityId}: Cannot setSize - scene is destroyed`);
@@ -782,6 +785,24 @@ export default class BaseEntity {
   // ========================================
   // Phaser GameObject Method Delegation
   // ========================================
+
+  /**
+   * @param {boolean} active - Whether the entity participates in updates
+   * @returns {BaseEntity} This entity for chaining
+   */
+  setActive(active) {
+    this.active = active;
+    return this;
+  }
+
+  /**
+   * @param {boolean} visible - Whether the entity is drawn
+   * @returns {BaseEntity} This entity for chaining
+   */
+  setVisible(visible) {
+    this.visible = visible;
+    return this;
+  }
 
   /**
    * Set depth for rendering layer (delegates to gameObject)

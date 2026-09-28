@@ -34,4 +34,4 @@ Each feature file starts with an H1 and one paragraph, then exactly four H2 sect
 - [Main menu](./main-menu.md) covers the preloader, the three menu labels, and keyboard selection.
 - [Instructions](./instructions.md) covers opening and closing the instructions overlay.
 - [Settings](./settings.md) covers the settings overlay and the audio line from this session's environment.
-- [Start game](./start-game.md) covers choosing `START GAME`. Gameplay does not begin; the canvas shows a game error.
+- [Start game](./start-game.md) covers choosing `START GAME`, the HUD, and pause.
