@@ -787,7 +787,6 @@ export default class BaseEntity {
   // ========================================
 
   /**
-   * Set active state. Spawn and weapon pools call this to park unused entities.
    * @param {boolean} active - Whether the entity participates in updates
    * @returns {BaseEntity} This entity for chaining
    */
@@ -797,7 +796,6 @@ export default class BaseEntity {
   }
 
   /**
-   * Set visible state. Spawn and weapon pools call this alongside setActive.
    * @param {boolean} visible - Whether the entity is drawn
    * @returns {BaseEntity} This entity for chaining
    */
