@@ -1,6 +1,10 @@
 import { defineConfig } from 'vitest/config';
+import viteConfig from './vite.config.js';
 
 export default defineConfig({
+  resolve: {
+    alias: viteConfig.resolve.alias,
+  },
   test: {
     globals: true,
     environment: 'jsdom',
