@@ -1,22 +1,27 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import Phaser from 'phaser';
 import BaseAdapter from '../../src/adapters/BaseAdapter.js';
 import { createInvalidScene } from '../__mocks__/PhaserScene.js';
-import { getEventBus, resetMockEventBus, createMockEventBus } from '../__mocks__/EventBus.js';
+import { getEventBus, resetMockEventBus } from '../__mocks__/EventBus.js';
 
-// Mock the EventBus module
+vi.mock('phaser', () => {
+  class Scene {}
+  return { default: { Scene } };
+});
+
 vi.mock('@/event-bus/EventBus.js', () => ({
   getEventBus: () => getEventBus(),
 }));
 
-// Create Phaser Scene mock class that can be used with instanceof
-class PhaserScene {
+class PhaserScene extends Phaser.Scene {
   constructor(config = {}) {
+    super();
     this.scene = {
       key: config.key || 'TestScene',
       active: config.active || false,
       visible: config.visible || true,
     };
-    
+
     this.game = { config: {}, events: new Map() };
     this.events = { on: vi.fn(), off: vi.fn(), emit: vi.fn(), once: vi.fn() };
     this.children = { list: [], add: vi.fn(), remove: vi.fn() };
@@ -26,9 +31,6 @@ class PhaserScene {
     this.physics = { add: { existing: vi.fn() }, world: { gravity: { x: 0, y: 0 } } };
   }
 }
-
-// Mock Phaser globally for instanceof checks
-global.Phaser = { Scene: PhaserScene };
 
 /**
  * Test suite for BaseAdapter class
@@ -95,11 +97,7 @@ describe('BaseAdapter', () => {
   });
 
   describe('Constructor Validation', () => {
-    class TestAdapter extends BaseAdapter {
-      constructor(scene) {
-        super(scene);
-      }
-    }
+    class TestAdapter extends BaseAdapter {}
 
     describe('Valid Scene Parameter', () => {
       it('should accept valid Phaser.Scene object', () => {
@@ -231,10 +229,6 @@ describe('BaseAdapter', () => {
 
   describe('EventBus Integration', () => {
     class TestAdapter extends BaseAdapter {
-      constructor(scene) {
-        super(scene);
-      }
-
       // Helper method to access eventBus for testing
       getEventBus() {
         return this.eventBus;
@@ -449,11 +443,7 @@ describe('BaseAdapter', () => {
   });
 
   describe('Error Handling Edge Cases', () => {
-    class TestAdapter extends BaseAdapter {
-      constructor(scene) {
-        super(scene);
-      }
-    }
+    class TestAdapter extends BaseAdapter {}
 
     it('should handle scene with null properties gracefully', () => {
       // Create a mock scene with some null properties
@@ -507,10 +497,6 @@ describe('BaseAdapter', () => {
 
   describe('Property Access and State', () => {
     class PropertyTestAdapter extends BaseAdapter {
-      constructor(scene) {
-        super(scene);
-      }
-
       getProperties() {
         return {
           scene: this.scene,
