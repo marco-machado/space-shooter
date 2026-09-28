@@ -32,9 +32,7 @@ export default class EventBus {
       throw new Error('[EventBus] Invalid context object provided to on()');
     }
 
-    if (typeof eventTypes === 'string') {
-      eventTypes = [eventTypes];
-    }
+    const types = typeof eventTypes === 'string' ? [eventTypes] : eventTypes;
 
     const listener = {
       id: this.generateListenerId(),
@@ -42,12 +40,12 @@ export default class EventBus {
       context,
       priority,
       options,
-      eventTypes: new Set(eventTypes),
+      eventTypes: new Set(types),
       addedAt: Date.now(),
     };
 
     // Add to listener map for each event type
-    for (const eventType of eventTypes) {
+    for (const eventType of types) {
       if (!this.listeners.has(eventType)) {
         this.listeners.set(eventType, new Set());
       }
@@ -55,14 +53,14 @@ export default class EventBus {
     }
 
     // Sort listeners by priority for each event type
-    for (const eventType of eventTypes) {
+    for (const eventType of types) {
       this.sortListeners(eventType);
     }
 
     // Log listener addition for debugging
 
     Logger.debug(
-      `[EventBus] Listener ${listener.id} added for ${Array.from(eventTypes).join(', ')}`
+      `[EventBus] Listener ${listener.id} added for ${Array.from(types).join(', ')}`
     );
 
     return listener.id;
@@ -87,19 +85,17 @@ export default class EventBus {
       throw new Error('[EventBus] Invalid context object provided to once()');
     }
 
-    if (typeof eventTypes === 'string') {
-      eventTypes = [eventTypes];
-    }
+    const types = typeof eventTypes === 'string' ? [eventTypes] : eventTypes;
 
     const listener = {
       id: this.generateListenerId(),
       callback,
       context,
-      eventTypes: new Set(eventTypes),
+      eventTypes: new Set(types),
       addedAt: Date.now(),
     };
 
-    for (const eventType of eventTypes) {
+    for (const eventType of types) {
       if (!this.oneTimeListeners.has(eventType)) {
         this.oneTimeListeners.set(eventType, new Set());
       }
@@ -107,7 +103,7 @@ export default class EventBus {
     }
 
     Logger.debug(
-      `[EventBus] One time listener ${listener.id} added for ${Array.from(eventTypes).join(', ')}`
+      `[EventBus] One time listener ${listener.id} added for ${Array.from(types).join(', ')}`
     );
 
     return listener.id;
@@ -218,11 +214,9 @@ export default class EventBus {
 
     Logger.debug('[EventBus] Emitting event type', eventType);
 
-    if (priority === null) {
-      priority = getDefaultPriority(eventType);
-    }
+    const eventPriority = priority === null ? getDefaultPriority(eventType) : priority;
 
-    const event = this.createEvent(eventType, eventData, priority);
+    const event = this.createEvent(eventType, eventData, eventPriority);
     this.processEventImmediate(event);
     return event.id;
   }

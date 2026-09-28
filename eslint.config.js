@@ -56,9 +56,14 @@ export default [
     },
   },
   {
-    files: ['src/core/Logger.js'],
+    files: ['src/utils/Logger.js'],
+    languageOptions: {
+      globals: {
+        process: 'readonly',
+      },
+    },
     rules: {
-      'no-console': 'off', // Logger system is allowed to use console methods
+      'no-console': 'off',
     },
   },
   {

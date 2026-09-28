@@ -7,7 +7,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import MovementSystem from '@/systems/MovementSystem.js';
 import BaseSystem from '@/systems/BaseSystem.js';
 import MovementComponent from '@/components/MovementComponent.js';
-import { EventTypes, EventPriority } from '@/event-bus/EventTypes.js';
+import { EventTypes } from '@/event-bus/EventTypes.js';
 import { resetMockEventBus } from '../__mocks__/EventBus.js';
 
 // Mock dependencies
@@ -41,6 +41,9 @@ describe('MovementSystem', () => {
           setTimeout(callback, delay);
         }),
       },
+      events: {
+        once: vi.fn(),
+      },
     };
 
     // Create system instance
@@ -67,8 +70,8 @@ describe('MovementSystem', () => {
   function createMockEntity(type, x, y, movementComponent) {
     const entity = {
       entityType: type,
-      x: x,
-      y: y,
+      x,
+      y,
       width: 32,
       height: 32,
       active: true,
@@ -325,7 +328,6 @@ describe('MovementSystem', () => {
       movementComponent.accelerationX = 50;
       movementComponent.drag = 2;
       
-      const originalVelocity = movementComponent.velocityX;
       const delta = 0.1;
       
       system.updateEntityMovement(testEntity, delta);
@@ -593,7 +595,7 @@ describe('MovementSystem', () => {
             centerY: 300,
             radius: 100,
             angularSpeed: 2, // Faster rotation to see difference
-            clockwise: clockwise,
+            clockwise,
           };
           
           system.moveTowards = vi.fn();
@@ -1031,37 +1033,46 @@ describe('MovementSystem', () => {
         movementComponent.boundaryBehavior = 'destroy';
       });
 
-      it('should schedule entity destruction when past left boundary', () => {
+      it('should destroy a non-pooled entity that leaves through the left boundary', () => {
         testEntity.x = -5;
         testEntity.width = 32;
-        
+        movementComponent.velocityX = -40;
+
         system.applyScreenBounds(testEntity, movementComponent);
-        
-        expect(mockScene.time.delayedCall).toHaveBeenCalledWith(
-          10,
-          expect.any(Function)
-        );
+
+        expect(testEntity.active).toBe(false);
+        expect(mockScene.events.once).toHaveBeenCalledWith('postupdate', expect.any(Function));
+        const onPostUpdate = mockScene.events.once.mock.calls[0][1];
+        onPostUpdate();
+        expect(testEntity.destroy).toHaveBeenCalledOnce();
       });
 
-      it('should schedule entity destruction when past any boundary', () => {
+      it('should destroy a non-pooled entity that leaves through any boundary', () => {
         const boundaries = [
-          { x: -5, y: 300 },   // Left
-          { x: 850, y: 300 },  // Right
-          { x: 400, y: -5 },   // Top
-          { x: 400, y: 650 },  // Bottom
+          { x: -5, y: 300, velocityX: -40, velocityY: 0 },
+          { x: 850, y: 300, velocityX: 40, velocityY: 0 },
+          { x: 400, y: -5, velocityX: 0, velocityY: -40 },
+          { x: 400, y: 650, velocityX: 0, velocityY: 40 },
         ];
-        
+
         boundaries.forEach((pos, index) => {
           const entity = createMockEntity('test', pos.x, pos.y, new MovementComponent());
           entity.width = 32;
           entity.height = 32;
           const mc = entity.getComponent(MovementComponent);
           mc.boundToScreen = true;
+          mc.screenPadding = 10;
           mc.boundaryBehavior = 'destroy';
-          
+          mc.velocityX = pos.velocityX;
+          mc.velocityY = pos.velocityY;
+
           system.applyScreenBounds(entity, mc);
-          
-          expect(mockScene.time.delayedCall).toHaveBeenCalledTimes(index + 1);
+
+          expect(entity.active).toBe(false);
+          expect(mockScene.events.once).toHaveBeenCalledTimes(index + 1);
+          const onPostUpdate = mockScene.events.once.mock.calls[index][1];
+          onPostUpdate();
+          expect(entity.destroy).toHaveBeenCalledOnce();
         });
       });
     });
@@ -1186,8 +1197,7 @@ describe('MovementSystem', () => {
 
     it('should clean up properly on destroy', () => {
       system.init();
-      const originalListenerId = system.inputListenerId;
-      
+
       system.destroy();
       
       expect(system.inputListenerId).toBeNull();
