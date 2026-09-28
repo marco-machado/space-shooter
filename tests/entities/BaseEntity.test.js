@@ -199,7 +199,14 @@ describe('BaseEntity', () => {
   describe('GameObject Factory Tests', () => {
     describe('Rectangle GameObject', () => {
       it('should create rectangle with correct parameters', () => {
-        new BaseEntity(mockScene, { type: 'rectangle', x: 10, y: 20, width: 30, height: 40, color: 0xff0000 });
+        new BaseEntity(mockScene, {
+          type: 'rectangle',
+          x: 10,
+          y: 20,
+          width: 30,
+          height: 40,
+          color: 0xff0000,
+        });
 
         expect(mockScene.add.rectangle).toHaveBeenCalledWith(10, 20, 30, 40, 0xff0000);
       });
@@ -286,7 +293,12 @@ describe('BaseEntity', () => {
       it('should use default diamond points when not provided', () => {
         new BaseEntity(mockScene, { type: 'polygon', x: 10, y: 20 });
 
-        expect(mockScene.add.polygon).toHaveBeenCalledWith(10, 20, [0, -16, 14, 14, -14, 14], 0x00ff00);
+        expect(mockScene.add.polygon).toHaveBeenCalledWith(
+          10,
+          20,
+          [0, -16, 14, 14, -14, 14],
+          0x00ff00
+        );
       });
     });
 
@@ -301,7 +313,10 @@ describe('BaseEntity', () => {
       it('should use default text and style when not provided', () => {
         new BaseEntity(mockScene, { type: 'text', x: 10, y: 20 });
 
-        expect(mockScene.add.text).toHaveBeenCalledWith(10, 20, 'Entity', { fontSize: '16px', color: '#ffffff' });
+        expect(mockScene.add.text).toHaveBeenCalledWith(10, 20, 'Entity', {
+          fontSize: '16px',
+          color: '#ffffff',
+        });
       });
     });
 
@@ -331,7 +346,7 @@ describe('BaseEntity', () => {
         new BaseEntity(mockScene, { type: 'unknown-type' });
 
         expect(Logger.warn).toHaveBeenCalledWith(
-          expect.stringContaining('Unknown GameObject type: unknown-type'),
+          expect.stringContaining('Unknown GameObject type: unknown-type')
         );
       });
     });
@@ -525,15 +540,15 @@ describe('BaseEntity', () => {
 
     beforeEach(() => {
       entity = new BaseEntity(mockScene, { type: 'rectangle' });
-      
+
       // Mock components
-      mockComponent1 = { 
+      mockComponent1 = {
         entity: null,
-        constructor: { name: 'TestComponent1' }
+        constructor: { name: 'TestComponent1' },
       };
-      mockComponent2 = { 
+      mockComponent2 = {
         entity: null,
-        constructor: { name: 'TestComponent2' }
+        constructor: { name: 'TestComponent2' },
       };
     });
 
@@ -549,11 +564,11 @@ describe('BaseEntity', () => {
 
       it('should replace existing component of same type', () => {
         entity.addComponent(mockComponent1);
-        const newComponent = { 
+        const newComponent = {
           entity: null,
-          constructor: { name: 'TestComponent1' }
+          constructor: { name: 'TestComponent1' },
         };
-        
+
         entity.addComponent(newComponent);
 
         expect(entity.components.get('TestComponent1')).toBe(newComponent);
@@ -612,7 +627,7 @@ describe('BaseEntity', () => {
 
       it('should return null when component does not exist', () => {
         const NonExistentComponent = function NonExistent() {};
-        
+
         const result = entity.getComponent(NonExistentComponent);
         expect(result).toBeNull();
       });
@@ -629,7 +644,7 @@ describe('BaseEntity', () => {
 
       it('should return false when component does not exist', () => {
         const NonExistentComponent = function NonExistent() {};
-        
+
         expect(entity.hasComponent(NonExistentComponent)).toBe(false);
       });
     });
@@ -750,7 +765,7 @@ describe('BaseEntity', () => {
 
       it('should implement once() with internal system', () => {
         entity.once('test-event', mockCallback);
-        
+
         entity.emit('test-event', 'data1');
         entity.emit('test-event', 'data2');
 
@@ -871,9 +886,35 @@ describe('BaseEntity', () => {
       expect(result).toBe(entity);
     });
 
+    it('setActive updates the active flag the spawn pool reads', () => {
+      entity.setActive(false);
+
+      expect(entity.active).toBe(false);
+      expect(mockGameObject.active).toBe(false);
+
+      const chained = entity.setActive(true);
+
+      expect(chained).toBe(entity);
+      expect(entity.active).toBe(true);
+      expect(mockGameObject.active).toBe(true);
+    });
+
+    it('setVisible updates the visible flag the spawn pool reads', () => {
+      entity.setVisible(false);
+
+      expect(entity.visible).toBe(false);
+      expect(mockGameObject.visible).toBe(false);
+
+      const chained = entity.setVisible(true);
+
+      expect(chained).toBe(entity);
+      expect(entity.visible).toBe(true);
+      expect(mockGameObject.visible).toBe(true);
+    });
+
     it('should handle delegated methods when gameObject lacks the method', () => {
       delete mockGameObject.setTint;
-      
+
       const result = entity.setTint(0xff0000);
       expect(result).toBe(entity); // Should not error and still return entity for chaining
     });
@@ -1170,7 +1211,7 @@ describe('BaseEntity', () => {
     describe('Entity ID Generation', () => {
       it('should generate unique IDs for multiple entities', () => {
         const ids = new Set();
-        
+
         for (let i = 0; i < 100; i++) {
           const id = BaseEntity.generateId();
           expect(ids.has(id)).toBe(false);
@@ -1257,9 +1298,7 @@ describe('BaseEntity', () => {
         const entity = new BaseEntity(mockScene, { type: 'rectangle' });
         const component = { constructor: { name: 'TestComponent' } };
 
-        const result = entity
-          .addComponent(component)
-          .removeComponent(component.constructor);
+        const result = entity.addComponent(component).removeComponent(component.constructor);
 
         expect(result).toBe(entity);
       });
@@ -1348,14 +1387,10 @@ describe('BaseEntity', () => {
       vi.clearAllMocks(); // Clear creation logs again
 
       entity.setPosition(100, 200);
-      expect(Logger.debug).toHaveBeenCalledWith(
-        expect.stringContaining('moved to (100, 200)')
-      );
+      expect(Logger.debug).toHaveBeenCalledWith(expect.stringContaining('moved to (100, 200)'));
 
       entity.setSize(50, 60);
-      expect(Logger.debug).toHaveBeenCalledWith(
-        expect.stringContaining('resized to 50x60')
-      );
+      expect(Logger.debug).toHaveBeenCalledWith(expect.stringContaining('resized to 50x60'));
 
       entity.destroy();
       expect(Logger.debug).toHaveBeenCalledWith(
