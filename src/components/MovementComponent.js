@@ -26,7 +26,7 @@ export default class MovementComponent extends BaseComponent {
     // Movement constraints
     this.boundToScreen = true;
     this.screenPadding = 0;
-    this.boundaryBehavior = 'clamp'; // 'clamp', 'wrap', 'bounce', 'destroy'
+    this.boundaryBehavior = 'clamp';
 
     // Movement state
     this.isMoving = false;

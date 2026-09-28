@@ -343,7 +343,7 @@ describe('MovementComponent', () => {
       expect(pattern.aiPattern).toBe('straight');
       expect(pattern.aiPatternData.direction).toBe(Math.PI / 2);
       expect(pattern.aiPatternData.speed).toBe(150);
-      expect(pattern.boundaryBehavior).toBe('destroy');
+      expect(pattern.boundaryBehavior).toBe('offscreen-deactivate');
       expect(pattern.maxSpeed).toBe(180);
     });
 
@@ -355,7 +355,7 @@ describe('MovementComponent', () => {
       expect(pattern.aiPatternData.frequency).toBe(2);
       expect(pattern.aiPatternData.baseDirection).toBe(Math.PI / 2);
       expect(pattern.aiPatternData.speed).toBe(120);
-      expect(pattern.boundaryBehavior).toBe('destroy');
+      expect(pattern.boundaryBehavior).toBe('offscreen-deactivate');
       expect(pattern.maxSpeed).toBe(150);
     });
 
@@ -367,7 +367,7 @@ describe('MovementComponent', () => {
       expect(pattern.aiPatternData.frequency).toBe(1);
       expect(pattern.aiPatternData.baseDirection).toBe(Math.PI / 2);
       expect(pattern.aiPatternData.speed).toBe(80);
-      expect(pattern.boundaryBehavior).toBe('destroy');
+      expect(pattern.boundaryBehavior).toBe('offscreen-deactivate');
       expect(pattern.maxSpeed).toBe(100);
     });
 
@@ -503,7 +503,7 @@ describe('MovementComponent', () => {
     });
 
     it('should accept all valid boundary behaviors', () => {
-      const validBehaviors = ['clamp', 'wrap', 'bounce', 'destroy'];
+      const validBehaviors = ['clamp', 'wrap', 'bounce', 'destroy', 'offscreen-deactivate'];
       
       for (const behavior of validBehaviors) {
         component.boundaryBehavior = behavior;

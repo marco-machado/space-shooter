@@ -46,7 +46,6 @@ npm run format:check       # Check formatting without changes
 npm run test               # Run all unit tests
 npm run test:watch         # Watch mode for continuous testing
 npm run test:coverage      # Generate test coverage report
-npm run test:ui            # Run tests with Vitest UI (if configured)
 
 # Development and build
 npm run dev                # Start development server with HMR
@@ -285,9 +284,6 @@ vitest tests/units/components/HealthComponent.test.js
 
 # Run tests matching pattern
 vitest --grep "BaseEntity"
-
-# Run tests with UI interface
-npm run test:ui
 ```
 
 ### Manual Testing Complement
@@ -295,7 +291,7 @@ npm run test:ui
 While comprehensive unit testing is the foundation, manual testing remains important for:
 
 - **User Experience**: Game feel, balance, and fun factor
-- **Visual Verification**: Graphics, animations, and visual effects  
+- **Visual Verification**: Graphics, animations, and visual effects
 - **Performance**: Real-world performance under various conditions
 - **Browser Compatibility**: Testing across different browsers and devices
 - **Audio**: Sound effects and music integration

@@ -45,7 +45,6 @@ class Logger {
         const timestamp = new Date().toISOString().substr(11, 8);
         const isDev = env.DEV || env.NODE_ENV === 'development';
 
-        // eslint-disable-next-line no-console
         console.log('🔍', `${timestamp} [DEBUG]`, 'Logger: auto-initialized', {
           debugMode: this.debugMode,
           logLevel: this.logLevel,

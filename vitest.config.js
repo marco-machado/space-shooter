@@ -1,6 +1,10 @@
 import { defineConfig } from 'vitest/config';
+import viteConfig from './vite.config.js';
 
 export default defineConfig({
+  resolve: {
+    alias: viteConfig.resolve.alias,
+  },
   test: {
     globals: true,
     environment: 'jsdom',
@@ -10,14 +14,7 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json-summary', 'html'],
-      exclude: [
-        'node_modules/',
-        'tests/',
-        'dist/',
-        'src/scenes/', // Skip Phaser scene testing
-        'src/graphics/', // Skip development graphics testing
-        'src/config/', // Skip configuration files
-      ],
+      exclude: ['node_modules/', 'tests/', 'dist/', 'src/scenes/', 'src/graphics/', 'src/config/'],
       thresholds: {
         global: {
           branches: 50,
