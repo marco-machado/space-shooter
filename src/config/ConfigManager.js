@@ -279,7 +279,7 @@ export default class ConfigManager {
     this._ensureInitialized();
 
     // In test environment, return a mock configuration
-    if (typeof process !== 'undefined' && process.env.NODE_ENV === 'test') {
+    if (globalThis.process?.env?.NODE_ENV === 'test') {
       return {
         type: 'WEBGL', // Mock value for tests
         width: 600,
@@ -481,7 +481,7 @@ export default class ConfigManager {
     };
 
     // Only include Phaser config if not in test environment
-    if (typeof process === 'undefined' || process.env.NODE_ENV !== 'test') {
+    if (globalThis.process?.env?.NODE_ENV !== 'test') {
       exportData.phaserConfig = this.getPhaserConfig();
     }
 
