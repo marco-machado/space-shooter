@@ -1,0 +1,12 @@
+{
+  "featureId": "instructions",
+  "entryPoint": "menu keyboard after debug auto-advance to menu",
+  "action": "ArrowDown from START GAME",
+  "scene": "MainMenuScene",
+  "error": null,
+  "texts": [
+    { "text": "START GAME", "color": "#ffffff", "alpha": 1 },
+    { "text": "INSTRUCTIONS", "color": "#00ff00", "alpha": 1 },
+    { "text": "SETTINGS", "color": "#ffffff", "alpha": 1 }
+  ]
+}

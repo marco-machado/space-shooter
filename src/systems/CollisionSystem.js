@@ -1,13 +1,13 @@
-import System from './System.js';
+import BaseSystem from './BaseSystem.js';
 import CollisionComponent from '../components/CollisionComponent.js';
-import Logger from '../core/Logger.js';
+import Logger from '../utils/Logger.js';
 
 /**
  * Collision System
  * Handles collision detection between entities with CollisionComponents
  * Uses spatial optimization for performance with large numbers of entities
  */
-class CollisionSystem extends System {
+class CollisionSystem extends BaseSystem {
   constructor(scene) {
     super();
     this.scene = scene;

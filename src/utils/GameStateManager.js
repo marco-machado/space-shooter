@@ -1,4 +1,4 @@
-import Logger from '../core/Logger.js';
+import Logger from './Logger.js';
 
 /**
  * Game State Manager

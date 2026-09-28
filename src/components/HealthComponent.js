@@ -1,11 +1,11 @@
-import Component from './Component.js';
-import Logger from '../core/Logger.js';
+import BaseComponent from './BaseComponent.js';
+import Logger from '../utils/Logger.js';
 
 /**
  * Health Component
  * Manages entity health, damage, and invulnerability
  */
-class HealthComponent extends Component {
+class HealthComponent extends BaseComponent {
   constructor(maxHealth = 100, currentHealth = null) {
     super();
 

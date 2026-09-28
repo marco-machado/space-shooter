@@ -1,0 +1,36 @@
+{
+  "featureId": "instructions",
+  "entryPoint": "menu keyboard after debug auto-advance to menu",
+  "action": "Enter on INSTRUCTIONS",
+  "ready": true,
+  "scene": "MainMenuScene",
+  "canvas": true,
+  "loadingHidden": true,
+  "error": null,
+  "errorBody": null,
+  "title": "Space Shooter - Defend the Galaxy",
+  "devIndicator": "DEVELOPMENT MODE",
+  "texts": [
+    { "text": "SPACE SHOOTER", "color": "#ffffff", "alpha": 1 },
+    { "text": "Defend the Galaxy", "color": "#888888", "alpha": 1 },
+    { "text": "Development Build - Colored Rectangle Graphics", "color": "#ffff00", "alpha": 1 },
+    { "text": "START GAME", "color": "#ffffff", "alpha": 1 },
+    { "text": "INSTRUCTIONS", "color": "#00ff00", "alpha": 1 },
+    { "text": "SETTINGS", "color": "#ffffff", "alpha": 1 },
+    {
+      "text": "CONTROLS:\nWASD / Arrow Keys - Move\nSPACE - Shoot\nESC - Pause",
+      "color": "#888888",
+      "alpha": 1
+    },
+    {
+      "text": "OBJECTIVE:\nDestroy enemies and survive waves\nCollect power-ups for upgrades\nAchieve the highest score!",
+      "color": "#888888",
+      "alpha": 1
+    },
+    {
+      "text": "INSTRUCTIONS:\n\nUse WASD or Arrow Keys to move your ship\nHold SPACE to shoot at enemies\nCollect green power-ups for health\nCollect purple power-ups for weapon upgrades\nSurvive as long as possible!\n\nPress any key to return to menu",
+      "color": "#ffffff",
+      "alpha": 1
+    }
+  ]
+}

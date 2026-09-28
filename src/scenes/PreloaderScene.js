@@ -1,4 +1,5 @@
-import Logger from '../core/Logger.js';
+import Phaser from 'phaser';
+import Logger from '../utils/Logger.js';
 import Environment from '../config/Environment.js';
 
 /**

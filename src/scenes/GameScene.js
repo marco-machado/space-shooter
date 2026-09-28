@@ -1,6 +1,7 @@
-import Logger from '../core/Logger.js';
+import Phaser from 'phaser';
+import Logger from '../utils/Logger.js';
 import Environment from '../config/Environment.js';
-import Entity from '../entities/Entity.js';
+import BaseEntity from '../entities/BaseEntity.js';
 // import Enemy from '../entities/Enemy.js'; // Imported but not directly used in scene
 import HealthComponent from '../components/HealthComponent.js';
 import MovementComponent from '../components/MovementComponent.js';
@@ -149,7 +150,7 @@ class GameScene extends Phaser.Scene {
     const startY = this.scale.height - 100;
 
     // Create player entity (blue rectangle in development)
-    this.player = new Entity(this, startX, startY, 64, 64, 0x0099ff);
+    this.player = new BaseEntity(this, startX, startY, 64, 64, 0x0099ff);
 
     // Mark as player for identification
     this.player.entityType = 'player';

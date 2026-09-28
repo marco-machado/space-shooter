@@ -1,11 +1,11 @@
-import Component from './Component.js';
-import Logger from '../core/Logger.js';
+import BaseComponent from './BaseComponent.js';
+import Logger from '../utils/Logger.js';
 
 /**
  * Collision Component
  * Manages collision detection, layers, and response behaviors
  */
-class CollisionComponent extends Component {
+class CollisionComponent extends BaseComponent {
   constructor(layer = 'default', shape = 'rectangle') {
     super();
 

@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import Environment from './config/Environment.js';
-import Logger from './core/Logger.js';
+import Logger from './utils/Logger.js';
 import GameConfig from './config/GameConfig.js';
 
 /**
@@ -55,6 +55,14 @@ class SpaceShooterGame {
 
       this.isInitialized = true;
       Logger.info('SpaceShooterGame: Game initialization complete');
+
+      if (Environment.DEBUG_MODE) {
+        window.spaceShooterGame = this;
+        window.phaser = Phaser;
+        Logger.debug(
+          'SpaceShooterGame: Debug mode - Game instance available as window.spaceShooterGame'
+        );
+      }
     } catch (error) {
       Logger.error('SpaceShooterGame: Failed to initialize game:', error);
       this.showErrorMessage(error.message);
@@ -236,13 +244,6 @@ if (document.readyState === 'loading') {
   spaceShooterGame.init().catch(error => {
     console.error('Failed to start Space Shooter game:', error);
   });
-}
-
-// Make game instance available globally for debugging
-if (Environment.DEBUG_MODE) {
-  window.spaceShooterGame = spaceShooterGame;
-  window.phaser = Phaser;
-  Logger.debug('SpaceShooterGame: Debug mode - Game instance available as window.spaceShooterGame');
 }
 
 // Export for potential module usage

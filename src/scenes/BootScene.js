@@ -1,5 +1,6 @@
+import Phaser from 'phaser';
 import Environment from '../config/Environment.js';
-import Logger from '../core/Logger.js';
+import Logger from '../utils/Logger.js';
 
 /**
  * Boot Scene - Initial setup and environment loading

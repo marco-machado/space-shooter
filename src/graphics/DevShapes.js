@@ -1,4 +1,4 @@
-import Logger from '../core/Logger.js';
+import Logger from '../utils/Logger.js';
 
 /**
  * Development Graphics System
